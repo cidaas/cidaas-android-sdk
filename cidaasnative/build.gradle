@@ -99,7 +99,7 @@ afterEvaluate {
                 // You can then customize attributes of the publication as shown below.
                 groupId = 'com.github.Cidaas'
                 artifactId =  project.name
-                version = '3.2.12'
+                version = '3.2.13'
                 afterEvaluate {
                     from components.release
                 }
