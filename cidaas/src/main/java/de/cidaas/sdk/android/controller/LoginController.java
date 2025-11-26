@@ -240,12 +240,16 @@ public class LoginController {
                                             // callback Failure
                                             callbacktoMain.failure(WebAuthError.getShared(context).loginWithBrowserFailureException(WebAuthErrorCode.LOGOUTWITH_BROWSER_FAILURE,
                                                     "EMPTY URL", methodName));
+                                            // Clear callback after failure
+                                            logoutcallback = null;
                                         }
                                     }
 
                                     @Override
                                     public void failure(WebAuthError error) {
                                         callbacktoMain.failure(error);
+                                        // Clear callback after failure
+                                        logoutcallback = null;
                                     }
                                 });
 
@@ -254,12 +258,16 @@ public class LoginController {
                             @Override
                             public void failure(WebAuthError error) {
                                 callbacktoMain.failure(error);
+                                // Clear callback after failure
+                                logoutcallback = null;
                             }
                         });
 
             }else{
                 callbacktoMain.failure(WebAuthError.getShared(context).loginWithBrowserFailureException(WebAuthErrorCode.LOGOUTWITH_BROWSER_FAILURE,
                         "EMPTY SUB", methodName));
+                // Clear callback after failure
+                logoutcallback = null;
             }
 
 
@@ -268,6 +276,8 @@ public class LoginController {
 
             callbacktoMain.failure(WebAuthError.getShared(context)
                     .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE, e.getMessage()));
+            // Clear callback after exception
+            logoutcallback = null;
         }
 
 
@@ -289,12 +299,16 @@ public class LoginController {
                         // callback Failure
                         callbacktoMain.failure(WebAuthError.getShared(context).loginWithBrowserFailureException(WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE,
                                 "EMPTY URL", methodName));
+                        // Clear callback after failure
+                        logincallback = null;
                     }
                 }
 
                 @Override
                 public void failure(WebAuthError error) {
                     callbacktoMain.failure(error);
+                    // Clear callback after failure
+                    logincallback = null;
                 }
             });
 
@@ -304,6 +318,8 @@ public class LoginController {
 
             callbacktoMain.failure(WebAuthError.getShared(context)
                     .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE, e.getMessage()));
+            // Clear callback after exception
+            logincallback = null;
         }
 
 
@@ -386,9 +402,12 @@ public class LoginController {
             }
             return code;
         } catch (Exception e) {
-
-            logincallback.failure(WebAuthError.getShared(context).methodException("Exception :LoginController :getCodeFromUrl() ",
-                    WebAuthErrorCode.GET_SOCIAL_LOGIN_URL_FAILURE, e.getMessage()));
+            if (logincallback != null) {
+                logincallback.failure(WebAuthError.getShared(context).methodException("Exception :LoginController :getCodeFromUrl() ",
+                        WebAuthErrorCode.GET_SOCIAL_LOGIN_URL_FAILURE, e.getMessage()));
+                // Clear callback after failure
+                logincallback = null;
+            }
             return null;
         }
     }
@@ -401,6 +420,7 @@ public class LoginController {
         }
         if(logoutcallback != null){
             logoutcallback.success(true);
+            // Clear both callbacks after logout callback is invoked
             logoutcallback = null;
             logincallback = null;
         }
@@ -414,18 +434,39 @@ public class LoginController {
             if (code != null) {
                 //  hideLoader();
 
-                AccessTokenController.getShared(context).getAccessTokenByCode(code, callback);
+                // Wrap callback to clear logincallback after invocation
+                final EventResult<AccessTokenEntity> wrappedCallback = new EventResult<AccessTokenEntity>() {
+                    @Override
+                    public void success(AccessTokenEntity result) {
+                        callback.success(result);
+                        // Clear callback after successful invocation
+                        logincallback = null;
+                    }
+
+                    @Override
+                    public void failure(WebAuthError error) {
+                        callback.failure(error);
+                        // Clear callback after failure invocation
+                        logincallback = null;
+                    }
+                };
+
+                AccessTokenController.getShared(context).getAccessTokenByCode(code, wrappedCallback);
             } else {
                 // hideLoader();
                 String loggerMessage = "Request-Id params to dictionary conversion failure : " + "Error Code - ";
                 //+error.errorCode + ", Error Message - " + error.getErrorMessage() + ", Status Code - " +  error.statusCode;
                 LogFile.getShared(context).addFailureLog(loggerMessage);
+                // Clear callback when code is null
+                logincallback = null;
             }
         } catch (Exception e) {
 
             callback.failure(WebAuthError.getShared(context)
                     .methodException("Exception :LoginController :getCodeFromUrl ", WebAuthErrorCode.GET_SOCIAL_LOGIN_URL_FAILURE, e.getMessage()));
 
+            // Clear callback after exception
+            logincallback = null;
             // handle Exception
         }
     }
@@ -666,12 +707,16 @@ public class LoginController {
                         // callback Failure
                         callbacktoMain.failure(WebAuthError.getShared(context).loginWithBrowserFailureException(WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE,
                                 "EMPTY URL", methodName));
+                        // Clear callback after failure
+                        logincallback = null;
                     }
                 }
 
                 @Override
                 public void failure(WebAuthError error) {
                     callbacktoMain.failure(error);
+                    // Clear callback after failure
+                    logincallback = null;
                 }
             });
 
@@ -681,6 +726,8 @@ public class LoginController {
 
             callbacktoMain.failure(WebAuthError.getShared(context)
                     .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE, e.getMessage()));
+            // Clear callback after exception
+            logincallback = null;
         }
 
 
@@ -699,17 +746,23 @@ public class LoginController {
                     } else {
                         callbacktoMain.failure(WebAuthError.getShared(context).loginWithBrowserFailureException(WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE,
                                 "EMPTY SOCIAL URL", "Error" + methodName));
+                        // Clear callback after failure
+                        logincallback = null;
                     }
                 }
 
                 @Override
                 public void failure(WebAuthError error) {
                     callbacktoMain.failure(error);
+                    // Clear callback after failure
+                    logincallback = null;
                 }
             });
 
         } catch (Exception e) {
             callbacktoMain.failure(WebAuthError.getShared(context).methodException("Exception : " + methodName, WebAuthErrorCode.GET_SOCIAL_LOGIN_URL_FAILURE, e.getMessage()));
+            // Clear callback after exception
+            logincallback = null;
         }
 
     }
