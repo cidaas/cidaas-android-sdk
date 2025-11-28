@@ -9,6 +9,7 @@ import java.util.Map;
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.helper.general.DBHelper;
 import de.cidaas.sdk.android.library.locationlibrary.LocationDetails;
+import de.cidaas.sdk.android.library.common.Privacy;
 import timber.log.Timber;
 
 public class Headers {
@@ -55,8 +56,11 @@ public class Headers {
                 headers.put("Content-Type", contentType);
             }
 
-            headers.put("lat", LocationDetails.getShared(context).getLatitude());
-            headers.put("lon", LocationDetails.getShared(context).getLongitude());
+            if (Privacy.isLocationEnabled()) {
+   		 
+                headers.put("lat", LocationDetails.getShared(context).getLatitude());
+                headers.put("lon", LocationDetails.getShared(context).getLongitude());
+        	}
 
             DeviceInfoEntity deviceInfoEntity = DBHelper.getShared().getDeviceInfo();
 

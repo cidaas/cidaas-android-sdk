@@ -23,6 +23,8 @@ import timber.log.Timber;
 
 import static android.content.Context.LOCATION_SERVICE;
 
+import de.cidaas.sdk.android.library.common.Privacy;
+
 public class LocationDetails implements LocationListener {
 
     private final Context mContext;
@@ -96,6 +98,11 @@ public class LocationDetails implements LocationListener {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void getLocationPermissions() {
+
+	if (!Privacy.isLocationEnabled()) {
+   		 return false;
+	}
+
         if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             getLocationAfterPermission();
