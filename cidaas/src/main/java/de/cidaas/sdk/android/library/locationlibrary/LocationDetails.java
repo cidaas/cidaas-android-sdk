@@ -23,6 +23,8 @@ import timber.log.Timber;
 
 import static android.content.Context.LOCATION_SERVICE;
 
+import de.cidaas.sdk.android.library.common.Privacy;
+
 public class LocationDetails implements LocationListener {
 
     private final Context mContext;
@@ -62,7 +64,6 @@ public class LocationDetails implements LocationListener {
         getLocation();
     }
 
-
     // Create Shared instances
     public static LocationDetails getShared(Context contextfromcidaas) {
 
@@ -72,10 +73,8 @@ public class LocationDetails implements LocationListener {
             new LocationDetails(contextfromcidaas, "String");
         }
 
-
         return shared;
     }
-
 
     public Location getLocation() {
         try {
@@ -96,8 +95,15 @@ public class LocationDetails implements LocationListener {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void getLocationPermissions() {
-        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+        if (!Privacy.isLocationEnabled()) {
+            return false;
+        }
+
+        if (ContextCompat.checkSelfPermission(mContext,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(mContext,
+                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             getLocationAfterPermission();
         } else {
             Timber.i("Location permission Denied");
@@ -166,7 +172,6 @@ public class LocationDetails implements LocationListener {
         }
     }
 
-
     /**
      * Stop using GPS listener
      * Calling this function will stop using GPS in your app
@@ -184,8 +189,10 @@ public class LocationDetails implements LocationListener {
 
         String Lat = "";
 
-        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(mContext,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(mContext,
+                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
             if (getLocation() != null) {
                 latitude = getLocation().getLatitude();
@@ -204,8 +211,10 @@ public class LocationDetails implements LocationListener {
      */
     public String getLongitude() {
         String Long = "";
-        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(mContext,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(mContext,
+                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
             if (getLocation() != null) {
                 longitude = getLocation().getLongitude();
@@ -284,6 +293,5 @@ public class LocationDetails implements LocationListener {
     public void onStatusChanged(String provider, int status, Bundle extras) {
 
     }
-
 
 }

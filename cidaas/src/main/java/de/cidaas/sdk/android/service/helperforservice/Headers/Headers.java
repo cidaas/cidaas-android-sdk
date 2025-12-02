@@ -9,16 +9,14 @@ import java.util.Map;
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.helper.general.DBHelper;
 import de.cidaas.sdk.android.library.locationlibrary.LocationDetails;
+import de.cidaas.sdk.android.library.common.Privacy;
 import timber.log.Timber;
 
 public class Headers {
 
-
     private static Headers shared;
 
-
     private Context context;
-
 
     public static Headers getShared(Context contextFromCidaas) {
         try {
@@ -32,14 +30,14 @@ public class Headers {
         return shared;
     }
 
-
     public Headers(Context contextFromCidaas) {
 
         context = contextFromCidaas;
 
     }
 
-    public Map<String, String> getHeaders(String accessToken, boolean verification_api_version, String contentType, String... requestId) {
+    public Map<String, String> getHeaders(String accessToken, boolean verification_api_version, String contentType,
+            String... requestId) {
         Map<String, String> headers = new Hashtable<>();
         try {
 
@@ -58,6 +56,12 @@ public class Headers {
             headers.put("lat", LocationDetails.getShared(context).getLatitude());
             headers.put("lon", LocationDetails.getShared(context).getLongitude());
 
+            if (Privacy.isLocationEnabled()) {
+
+                headers.put("lat", LocationDetails.getShared(context).getLatitude());
+                headers.put("lon", LocationDetails.getShared(context).getLongitude());
+            }
+
             DeviceInfoEntity deviceInfoEntity = DBHelper.getShared().getDeviceInfo();
 
             if (deviceInfoEntity != null) {
@@ -67,7 +71,6 @@ public class Headers {
                 headers.put("deviceVersion", deviceInfoEntity.getDeviceVersion());
             }
 
-
             if (requestId != null && requestId.length > 0) {
                 headers.put("requestId", requestId[0]);
             }
@@ -75,11 +78,9 @@ public class Headers {
                 headers.put("Accept-Language", Locale.getDefault().toString());
             }
 
-
             return headers;
         } catch (Exception e) {
             return headers;
         }
     }
 }
-
