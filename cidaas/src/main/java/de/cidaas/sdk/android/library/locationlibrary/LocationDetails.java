@@ -97,7 +97,7 @@ public class LocationDetails implements LocationListener {
     private void getLocationPermissions() {
 
         if (!Privacy.isLocationEnabled()) {
-            return false;
+            return;
         }
 
         if (ContextCompat.checkSelfPermission(mContext,
