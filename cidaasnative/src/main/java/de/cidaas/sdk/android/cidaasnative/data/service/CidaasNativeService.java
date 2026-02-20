@@ -81,7 +81,9 @@ public class CidaasNativeService {
         if (baseUa != null) {
             ua = ua + "/" + CidaasHelper.APP_VERSION + "_" + BuildConfig.VERSION_NAME +" Make:" + Build.BRAND+"_"+Build.DEVICE+" Model:" + Build.MODEL+ " " + baseUa;
         }
-        return ua;
+        // Remove non-ASCII characters for HTTP header compatibility
+        // Safety net for device names or other fields with special characters
+        return ua.replaceAll("[^\\x20-\\x7E]", "");
     }
 
 }
