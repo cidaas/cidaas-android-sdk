@@ -23,7 +23,6 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 
 public class CidaassdkService {
 
-
     private static Context mcontext;
 
     public CidaassdkService(Context context) {
@@ -34,7 +33,7 @@ public class CidaassdkService {
         mcontext = context;
     }
 
-    //For Cidaas Core Service
+    // For Cidaas Core Service
     public ICidaasSDKService getInstance() {
 
         String baseurl = CidaasHelper.baseurl;
@@ -49,11 +48,10 @@ public class CidaassdkService {
         return iCidaasSDKService;
     }
 
-
     public Retrofit getRetrofit(String baseurl, OkHttpClient okHttpClient) {
         return new Retrofit.Builder()
                 // .baseUrl(DBHelper.getShared().getLoginProperties().get("DomainURL"))
-                .baseUrl(baseurl)//done Get Base URL
+                .baseUrl(baseurl)// done Get Base URL
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .addConverterFactory(JacksonConverterFactory.create())
                 .client(okHttpClient)
@@ -63,8 +61,10 @@ public class CidaassdkService {
     public OkHttpClient getOKHttpClient() {
         OkHttpClient okHttpClient;
         final String HEADER_USER_AGENT = "User-Agent";
-     /*   final String HEADER_LOCATION_LATITUDE="Lat";
-        final String HEADER_LOCATION_LONGITUDE="Long";*/
+        /*
+         * final String HEADER_LOCATION_LATITUDE="Lat";
+         * final String HEADER_LOCATION_LONGITUDE="Long";
+         */
         okHttpClient = new OkHttpClient.Builder()
                 .readTimeout(40, TimeUnit.SECONDS)
                 .connectTimeout(100, TimeUnit.SECONDS)
@@ -74,12 +74,17 @@ public class CidaassdkService {
                         Request originalRequest = chain.request();
                         Request requestWithUserAgent = originalRequest.newBuilder()
                                 .header(HEADER_USER_AGENT, createCustomUserAgent(originalRequest))
-                                /*.addHeader(HEADER_LOCATION_LATITUDE,getLat())
-                                .header(HEADER_LOCATION_LONGITUDE,getLong())*/
+                                /*
+                                 * .addHeader(HEADER_LOCATION_LATITUDE,getLat())
+                                 * .header(HEADER_LOCATION_LONGITUDE,getLong())
+                                 */
                                 .build();
                         for (int i = 0; i < requestWithUserAgent.headers().size(); i++) {
-                            //    Timber.d("User-Agent : "+String.format("%s: %s", requestWithUserAgent.headers().name(i), requestWithUserAgent.headers().value(i)));
-                            DBHelper.getShared().setUserAgent("User-Agent : " + String.format("%s: %s", requestWithUserAgent.headers().name(i), requestWithUserAgent.headers().value(i)));
+                            // Timber.d("User-Agent : "+String.format("%s: %s",
+                            // requestWithUserAgent.headers().name(i),
+                            // requestWithUserAgent.headers().value(i)));
+                            DBHelper.getShared().setUserAgent("User-Agent : " + String.format("%s: %s",
+                                    requestWithUserAgent.headers().name(i), requestWithUserAgent.headers().value(i)));
                         }
 
                         return chain.proceed(requestWithUserAgent);
@@ -90,13 +95,17 @@ public class CidaassdkService {
     }
 
     private String createCustomUserAgent(Request originalRequest) {
-        // App name can be also retrieved programmatically, but no need to do it for this sample needs
+        // App name can be also retrieved programmatically, but no need to do it for
+        // this sample needs
         String ua = "Cidaas-" + CidaasHelper.APP_NAME;
         String baseUa = System.getProperty("http.agent");
         if (baseUa != null) {
-          ua = ua + "/" + CidaasHelper.APP_VERSION + "_" + BuildConfig.VERSION_NAME +" Make:" + Build.BRAND+"_"+Build.DEVICE+" Model:" + Build.MODEL+ " " + baseUa;
+            ua = ua + "/" + CidaasHelper.APP_VERSION + "_" + BuildConfig.VERSION_NAME + " Make:" + Build.BRAND + "_"
+                    + Build.DEVICE + " Model:" + Build.MODEL + " " + baseUa;
         }
-        return ua;
+        // Remove non-ASCII characters for HTTP header compatibility
+        // Safety net for device names or other fields with special characters
+        return ua.replaceAll("[^\\x20-\\x7E]", "");
     }
 
 }
