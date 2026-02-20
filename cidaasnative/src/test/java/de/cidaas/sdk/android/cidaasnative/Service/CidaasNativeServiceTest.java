@@ -8,7 +8,8 @@ import de.cidaas.sdk.android.helper.general.CidaasHelper;
 
 /**
  * Unit tests for createCustomUserAgent ASCII sanitization.
- * Tests verify that non-ASCII characters are properly removed from User-Agent string.
+ * Tests verify that non-ASCII characters are properly removed from User-Agent
+ * string.
  */
 public class CidaasNativeServiceTest {
 
@@ -65,7 +66,7 @@ public class CidaasNativeServiceTest {
 
     @Test
     public void testSanitizeUserAgent_preservesAsciiCharacters() {
-        String input = "Cidaas-com.cidaas.test/3.2.14 Make:Google_Pixel Model:Pixel5";
+        String input = "Cidaas-com.cidaas.test/3.2.15 Make:Google_Pixel Model:Pixel5";
         String result = sanitizeForUserAgent(input);
 
         Assert.assertNotNull(result);
@@ -104,7 +105,8 @@ public class CidaasNativeServiceTest {
     }
 
     private boolean isAsciiOnly(String str) {
-        if (str == null) return false;
+        if (str == null)
+            return false;
         for (char c : str.toCharArray()) {
             if (c < 0x20 || c > 0x7E) {
                 return false;
