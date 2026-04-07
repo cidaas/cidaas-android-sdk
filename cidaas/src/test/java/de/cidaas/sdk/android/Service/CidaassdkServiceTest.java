@@ -66,7 +66,7 @@ public class CidaassdkServiceTest {
 
     @Test
     public void testSanitizeUserAgent_preservesAsciiCharacters() {
-        String input = "Cidaas-com.cidaas.test/3.2.15 Make:Google_Pixel Model:Pixel5";
+        String input = "Cidaas-com.cidaas.test/3.2.16 Make:Google_Pixel Model:Pixel5";
         String result = sanitizeForUserAgent(input);
 
         Assert.assertNotNull(result);

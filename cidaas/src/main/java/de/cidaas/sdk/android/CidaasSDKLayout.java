@@ -22,11 +22,13 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 import de.cidaas.sdk.android.controller.AccessTokenController;
 import de.cidaas.sdk.android.controller.LoginController;
@@ -246,6 +248,10 @@ public class CidaasSDKLayout extends RelativeLayout {
 
     //Get Login URL without any Argument
     public void getLoginURL(final EventResult<String> callback) {
+        getLoginURL(null, callback);
+    }
+
+    public void getLoginURL(@Nullable final Map<String, String> extraParams, final EventResult<String> callback) {
         try {
             //Check requestId is not null
 
@@ -257,7 +263,7 @@ public class CidaasSDKLayout extends RelativeLayout {
 
                     //This is to generate the Code Challenge
 
-                    LoginController.getShared(GLOBAL_CONTEXT).getLoginURL(DomainURL, result, null, new EventResult<String>() {
+                    LoginController.getShared(GLOBAL_CONTEXT).getLoginURL(DomainURL, result, null, extraParams, new EventResult<String>() {
                         @Override
                         public void success(String result) {
 
@@ -504,10 +510,10 @@ public class CidaasSDKLayout extends RelativeLayout {
 
 
     // Get Login
-    private void login() {
+    private void login(@Nullable final Map<String, String> extraParams) {
         try {
 
-            getLoginURL(new EventResult<String>() {
+            getLoginURL(extraParams, new EventResult<String>() {
                 @Override
                 public void success(String result) {
                     String url = result;
@@ -540,6 +546,11 @@ public class CidaasSDKLayout extends RelativeLayout {
 
     //Login with WEBVIEW
     public void loginWithEmbeddedBrowser(final RelativeLayout relativeLayout, final EventResult<AccessTokenEntity> loginResultcallback) {
+        loginWithEmbeddedBrowser(relativeLayout, null, loginResultcallback);
+    }
+
+    public void loginWithEmbeddedBrowser(final RelativeLayout relativeLayout, @Nullable final Map<String, String> extraParams,
+                                         final EventResult<AccessTokenEntity> loginResultcallback) {
         try {
 
             webViewInstance = getWebViewInstance();
@@ -596,7 +607,7 @@ public class CidaasSDKLayout extends RelativeLayout {
                                     GLOBAL_CONTEXT.startActivity(new Intent(Settings.ACTION_SETTINGS));
                                 } else {
                                     relativeLayout.removeAllViews();
-                                    loginWithEmbeddedBrowser(relativeLayout, logincallback);
+                                    loginWithEmbeddedBrowser(relativeLayout, extraParams, logincallback);
                                 }
                             }
                         });
@@ -629,7 +640,7 @@ public class CidaasSDKLayout extends RelativeLayout {
                         imageViewInstance.setVisibility(GONE);
                         textViewInstance.setVisibility(GONE);
                         buttonInstance.setVisibility(GONE);
-                        login();
+                        login(extraParams);
                         LogFile.getShared(GLOBAL_CONTEXT).addFailureLog("Login loaded Sucessfully");
                     }
                 }
