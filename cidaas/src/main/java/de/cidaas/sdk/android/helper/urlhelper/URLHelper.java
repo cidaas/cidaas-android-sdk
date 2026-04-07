@@ -2,6 +2,8 @@ package de.cidaas.sdk.android.helper.urlhelper;
 
 import android.net.Uri;
 
+import androidx.annotation.Nullable;
+
 import java.util.Map;
 import java.util.UUID;
 
@@ -364,6 +366,11 @@ public class URLHelper {
 
 
     public String constructLoginURL(String authzURL, String clientId, String redirectURL, String codeChallenge, String viewType) {
+        return constructLoginURL(authzURL, clientId, redirectURL, codeChallenge, viewType, null);
+    }
+
+    public String constructLoginURL(String authzURL, String clientId, String redirectURL, String codeChallenge, String viewType,
+                                    @Nullable Map<String, String> extraParams) {
         try {
             Uri.Builder builder = new Uri.Builder();
 
@@ -379,6 +386,14 @@ public class URLHelper {
 
             for (Map.Entry<String, String> entry : Cidaas.extraParams.entrySet()) {
                 builder.appendQueryParameter(entry.getKey(), entry.getValue());
+            }
+
+            if (extraParams != null) {
+                for (Map.Entry<String, String> entry : extraParams.entrySet()) {
+                    if (entry.getKey() != null && entry.getValue() != null) {
+                        builder.appendQueryParameter(entry.getKey(), entry.getValue());
+                    }
+                }
             }
 
             return authzURL + builder.build().toString();

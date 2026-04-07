@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Map;
 
 import de.cidaas.sdk.android.controller.AccessTokenController;
 import de.cidaas.sdk.android.controller.DocumentScannnerController;
@@ -139,6 +140,11 @@ public class Cidaas {
         LoginController.getShared(context).loginWithBrowser(activityContext, color, callbacktoMain);
     }
 
+    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
+                                 final EventResult<AccessTokenEntity> callbacktoMain) {
+        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, callbacktoMain);
+    }
+
     public void logoutWithBrowser(@NonNull final Context activityContext,@NonNull final String sub,@Nullable final String post_redirect_uri, @Nullable final String color, final EventResult<Boolean> callbacktoMain) {
         LoginController.getShared(context).logoutWithBrowser(activityContext,sub,post_redirect_uri, color, callbacktoMain);
     }
@@ -148,14 +154,27 @@ public class Cidaas {
         LoginController.getShared(context).getLoginURL(callback);
     }
 
+    public void getLoginURL(@Nullable final Map<String, String> extraParams, final EventResult<String> callback) {
+        LoginController.getShared(context).getLoginURL(extraParams, callback);
+    }
+
     //Get Registration URL
     public void getRegistrationURL(final EventResult<String> callback) {
         LoginController.getShared(context).getRegistrationURL(callback);
     }
 
+    public void getRegistrationURL(@Nullable final Map<String, String> extraParams, final EventResult<String> callback) {
+        LoginController.getShared(context).getRegistrationURL(extraParams, callback);
+    }
+
     // Custom Tab
     public void RegisterWithBrowser(@NonNull final Context activityContext, @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
         LoginController.getShared(context).registerWithBrowser(activityContext, color, callbacktoMain);
+    }
+
+    public void RegisterWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
+                                    final EventResult<AccessTokenEntity> callbacktoMain) {
+        LoginController.getShared(context).registerWithBrowser(activityContext, color, extraParams, callbacktoMain);
     }
     //------------------------------------------------------------------------------------------Local Authentication----------------------------------------
 

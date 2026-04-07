@@ -11,6 +11,7 @@ import androidx.browser.customtabs.CustomTabsIntent;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import de.cidaas.sdk.android.helper.customtab.CustomTabHelper;
 import de.cidaas.sdk.android.helper.enums.EventResult;
@@ -127,6 +128,12 @@ public class LoginController {
     //Get login URL for Custom browser and Webview
     public void getLoginURL(@NonNull final String baseurl, Dictionary<String, String> loginProperties,
                             final Dictionary<String, String> challengePropertiesfromparam, @NonNull final EventResult<String> callbackResult) {
+        getLoginURL(baseurl, loginProperties, challengePropertiesfromparam, null, callbackResult);
+    }
+
+    public void getLoginURL(@NonNull final String baseurl, Dictionary<String, String> loginProperties,
+                            final Dictionary<String, String> challengePropertiesfromparam, @Nullable final Map<String, String> extraParams,
+                            @NonNull final EventResult<String> callbackResult) {
         final String methodName = "LoginController :getLoginURL()";
         try {
 
@@ -162,7 +169,7 @@ public class LoginController {
                     // Here the Error may occur due to Challange is empty
                     if (clientId != null && !clientId.equals("") && redirectURL != null && !redirectURL.equals("") && challenge != null && !challenge.equals("")) {
 
-                        String finalURL = URLHelper.getShared().constructLoginURL(authzURL, clientId, redirectURL, challenge, "login");
+                        String finalURL = URLHelper.getShared().constructLoginURL(authzURL, clientId, redirectURL, challenge, "login", extraParams);
                         if (finalURL != null && !finalURL.equals("")) {
                             callbackResult.success(finalURL);
                         } else {
@@ -285,10 +292,15 @@ public class LoginController {
 
     //Get Login With Browser
     public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
+        loginWithBrowser(activityContext, color, null, callbacktoMain);
+    }
+
+    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
+                                 final EventResult<AccessTokenEntity> callbacktoMain) {
         final String methodName = "LoginController :loginWithBrowser()";
         try {
 
-            getLoginURL(new EventResult<String>() {
+            getLoginURL(extraParams, new EventResult<String>() {
                 @Override
                 public void success(String result) {
                     String loginURL = result;
@@ -473,6 +485,10 @@ public class LoginController {
 
     //Get Login URL without any Argument
     public void getLoginURL(final EventResult<String> callback) {
+        getLoginURL(null, callback);
+    }
+
+    public void getLoginURL(@Nullable final Map<String, String> extraParams, final EventResult<String> callback) {
         try {
             //Check requestId is not null
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
@@ -490,7 +506,7 @@ public class LoginController {
                     }
 
 
-                    getLoginURL(CidaasHelper.baseurl, result, challengeProperties, new EventResult<String>() {
+                    getLoginURL(CidaasHelper.baseurl, result, challengeProperties, extraParams, new EventResult<String>() {
                         @Override
                         public void success(String result) {
 
@@ -582,8 +598,12 @@ public class LoginController {
     }
 
 
-    //Get Login URL without any Argument
+    //Get Registration URL without any Argument
     public void getRegistrationURL(final EventResult<String> callback) {
+        getRegistrationURL(null, callback);
+    }
+
+    public void getRegistrationURL(@Nullable final Map<String, String> extraParams, final EventResult<String> callback) {
         try {
             //Check requestId is not null
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
@@ -601,7 +621,7 @@ public class LoginController {
                     }
 
 
-                    getRegistrationURL(CidaasHelper.baseurl, result, challengeProperties, new EventResult<String>() {
+                    getRegistrationURL(CidaasHelper.baseurl, result, challengeProperties, extraParams, new EventResult<String>() {
                         @Override
                         public void success(String result) {
 
@@ -632,6 +652,12 @@ public class LoginController {
     //Get Registration URL for Custom browser and Webview
     public void getRegistrationURL(@NonNull final String baseurl, Dictionary<String, String> loginProperties,
                                    final Dictionary<String, String> challengePropertiesfromparam, @NonNull final EventResult<String> callbackResult) {
+        getRegistrationURL(baseurl, loginProperties, challengePropertiesfromparam, null, callbackResult);
+    }
+
+    public void getRegistrationURL(@NonNull final String baseurl, Dictionary<String, String> loginProperties,
+                                   final Dictionary<String, String> challengePropertiesfromparam, @Nullable final Map<String, String> extraParams,
+                                   @NonNull final EventResult<String> callbackResult) {
         final String methodName = "LoginController :getRegistrationURL()";
         try {
 
@@ -667,7 +693,7 @@ public class LoginController {
                     // Here the Error may occur due to Challange is empty
                     if (clientId != null && !clientId.equals("") && redirectURL != null && !redirectURL.equals("") && challenge != null && !challenge.equals("")) {
 
-                        String finalURL = URLHelper.getShared().constructLoginURL(authzURL, clientId, redirectURL, challenge, "register");
+                        String finalURL = URLHelper.getShared().constructLoginURL(authzURL, clientId, redirectURL, challenge, "register", extraParams);
                         if (finalURL != null && !finalURL.equals("")) {
                             callbackResult.success(finalURL);
                         } else {
@@ -693,10 +719,15 @@ public class LoginController {
 
     //Get Register With Browser
     public void registerWithBrowser(@NonNull final Context activityContext, @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
+        registerWithBrowser(activityContext, color, null, callbacktoMain);
+    }
+
+    public void registerWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
+                                    final EventResult<AccessTokenEntity> callbacktoMain) {
         final String methodName = "LoginController :loginWithBrowser()";
         try {
 
-            getRegistrationURL(new EventResult<String>() {
+            getRegistrationURL(extraParams, new EventResult<String>() {
                 @Override
                 public void success(String result) {
                     String registrationURL = result;
