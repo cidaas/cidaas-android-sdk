@@ -220,15 +220,6 @@ public class EntityToModelConverter {
                                 AESCrypt.decrypt(refreshToken_salt, accessTokenEntity.getRefresh_token()));
                     }
 
-                } else {
-                    /*
-                     * if(accessTokenModel.getPlainToken()==null ||
-                     * (accessTokenModel.getPlainToken().equals("")))
-                     * {
-                     * accessTokenModel.setPlainToken(accessTokenEntity.getAccess_token());
-                     * }
-                     * accessTokenEntity.setAccess_token(accessTokenModel.getPlainToken());
-                     */
                 }
                 callback.success(accessTokenEntity);
             } else {
