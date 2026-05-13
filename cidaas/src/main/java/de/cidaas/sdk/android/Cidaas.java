@@ -13,6 +13,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.cidaas.sdk.android.browser.WebAuth;
 import de.cidaas.sdk.android.controller.AccessTokenController;
 import de.cidaas.sdk.android.controller.DocumentScannnerController;
 import de.cidaas.sdk.android.controller.LocalAuthenticationController;
@@ -147,6 +148,16 @@ public class Cidaas {
 
     public void logoutWithBrowser(@NonNull final Context activityContext,@NonNull final String sub,@Nullable final String post_redirect_uri, @Nullable final String color, final EventResult<Boolean> callbacktoMain) {
         LoginController.getShared(context).logoutWithBrowser(activityContext,sub,post_redirect_uri, color, callbacktoMain);
+    }
+
+    /**
+     * Browser-based login, logout, and social login. Pass the {@link Context} used to launch the custom tab
+     * (typically your current {@link Activity}). Example:
+     * {@code cidaas.webAuth(this).extraParams(map).signIn(callback);}
+     */
+    @NonNull
+    public WebAuth webAuth(@NonNull Context activityContext) {
+        return new WebAuth(this, activityContext);
     }
 
     //Get Login URL
