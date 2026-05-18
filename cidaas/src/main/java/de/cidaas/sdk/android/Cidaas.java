@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.cidaas.sdk.android.browser.WebAuth;
+import de.cidaas.sdk.android.device.Device;
 import de.cidaas.sdk.android.controller.AccessTokenController;
 import de.cidaas.sdk.android.controller.DocumentScannnerController;
 import de.cidaas.sdk.android.controller.LocalAuthenticationController;
@@ -37,12 +38,9 @@ import de.cidaas.sdk.android.service.entity.userlogininfo.UserLoginInfoEntity;
 import de.cidaas.sdk.android.service.entity.userlogininfo.UserLoginInfoResponseEntity;
 import rx.android.BuildConfig;
 
-
 public class Cidaas {
 
-
     EventResult<LocalAuthenticationEntity> localAuthenticationEntityCallback;
-
 
     public Context context;
     public Activity activityFromCidaas;
@@ -54,12 +52,11 @@ public class Cidaas {
 
     public WebAuthError webAuthError = null;
 
-
     // Confirm it must be a static one
-    //Extra parameter that is passed in URL
+    // Extra parameter that is passed in URL
     public static HashMap<String, String> extraParams = new HashMap<>();
 
-    //Create a Shared Instance
+    // Create a Shared Instance
     private static Cidaas cidaasInstance;
 
     public static Cidaas getInstance(Context YourActivitycontext) {
@@ -70,13 +67,14 @@ public class Cidaas {
         return cidaasInstance;
     }
 
-    //Constructor
+    // Constructor
     public Cidaas(Context yourActivityContext) {
         this.context = yourActivityContext;
         CidaasHelper.getShared(yourActivityContext).initialiseObject();
     }
 
-    //-----------------------------------------_Common For Cidaas Instances-------------------------------------------------------------------------
+    // -----------------------------------------_Common For Cidaas
+    // Instances-------------------------------------------------------------------------
 
     public boolean isENABLE_PKCE() {
         return CidaasHelper.getShared(context).isENABLE_PKCE();
@@ -86,7 +84,7 @@ public class Cidaas {
         CidaasHelper.getShared(context).setENABLE_PKCE(ENABLE_PKCE);
     }
 
-    //enableLog
+    // enableLog
 
     public boolean isLogEnable() {
         return CidaasHelper.getShared(context).isLogEnable();
@@ -100,14 +98,16 @@ public class Cidaas {
         return CidaasHelper.getShared(context).disableLog();
     }
 
-    // ****** LOGIN WITH Document *****-------------------------------------------------------------------------------------------------------
-    public void VerifyDocument(final File photo, final String sub, final EventResult<DocumentScannerServiceResultEntity> resultEntityResult) {
+    // ****** LOGIN WITH Document
+    // *****-------------------------------------------------------------------------------------------------------
+    public void VerifyDocument(final File photo, final String sub,
+            final EventResult<DocumentScannerServiceResultEntity> resultEntityResult) {
         DocumentScannnerController.getShared(context).sendtoServicecall(photo, sub, resultEntityResult);
     }
 
-    //----------------------------------------------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------
 
-    //@Override
+    // @Override
     public void getAccessToken(String sub, EventResult<AccessTokenEntity> result) {
         AccessTokenController.getShared(context).getAccessToken(sub, result);
     }
@@ -116,42 +116,50 @@ public class Cidaas {
         AccessTokenController.getShared(context).getAccessTokenByRefreshToken(refershtoken, result);
     }
 
-    public void getAccessTokenBySocial(SocialAccessTokenEntity socialAccessTokenEntity, EventResult<AccessTokenEntity> result) {
+    public void getAccessTokenBySocial(SocialAccessTokenEntity socialAccessTokenEntity,
+            EventResult<AccessTokenEntity> result) {
         AccessTokenController.getShared(context).getAccessTokenBySocial(socialAccessTokenEntity, result);
     }
 
-    //For Authenticator App
-    public void setAccessToken(final AccessTokenEntity accessTokenEntity, final EventResult<LoginCredentialsResponseEntity> result) {
+    // For Authenticator App
+    public void setAccessToken(final AccessTokenEntity accessTokenEntity,
+            final EventResult<LoginCredentialsResponseEntity> result) {
         AccessTokenController.getShared(context).setAccessToken(accessTokenEntity, result);
     }
 
-    //Get userinfo Based on Access Token
+    // Get userinfo Based on Access Token
     // @Override
     public void getUserInfo(String sub, final EventResult<UserInfoEntity> callback) {
         UserProfileController.getShared(context).getUserProfile(sub, callback);
     }
 
-    //Resume After open App From Broswer
+    // Resume After open App From Broswer
     public void handleToken(String code) {
         LoginController.getShared(context).handleToken(code);
     }
 
     // Custom Tab
-    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
+    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
+            final EventResult<AccessTokenEntity> callbacktoMain) {
         LoginController.getShared(context).loginWithBrowser(activityContext, color, callbacktoMain);
     }
 
-    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
-                                 final EventResult<AccessTokenEntity> callbacktoMain) {
+    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
+            @Nullable final Map<String, String> extraParams,
+            final EventResult<AccessTokenEntity> callbacktoMain) {
         LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, callbacktoMain);
     }
 
-    public void logoutWithBrowser(@NonNull final Context activityContext,@NonNull final String sub,@Nullable final String post_redirect_uri, @Nullable final String color, final EventResult<Boolean> callbacktoMain) {
-        LoginController.getShared(context).logoutWithBrowser(activityContext,sub,post_redirect_uri, color, callbacktoMain);
+    public void logoutWithBrowser(@NonNull final Context activityContext, @NonNull final String sub,
+            @Nullable final String post_redirect_uri, @Nullable final String color,
+            final EventResult<Boolean> callbacktoMain) {
+        LoginController.getShared(context).logoutWithBrowser(activityContext, sub, post_redirect_uri, color,
+                callbacktoMain);
     }
 
     /**
-     * Browser-based login, logout, and social login. Pass the {@link Context} used to launch the custom tab
+     * Browser-based login, logout, and social login. Pass the {@link Context} used
+     * to launch the custom tab
      * (typically your current {@link Activity}). Example:
      * {@code cidaas.webAuth(this).extraParams(map).signIn(callback);}
      */
@@ -160,7 +168,12 @@ public class Cidaas {
         return new WebAuth(this, activityContext);
     }
 
-    //Get Login URL
+    @NonNull
+    public Device device() {
+        return new Device(this);
+    }
+
+    // Get Login URL
     public void getLoginURL(final EventResult<String> callback) {
         LoginController.getShared(context).getLoginURL(callback);
     }
@@ -169,50 +182,53 @@ public class Cidaas {
         LoginController.getShared(context).getLoginURL(extraParams, callback);
     }
 
-    //Get Registration URL
+    // Get Registration URL
     public void getRegistrationURL(final EventResult<String> callback) {
         LoginController.getShared(context).getRegistrationURL(callback);
     }
 
-    public void getRegistrationURL(@Nullable final Map<String, String> extraParams, final EventResult<String> callback) {
+    public void getRegistrationURL(@Nullable final Map<String, String> extraParams,
+            final EventResult<String> callback) {
         LoginController.getShared(context).getRegistrationURL(extraParams, callback);
     }
 
     // Custom Tab
-    public void RegisterWithBrowser(@NonNull final Context activityContext, @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
+    public void RegisterWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
+            final EventResult<AccessTokenEntity> callbacktoMain) {
         LoginController.getShared(context).registerWithBrowser(activityContext, color, callbacktoMain);
     }
 
-    public void RegisterWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
-                                    final EventResult<AccessTokenEntity> callbacktoMain) {
+    public void RegisterWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
+            @Nullable final Map<String, String> extraParams,
+            final EventResult<AccessTokenEntity> callbacktoMain) {
         LoginController.getShared(context).registerWithBrowser(activityContext, color, extraParams, callbacktoMain);
     }
-    //------------------------------------------------------------------------------------------Local Authentication----------------------------------------
+    // ------------------------------------------------------------------------------------------Local
+    // Authentication----------------------------------------
 
-    //Cidaas Set OnActivityEventResult For Handling Device Authentication
+    // Cidaas Set OnActivityEventResult For Handling Device Authentication
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         LocalAuthenticationController.getShared(context).onActivityResult(requestCode, resultCode, data);
     }
 
-    //Show the Alert Dilog Which is go to settings
+    // Show the Alert Dilog Which is go to settings
     private void showDialogToSetupLock(final Activity activity, EventResult<LocalAuthenticationEntity> result) {
         LocalAuthenticationController.getShared(context).showDialogToSetupLock(activity, result);
     }
 
-    //Method for Local Authentocation
+    // Method for Local Authentocation
 
     public void localAuthentication(final Activity activity, EventResult<LocalAuthenticationEntity> result) {
         LocalAuthenticationController.getShared(context).localAuthentication(activity, result);
     }
 
-
-    //Method for Local Biometric Authentocation
+    // Method for Local Biometric Authentocation
     @TargetApi(Build.VERSION_CODES.P)
     public void localBiometricAuthentication(final BiometricEntity biometricBuilder, BiometricCallback callback) {
         LocalAuthenticationController.getShared(context).localBiometricAuthenticate(biometricBuilder, callback);
     }
 
-    //------------------------------------------------------------------------------------------XXXXXXX----------------------------------------
+    // ------------------------------------------------------------------------------------------XXXXXXX----------------------------------------
 
     public static String getSDKVersion() {
         String version = "";
@@ -230,20 +246,21 @@ public class Cidaas {
         return DBHelper.getShared().getUserAgent();
     }
 
-
-    //----------------------------------LocationHistory------------------------------------------------------------------------------------------------------
+    // ----------------------------------LocationHistory------------------------------------------------------------------------------------------------------
     // Add Logs
-    public void getUserLoginInfo(final UserLoginInfoEntity userLoginInfoEntity, final EventResult<UserLoginInfoResponseEntity> result) {
+    public void getUserLoginInfo(final UserLoginInfoEntity userLoginInfoEntity,
+            final EventResult<UserLoginInfoResponseEntity> result) {
         UserLoginInfoController.getShared(context).getUserLoginInfo(userLoginInfoEntity, result);
     }
 
     // Ask Ganehs
-    public void loginWithSocial(@NonNull final Context activityContext, @NonNull final String requestId, @NonNull final String provider,
-                                @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
+    public void loginWithSocial(@NonNull final Context activityContext, @NonNull final String requestId,
+            @NonNull final String provider,
+            @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
         LoginController.getShared(context).loginWithSocial(activityContext, requestId, provider, color, callbacktoMain);
     }
 
-    //Get Social Login URL
+    // Get Social Login URL
     public void getSocialLoginURL(final String requestId, final String provider, final EventResult<String> callback) {
         LoginController.getShared(context).getSocialLoginURL(provider, requestId, callback);
     }
