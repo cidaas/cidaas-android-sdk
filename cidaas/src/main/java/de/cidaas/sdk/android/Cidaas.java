@@ -98,6 +98,27 @@ public class Cidaas {
         return CidaasHelper.getShared(context).disableLog();
     }
 
+    /**
+     * Enable optional certificate pinning for Retrofit/OkHttp calls to the cidaas instance.
+     * Pins are applied to the host from the configured domain URL.
+     *
+     * @param pinHashes SHA-256 pins in OkHttp format, e.g. {@code sha256/AAAAAAAA...=}
+     */
+    public void setCertificatePinning(@NonNull String... pinHashes) {
+        CidaasHelper.setCertificatePinning(pinHashes);
+    }
+
+    /**
+     * Enable optional certificate pinning for a specific host.
+     */
+    public void setCertificatePinning(@NonNull String host, @NonNull String... pinHashes) {
+        CidaasHelper.setCertificatePinning(host, pinHashes);
+    }
+
+    public void clearCertificatePinning() {
+        CidaasHelper.clearCertificatePinning();
+    }
+
     // ****** LOGIN WITH Document
     // *****-------------------------------------------------------------------------------------------------------
     public void VerifyDocument(final File photo, final String sub,
