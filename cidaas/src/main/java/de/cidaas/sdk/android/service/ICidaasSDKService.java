@@ -10,6 +10,7 @@ import de.cidaas.sdk.android.service.entity.notificationentity.getpendingnotific
 import de.cidaas.sdk.android.service.entity.socialprovider.SocialProviderEntity;
 import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationRequestEntity;
 import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationResponseEntity;
+import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationVerificationRequestEntity;
 import de.cidaas.sdk.android.service.entity.userlogininfo.UserLoginInfoEntity;
 import de.cidaas.sdk.android.service.entity.userlogininfo.UserLoginInfoResponseEntity;
 import de.cidaas.sdk.android.service.entity.userprofile.UserprofileResponseEntity;
@@ -88,6 +89,13 @@ public interface ICidaasSDKService {
     Call<DeviceRegistrationResponseEntity> initiateDeviceRegistration(@Url String url,
             @HeaderMap Map<String, String> headers,
             @Body DeviceRegistrationRequestEntity body);
+
+    @POST
+    Call<DeviceRegistrationResponseEntity> verifyDeviceRegistration(@Url String url,
+            @HeaderMap Map<String, String> headers,
+            @Header("DPoP") String dpopProof,
+            @Header("Biometric") String biometricProof,
+            @Body DeviceRegistrationVerificationRequestEntity body);
 
     // -----------------------------------------------------GetCall-----------------------------------------------------------------
 

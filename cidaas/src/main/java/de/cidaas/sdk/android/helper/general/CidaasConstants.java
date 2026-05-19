@@ -24,4 +24,8 @@ public final class CidaasConstants {
     public static final String CIDAAS_CONSTRUCTOR_FAILURE = "Cidaas constructor failure : ";
     public static final String CLIENTID_MUST_NOT_BE_NULL = "ClientId must not be null";
 
+    /** Host app manifest meta-data for Play Integrity cloud project number. */
+    public static final String PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER =
+            "de.cidaas.sdk.android.PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER";
+
 }

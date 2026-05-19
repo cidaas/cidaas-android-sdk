@@ -21,6 +21,7 @@ buildscript {
 
         //noinspection GradleDependency. versions > 6.0.3 do not work with our project currently
         classpath 'org.owasp:dependency-check-gradle:6.0.3'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24'
     }
 }
 
