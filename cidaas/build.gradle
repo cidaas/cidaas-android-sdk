@@ -152,6 +152,10 @@ dependencies {
     implementation 'androidx.biometric:biometric:1.1.0'
     implementation 'com.google.android.play:integrity:1.4.0'
 
+    // Firebase App Check token when device registration uses provider=firebase
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity'
+
     /*///For ID card Scannner
     compile 'io.card:android-sdk:5.5.1'*/
 

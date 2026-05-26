@@ -21,8 +21,10 @@ public final class Device {
     }
 
     /**
-     * Initiates device registration via {@code POST .../devices/registration/initiation}, then performs
-     * Play Integrity attestation and completes registration via {@code POST .../devices/registration/verification}.
+     * Initiates device registration via {@code POST .../devices/registration/initiation}. The initiation response
+     * must include {@code nonce}, {@code session_id} (or {@code sessionId}), and {@code provider} ({@code google} or
+     * {@code firebase}). The SDK then runs Play Integrity or Firebase App Check and completes registration via
+     * {@code POST .../devices/registration/verification}.
      * Device id comes from stored {@linkplain de.cidaas.sdk.android.entities.DeviceInfoEntity device info};
      * {@code client_id} comes from saved login properties (e.g. {@code cidaas.xml}).
      *
@@ -37,7 +39,8 @@ public final class Device {
 
     /**
      * Same as {@link #startRegistration(FragmentActivity, String, EventResult)} with an explicit Play Integrity
-     * cloud project number (must match the GCP project linked under Play Console → App integrity).
+     * cloud project number (used when initiation {@code provider} is {@code google}; must match the GCP project
+     * linked under Play Console → App integrity).
      */
     public void startRegistration(@NonNull FragmentActivity activity,
                                   @NonNull String pushId,

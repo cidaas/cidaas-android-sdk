@@ -20,6 +20,7 @@ import de.cidaas.sdk.android.helper.commonerror.CommonError;
 import de.cidaas.sdk.android.helper.crypthelper.BiometricP256Signer;
 import de.cidaas.sdk.android.helper.crypthelper.BiometricProofListener;
 import de.cidaas.sdk.android.helper.crypthelper.DpopP256Keystore;
+import de.cidaas.sdk.android.helper.crypthelper.FirebaseAppAttestationHelper;
 import de.cidaas.sdk.android.helper.crypthelper.PlayIntegrityHelper;
 import de.cidaas.sdk.android.helper.crypthelper.PlayIntegrityTokenListener;
 import de.cidaas.sdk.android.helper.enums.EventResult;
@@ -67,7 +68,9 @@ public class DeviceRegistrationService {
     }
 
     /**
-     * Initiates device registration, then performs Play Integrity attestation and calls the verification API.
+     * Initiates device registration, reads {@code nonce}, {@code session_id} / {@code sessionId}, and {@code provider}
+     * from the initiation response, then performs attestation (Play Integrity when {@code provider} is {@code google},
+     * Firebase App Check when {@code firebase}) and calls the verification API.
      *
      * @param activity hosting FragmentActivity for biometric proof JWT signing
      * @param pushId   FCM push token
@@ -193,63 +196,92 @@ public class DeviceRegistrationService {
         verificationExecutor.execute(() -> {
             try {
                 final DeviceRegistrationInitiationDataEntity initiationData = parseInitiation(initiation);
-                final byte[] challengeBytes = BiometricP256Signer.decodeChallengeB64(initiationData.getNonce());
+                final String provider = attestationProviderFromInitiationResponse(initiationData);
+                final PlayIntegrityTokenListener afterAttestation = new PlayIntegrityTokenListener() {
+                    @Override
+                    public void onSuccess(String attestationToken) {
+                        try {
+                            final BiometricP256Signer signer = new BiometricP256Signer(context);
+                            signer.ensureKey();
+                            DpopP256Keystore.ensureKey(context);
 
-                PlayIntegrityHelper.requestToken(
-                        context,
-                        challengeBytes,
-                        playIntegrityCloudProjectNumber,
-                        new PlayIntegrityTokenListener() {
-                            @Override
-                            public void onSuccess(String playToken) {
-                                try {
-                                    final BiometricP256Signer signer = new BiometricP256Signer(context);
-                                    signer.ensureKey();
-                                    DpopP256Keystore.ensureKey(context);
+                            final String verificationUrl = baseUrl.replaceAll("/$", "")
+                                    + URLHelper.getShared().getDeviceRegistrationURL() + "/verification";
+                            final String dpopThumb = DpopP256Keystore.jwkThumbprintSha256(context);
+                            final String bioThumb = signer.jwkThumbprintSha256();
+                            final String dpopProof = DpopP256Keystore.proofJwt(
+                                    context, "POST", verificationUrl);
 
-                                    final String verificationUrl = baseUrl.replaceAll("/$", "")
-                                            + URLHelper.getShared().getDeviceRegistrationURL() + "/verification";
-                                    final String dpopThumb = DpopP256Keystore.jwkThumbprintSha256(context);
-                                    final String bioThumb = signer.jwkThumbprintSha256();
-                                    final String dpopProof = DpopP256Keystore.proofJwt(
-                                            context, "POST", verificationUrl);
-
-                                    signer.proofJwt(activity, "POST", verificationUrl, new BiometricProofListener() {
-                                        @Override
-                                        public void onSuccess(String bioProof) {
-                                            verificationExecutor.execute(() -> enqueueVerification(
-                                                    verificationUrl,
-                                                    headers,
-                                                    api,
-                                                    initiationData.getSessionId(),
-                                                    playToken,
-                                                    dpopThumb,
-                                                    bioThumb,
-                                                    dpopProof,
-                                                    bioProof,
-                                                    callback,
-                                                    methodName));
-                                        }
-
-                                        @Override
-                                        public void onFailure(Throwable error) {
-                                            notifyVerificationFailure(callback, methodName, error.getMessage());
-                                        }
-                                    });
-                                } catch (Exception e) {
-                                    notifyVerificationFailure(callback, methodName, e.getMessage());
+                            signer.proofJwt(activity, "POST", verificationUrl, new BiometricProofListener() {
+                                @Override
+                                public void onSuccess(String bioProof) {
+                                    verificationExecutor.execute(() -> enqueueVerification(
+                                            verificationUrl,
+                                            headers,
+                                            api,
+                                            initiationData.getSessionId(),
+                                            attestationToken,
+                                            dpopThumb,
+                                            bioThumb,
+                                            dpopProof,
+                                            bioProof,
+                                            callback,
+                                            methodName));
                                 }
-                            }
 
-                            @Override
-                            public void onFailure(Throwable error) {
-                                notifyVerificationFailure(callback, methodName, error.getMessage());
-                            }
-                        });
+                                @Override
+                                public void onFailure(Throwable error) {
+                                    notifyVerificationFailure(callback, methodName, error.getMessage());
+                                }
+                            });
+                        } catch (Exception e) {
+                            notifyVerificationFailure(callback, methodName, e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable error) {
+                        notifyVerificationFailure(callback, methodName, error.getMessage());
+                    }
+                };
+
+                if (isGoogleProvider(provider)) {
+                    final byte[] challengeBytes = BiometricP256Signer.decodeChallengeB64(initiationData.getNonce());
+                    PlayIntegrityHelper.requestToken(
+                            context,
+                            challengeBytes,
+                            playIntegrityCloudProjectNumber,
+                            afterAttestation);
+                } else if (isFirebaseProvider(provider)) {
+                    FirebaseAppAttestationHelper.requestToken(afterAttestation);
+                } else {
+                    notifyVerificationFailure(callback, methodName,
+                            "Unsupported attestation provider: " + provider + " (expected google or firebase)");
+                }
             } catch (Exception e) {
                 notifyVerificationFailure(callback, methodName, e.getMessage());
             }
         });
+    }
+
+    /**
+     * {@code provider} is read from the initiation response; defaults to {@code google} if absent (older backends).
+     */
+    private static String attestationProviderFromInitiationResponse(
+            @NonNull DeviceRegistrationInitiationDataEntity initiationData) {
+        String p = initiationData.getProvider();
+        if (p == null || p.trim().isEmpty()) {
+            return "google";
+        }
+        return p.trim();
+    }
+
+    private static boolean isGoogleProvider(@Nullable String provider) {
+        return provider != null && "google".equalsIgnoreCase(provider.trim());
+    }
+
+    private static boolean isFirebaseProvider(@Nullable String provider) {
+        return provider != null && "firebase".equalsIgnoreCase(provider.trim());
     }
 
     private void enqueueVerification(final String verificationUrl,
@@ -303,13 +335,15 @@ public class DeviceRegistrationService {
     private DeviceRegistrationInitiationDataEntity parseInitiation(DeviceRegistrationResponseEntity initiation)
             throws IllegalArgumentException {
         if (initiation.getData() == null) {
-            throw new IllegalArgumentException("initiation response missing data.session_id and data.nonce");
+            throw new IllegalArgumentException(
+                    "initiation response missing data (expected nonce, session_id/sessionId, provider)");
         }
         DeviceRegistrationInitiationDataEntity data = objectMapper.convertValue(
                 initiation.getData(), DeviceRegistrationInitiationDataEntity.class);
         if (data.getSessionId() == null || data.getSessionId().isEmpty()
                 || data.getNonce() == null || data.getNonce().isEmpty()) {
-            throw new IllegalArgumentException("initiation response missing data.session_id and data.nonce");
+            throw new IllegalArgumentException(
+                    "initiation response missing data.nonce and/or data.session_id (or data.sessionId)");
         }
         return data;
     }
