@@ -20,6 +20,9 @@ public class DeviceRegistrationVerificationRequestEntity implements Serializable
     private String appVersion;
     @JsonProperty("platform")
     private String platform;
+    /** Same sense as initiation {@code provider}: {@code google} (Play Integrity token) or {@code firebase} (App Check JWT). */
+    @JsonProperty("provider")
+    private String provider;
 
     public DeviceRegistrationVerificationRequestEntity() {
     }
@@ -29,13 +32,15 @@ public class DeviceRegistrationVerificationRequestEntity implements Serializable
                                                        String dpopJwkThumbprint,
                                                        String biometricJwkThumbprint,
                                                        String appVersion,
-                                                       String platform) {
+                                                       String platform,
+                                                       String provider) {
         this.sessionId = sessionId;
         this.attestation = attestation;
         this.dpopJwkThumbprint = dpopJwkThumbprint;
         this.biometricJwkThumbprint = biometricJwkThumbprint;
         this.appVersion = appVersion;
         this.platform = platform;
+        this.provider = provider;
     }
 
     public String getSessionId() {
@@ -84,5 +89,13 @@ public class DeviceRegistrationVerificationRequestEntity implements Serializable
 
     public void setPlatform(String platform) {
         this.platform = platform;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 }

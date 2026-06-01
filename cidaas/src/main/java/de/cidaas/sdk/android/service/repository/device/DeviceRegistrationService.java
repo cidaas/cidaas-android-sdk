@@ -225,6 +225,7 @@ public class DeviceRegistrationService {
                                             bioThumb,
                                             dpopProof,
                                             bioProof,
+                                            provider,
                                             callback,
                                             methodName));
                                 }
@@ -253,7 +254,7 @@ public class DeviceRegistrationService {
                             playIntegrityCloudProjectNumber,
                             afterAttestation);
                 } else if (isFirebaseProvider(provider)) {
-                    FirebaseAppAttestationHelper.requestToken(afterAttestation);
+                    FirebaseAppAttestationHelper.requestToken(context, afterAttestation);
                 } else {
                     notifyVerificationFailure(callback, methodName,
                             "Unsupported attestation provider: " + provider + " (expected google or firebase)");
@@ -293,6 +294,7 @@ public class DeviceRegistrationService {
                                      final String bioThumb,
                                      final String dpopProof,
                                      final String bioProof,
+                                     final String attestationProvider,
                                      final EventResult<DeviceRegistrationResponseEntity> callback,
                                      final String methodName) {
         try {
@@ -302,7 +304,8 @@ public class DeviceRegistrationService {
                     dpopThumb,
                     bioThumb,
                     readAppVersion(),
-                    "android");
+                    "android",
+                    attestationProvider);
             api.verifyDeviceRegistration(verificationUrl, headers, dpopProof, bioProof, body)
                     .enqueue(new Callback<DeviceRegistrationResponseEntity>() {
                         @Override
