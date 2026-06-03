@@ -18,9 +18,8 @@ public class URLHelper {
     public static String contentType = "application/x-www-form-urlencoded";
     public static String contentTypeJson = "application/json";
 
-    //Shared Instances
+    // Shared Instances
     public static URLHelper shared;
-
 
     public static URLHelper getShared() {
         if (shared == null) {
@@ -29,10 +28,10 @@ public class URLHelper {
         return shared;
     }
 
-
     String logoutURLForEmbeddedBrowser = "/session/end_session";
     String userLoginInfoURL = "/verification-srv/verificationstatus/status/search/sdk";
 
+    String deviceRegistrationURL = "/verification-actions-srv/devices/registration";
 
     String tokenUrl = "/token-srv/token";
     String socialTokenURL = "/login-srv/social/token";
@@ -53,9 +52,7 @@ public class URLHelper {
     String internaluserProfileURL = "/users-srv/internal/userinfo/profile/";
     String userInfoURL = "/users-srv/userinfo";
 
-
     String documentScanner = "/access-control-srv/ocr/validate";
-
 
     String openIdURL = "/.well-known/openid-configuration";
 
@@ -63,7 +60,6 @@ public class URLHelper {
     String enrollEmailMFA = "/verification-srv/email/enroll";
     String initiateemailMFA = "/verification-srv/email/initiate";
     String authenticateemailMFA = "/verification-srv/email/authenticate";
-
 
     String setupSMSMFA = "/verification-srv/sms/callSetup";
     String enrollSMSMFA = "/verification-srv/sms/enroll";
@@ -119,6 +115,10 @@ public class URLHelper {
         return userLoginInfoURL;
     }
 
+    public String getDeviceRegistrationURL() {
+        return deviceRegistrationURL;
+    }
+
     public String getUserInfoURL() {
         return userInfoURL;
     }
@@ -126,7 +126,6 @@ public class URLHelper {
     public String getInternaluserProfileURL() {
         return internaluserProfileURL;
     }
-
 
     public String getSetupEmailMFA() {
         return setupEmailMFA;
@@ -316,7 +315,6 @@ public class URLHelper {
         return openIdURL;
     }
 
-
     public String getPreAuthCode() {
         return preAuthCode;
     }
@@ -325,11 +323,9 @@ public class URLHelper {
         return socialTokenURL;
     }
 
-
     public String getDocumentScanner() {
         return documentScanner;
     }
-
 
     public String getScannedFIDOURL() {
         return scannedFIDOURL;
@@ -359,21 +355,20 @@ public class URLHelper {
         return tokenUrl;
     }
 
-
     public String getScannedPatternURL() {
         return scannedPatternURL;
     }
 
-
-    public String constructLoginURL(String authzURL, String clientId, String redirectURL, String codeChallenge, String viewType) {
+    public String constructLoginURL(String authzURL, String clientId, String redirectURL, String codeChallenge,
+            String viewType) {
         return constructLoginURL(authzURL, clientId, redirectURL, codeChallenge, viewType, null);
     }
 
-    public String constructLoginURL(String authzURL, String clientId, String redirectURL, String codeChallenge, String viewType,
-                                    @Nullable Map<String, String> extraParams) {
+    public String constructLoginURL(String authzURL, String clientId, String redirectURL, String codeChallenge,
+            String viewType,
+            @Nullable Map<String, String> extraParams) {
         try {
             Uri.Builder builder = new Uri.Builder();
-
 
             builder
                     .appendQueryParameter("client_id", clientId)
@@ -403,7 +398,7 @@ public class URLHelper {
         }
     }
 
-    //Perform Construct by Challenge
+    // Perform Construct by Challenge
     public String constructURLbyChallenge(String challenge) {
         try {
             Uri.Builder builder = new Uri.Builder();
@@ -414,8 +409,8 @@ public class URLHelper {
                     .encodedAuthority(authority);
 
             // Add ClientId and otherinformation
-            //.appendQueryParameter("client_id", CidaasSDKEntity.cidaasSDKEntityInstance.getClientId());
-
+            // .appendQueryParameter("client_id",
+            // CidaasSDKEntity.cidaasSDKEntityInstance.getClientId());
 
             for (Map.Entry<String, String> entry : Cidaas.extraParams.entrySet()) {
                 builder.appendQueryParameter(entry.getKey(), entry.getValue());
@@ -424,22 +419,23 @@ public class URLHelper {
             return builder.build().toString();
         } catch (Exception e) {
             return "constructURLbyChallenge Fails something went wrong";
-            //handle Exception
+            // handle Exception
         }
     }
 
-
-    //Construct url for social Login
+    // Construct url for social Login
     public String constructSocialURL(String baseURL, String provider, String requestId) {
         try {
             String finalSocialURL = baseURL + socialLoginURL + provider + "/" + requestId;
 
-           /* Uri.Builder builder = new Uri.Builder();
-            builder
-                    .appendQueryParameter("provider", provider)
-                    .appendQueryParameter("requestId", requestId);*/
+            /*
+             * Uri.Builder builder = new Uri.Builder();
+             * builder
+             * .appendQueryParameter("provider", provider)
+             * .appendQueryParameter("requestId", requestId);
+             */
 
-            return finalSocialURL;/*+builder.build().toString()*/
+            return finalSocialURL;/* +builder.build().toString() */
         } catch (Exception e) {
             return "";
         }

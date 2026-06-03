@@ -8,6 +8,9 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 import de.cidaas.sdk.android.service.entity.documentscanner.DocumentScannerServiceResultEntity;
 import de.cidaas.sdk.android.service.entity.notificationentity.getpendingnotification.NotificationEntity;
 import de.cidaas.sdk.android.service.entity.socialprovider.SocialProviderEntity;
+import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationRequestEntity;
+import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationResponseEntity;
+import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationVerificationRequestEntity;
 import de.cidaas.sdk.android.service.entity.userlogininfo.UserLoginInfoEntity;
 import de.cidaas.sdk.android.service.entity.userlogininfo.UserLoginInfoResponseEntity;
 import de.cidaas.sdk.android.service.entity.userprofile.UserprofileResponseEntity;
@@ -29,76 +32,85 @@ import retrofit2.http.Url;
  */
 
 public interface ICidaasSDKService {
-    //-----------------------------------------------------------POST Call--------------------------------------------------------------
-    //get Access token by Code
+    // -----------------------------------------------------------POST
+    // Call--------------------------------------------------------------
+    // get Access token by Code
     @FormUrlEncoded
     @POST
     Call<AccessTokenEntity> getAccessTokenByCode(@Url String url,
-                                                 @HeaderMap Map<String, String> headers,
-                                                 @FieldMap(encoded = true) Map<String, String> params);
+            @HeaderMap Map<String, String> headers,
+            @FieldMap(encoded = true) Map<String, String> params);
 
-    //get Access token by refreshtoken
+    // get Access token by refreshtoken
     @FormUrlEncoded
     @POST
     Call<AccessTokenEntity> getAccessTokenByRefreshToken(@Url String url,
-                                                         @HeaderMap Map<String, String> headers,
-                                                         @FieldMap(encoded = true) Map<String, String> params);
-
+            @HeaderMap Map<String, String> headers,
+            @FieldMap(encoded = true) Map<String, String> params);
 
     @GET
     Call<SocialProviderEntity> getAccessTokenBySocial(@Url String url, @HeaderMap Map<String, String> headers);
-
 
     // Add FieldMap Pending
     // @FormUrlEncoded
     @POST
     Call<String> getLoginUrl(@Url String url, @HeaderMap Map<String, String> headers);
 
-
-    //Enroll Face MFA
+    // Enroll Face MFA
     @POST
     @Multipart
-    Call<DocumentScannerServiceResultEntity> enrollDocument(@Url String url, @HeaderMap Map<String, String> headers, @Part MultipartBody.Part face);
-
+    Call<DocumentScannerServiceResultEntity> enrollDocument(@Url String url, @HeaderMap Map<String, String> headers,
+            @Part MultipartBody.Part face);
 
     // Deny Notification
     @POST
-    Call<de.cidaas.sdk.android.Service.Entity.NotificationEntity.DenyNotification.DenyNotificationResponseEntity> denyNotificationService(@Url String url, @Header("Content-Type") String content_type,
-                                                                                                                                          @Header("access_token") String access_token, @HeaderMap Map<String, String> headers, @Body de.cidaas.sdk.android.Service.Entity.NotificationEntity.DenyNotification.DenyNotificationRequestEntity denyRequest);
+    Call<de.cidaas.sdk.android.Service.Entity.NotificationEntity.DenyNotification.DenyNotificationResponseEntity> denyNotificationService(
+            @Url String url, @Header("Content-Type") String content_type,
+            @Header("access_token") String access_token, @HeaderMap Map<String, String> headers,
+            @Body de.cidaas.sdk.android.Service.Entity.NotificationEntity.DenyNotification.DenyNotificationRequestEntity denyRequest);
 
-
-    //Pending Notification
+    // Pending Notification
     @POST
     Call<NotificationEntity> getPendingNotification(@Url String url, @Header("Content-Type") String content_type,
-                                                    @Header("access_token") String access_token, @HeaderMap Map<String, String> headers);
-
+            @Header("access_token") String access_token, @HeaderMap Map<String, String> headers);
 
     @POST
     Call<Object> updateFCMToken(@Url String url,
-                                @Header("access_token") String access_token,
-                                @HeaderMap Map<String, String> headers,
-                                @Body DeviceInfoEntity deviceInfoEntity);
+            @Header("access_token") String access_token,
+            @HeaderMap Map<String, String> headers,
+            @Body DeviceInfoEntity deviceInfoEntity);
 
-    //Location History Service
+    // Location History Service
     @POST
-    Call<UserLoginInfoResponseEntity> getUserLoginInfoService(@Url String url, @HeaderMap Map<String, String> headers, @Body UserLoginInfoEntity userLoginInfoEntity);
+    Call<UserLoginInfoResponseEntity> getUserLoginInfoService(@Url String url, @HeaderMap Map<String, String> headers,
+            @Body UserLoginInfoEntity userLoginInfoEntity);
 
+    @POST
+    Call<DeviceRegistrationResponseEntity> initiateDeviceRegistration(@Url String url,
+            @HeaderMap Map<String, String> headers,
+            @Body DeviceRegistrationRequestEntity body);
 
-    //-----------------------------------------------------GetCall-----------------------------------------------------------------
+    @POST
+    Call<DeviceRegistrationResponseEntity> verifyDeviceRegistration(@Url String url,
+            @HeaderMap Map<String, String> headers,
+            @Header("DPoP") String dpopProof,
+            @Header("Biometric") String biometricProof,
+            @Body DeviceRegistrationVerificationRequestEntity body);
 
-    //Get Registration Setup
-    //get userinfo
+    // -----------------------------------------------------GetCall-----------------------------------------------------------------
+
+    // Get Registration Setup
+    // get userinfo
     @GET
     Call<UserInfoEntity> getUserInfo(@Url String url, @HeaderMap Map<String, String> headers);
 
-
-    //Get TenantInfo
+    // Get TenantInfo
     @GET
     Call<UserprofileResponseEntity> getInternalUserProfileInfo(@Url String url, @HeaderMap Map<String, String> headers);
 
-    //Construct URL
+    // Construct URL
     @GET
     Call<Object> getUrlList(@Url String url, @HeaderMap Map<String, String> headers);
 
-    //---------
+    // ---------
 }

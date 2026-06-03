@@ -9,9 +9,13 @@ import android.provider.Settings;
 
 import java.util.Dictionary;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
+import de.cidaas.sdk.android.helper.network.CertificatePinningConfig;
 import de.cidaas.sdk.android.properties.CidaasProperties;
 
 import static android.os.Build.MODEL;
@@ -38,6 +42,9 @@ public class CidaasHelper {
     public static String APP_VERSION = "";
 
     public static boolean IS_SETURL_CALLED = false;
+
+    @Nullable
+    public static CertificatePinningConfig certificatePinningConfig;
 
     public static CidaasHelper getShared(Context context) {
         if (shared == null) {
@@ -163,6 +170,29 @@ public class CidaasHelper {
         this.ENABLE_LOG = false;
         DBHelper.getShared().setEnableLog(ENABLE_LOG);
         return "Log Successfully Disabled";
+    }
+
+    /**
+     * Pins the cidaas instance host derived from {@link #baseurl}.
+     * Call after the domain URL is known (e.g. after {@code setURL}).
+     */
+    public static void setCertificatePinning(@NonNull String... pinHashes) {
+        certificatePinningConfig = new CertificatePinningConfig(null, pinHashes);
+    }
+
+    /**
+     * Pins a specific host (use when the pin host differs from the configured base URL).
+     */
+    public static void setCertificatePinning(@NonNull String host, @NonNull String... pinHashes) {
+        certificatePinningConfig = new CertificatePinningConfig(host, pinHashes);
+    }
+
+    public static void setCertificatePinning(@NonNull CertificatePinningConfig config) {
+        certificatePinningConfig = config;
+    }
+
+    public static void clearCertificatePinning() {
+        certificatePinningConfig = null;
     }
 
 }

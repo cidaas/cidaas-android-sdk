@@ -217,6 +217,8 @@ public final class WebAuthErrorCode {
 
     public static final int LOGOUTWITH_BROWSER_FAILURE = 10136;
 
+    public static final int DEVICE_REGISTRATION_FAILURE = 10137;
+
     private WebAuthErrorCode() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }

@@ -52,15 +52,14 @@ import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.helper.general.FileHelper;
 import de.cidaas.sdk.android.properties.CidaasProperties;
 
-
 public class CidaasNative {
 
     private Context context;
     public static CidaasNative cidaasNativeInstance;
     public static String locale;
 
-    //Confirm it must be a static one
-    //Extra parameter that is passed in URL
+    // Confirm it must be a static one
+    // Extra parameter that is passed in URL
     public static HashMap<String, String> extraParams = new HashMap<>();
 
     public static CidaasNative getInstance(Context context) {
@@ -75,81 +74,88 @@ public class CidaasNative {
         this.context = context;
         CidaasHelper.getShared(context).initialiseObject();
 
-        //1.Initialise DB ie shared preference
-        //2.Enable log
-        //3.add devi0ce info and FCM token
-        //4.Set Base url
+        // 1.Initialise DB ie shared preference
+        // 2.Enable log
+        // 3.add devi0ce info and FCM token
+        // 4.Set Base url
         Configuration configuration = context.getResources().getConfiguration();
 
         // For API level 24 and above, use getLocales()
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            locale=configuration.getLocales().get(0).getLanguage();
+            locale = configuration.getLocales().get(0).getLanguage();
         } else {
             // For older versions, use locale
-            locale=configuration.locale.getLanguage();
+            locale = configuration.locale.getLanguage();
         }
 
     }
 
+    // ------------------------------------------Methods without requestID and other
+    // Suppoertive
+    // methods-------------------------------------------------------------------------------
 
-    //------------------------------------------Methods without requestID and other Suppoertive methods-------------------------------------------------------------------------------
-
-    //Get Request Id By passing loginProperties as an Object
+    // Get Request Id By passing loginProperties as an Object
     // 1. Read properties from file
     // 2. Call request id from dictionary method
     // 3. Maintain logs based on flags
 
+    // -----------------------------------------------------***** REQUEST ID
+    // *****---------------------------------------------------------------
 
-    // -----------------------------------------------------***** REQUEST ID *****---------------------------------------------------------------
-
-    //Get Request Id By Passing loginProperties as Value in parameters with Client Secret
-    public void getRequestId(@NonNull String DomainUrl, @NonNull String ClientId, @NonNull String RedirectURL, @NonNull String ClientSecret,
-                             final EventResult<AuthRequestResponseEntity> result) {
+    // Get Request Id By Passing loginProperties as Value in parameters with Client
+    // Secret
+    public void getRequestId(@NonNull String DomainUrl, @NonNull String ClientId, @NonNull String RedirectURL,
+            @NonNull String ClientSecret,
+            final EventResult<AuthRequestResponseEntity> result) {
         try {
-            FileHelper.getShared(context).paramsToDictionaryConverter(DomainUrl, ClientId, RedirectURL, ClientSecret, new EventResult<Dictionary<String, String>>() {
-                @Override
-                public void success(Dictionary<String, String> loginproperties) {
+            FileHelper.getShared(context).paramsToDictionaryConverter(DomainUrl, ClientId, RedirectURL, ClientSecret,
+                    new EventResult<Dictionary<String, String>>() {
+                        @Override
+                        public void success(Dictionary<String, String> loginproperties) {
 
-                    getRequestId(loginproperties, result, extraParams);
-                }
+                            getRequestId(loginproperties, result, extraParams);
+                        }
 
-                @Override
-                public void failure(WebAuthError error) {
-                    result.failure(error);
-                }
-            });
+                        @Override
+                        public void failure(WebAuthError error) {
+                            result.failure(error);
+                        }
+                    });
 
         } catch (Exception e) {
-            result.failure(WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_REQUEST_ID_MESSAGE, WebAuthErrorCode.READ_PROPERTIES_ERROR, e.getMessage()));
+            result.failure(WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_REQUEST_ID_MESSAGE,
+                    WebAuthErrorCode.READ_PROPERTIES_ERROR, e.getMessage()));
         }
     }
 
-    //Get Request Id By Passing loginProperties as Value in parameters
+    // Get Request Id By Passing loginProperties as Value in parameters
     public void getRequestId(@NonNull final String DomainUrl, @NonNull String ClientId, @NonNull String RedirectURL,
-                             final EventResult<AuthRequestResponseEntity> Primaryresult, final HashMap<String, String>... extraParams) {
+            final EventResult<AuthRequestResponseEntity> Primaryresult, final HashMap<String, String>... extraParams) {
         try {
-            FileHelper.getShared(context).paramsToDictionaryConverter(DomainUrl, ClientId, RedirectURL, new EventResult<Dictionary<String, String>>() {
-                @Override
-                public void success(Dictionary<String, String> loginPropertiesresult) {
-                    getRequestId(loginPropertiesresult, Primaryresult, extraParams);
-                }
+            FileHelper.getShared(context).paramsToDictionaryConverter(DomainUrl, ClientId, RedirectURL,
+                    new EventResult<Dictionary<String, String>>() {
+                        @Override
+                        public void success(Dictionary<String, String> loginPropertiesresult) {
+                            getRequestId(loginPropertiesresult, Primaryresult, extraParams);
+                        }
 
-                @Override
-                public void failure(WebAuthError error) {
-                    Primaryresult.failure(error);
-                }
-            });
+                        @Override
+                        public void failure(WebAuthError error) {
+                            Primaryresult.failure(error);
+                        }
+                    });
 
         } catch (Exception e) {
-            Primaryresult.failure(WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_REQUEST_ID_MESSAGE, WebAuthErrorCode.REQUEST_ID_SERVICE_FAILURE, e.getMessage()));
+            Primaryresult.failure(
+                    WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_REQUEST_ID_MESSAGE,
+                            WebAuthErrorCode.REQUEST_ID_SERVICE_FAILURE, e.getMessage()));
         }
     }
 
-
-    //Get Request Id without passing any value
-    public void getRequestId(final EventResult<AuthRequestResponseEntity> resulttoReturn, @Nullable final HashMap<String, String>... extraParams) {
+    // Get Request Id without passing any value
+    public void getRequestId(final EventResult<AuthRequestResponseEntity> resulttoReturn,
+            @Nullable final HashMap<String, String>... extraParams) {
         try {
-
 
             CidaasProperties.getShared(context).saveCidaasProperties(new EventResult<Dictionary<String, String>>() {
                 @Override
@@ -166,21 +172,25 @@ public class CidaasNative {
             });
 
         } catch (Exception e) {
-            resulttoReturn.failure(WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_REQUEST_ID_MESSAGE, WebAuthErrorCode.REQUEST_ID_SERVICE_FAILURE, e.getMessage()));
+            resulttoReturn.failure(
+                    WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_REQUEST_ID_MESSAGE,
+                            WebAuthErrorCode.REQUEST_ID_SERVICE_FAILURE, e.getMessage()));
         }
     }
 
     // ***** REQUEST ID CONTROLLER SENDER *****
 
-    public void getRequestId(final Dictionary<String, String> loginproperties, final EventResult<AuthRequestResponseEntity> Primaryresult,
-                             @Nullable HashMap<String, String>... extraParams) {
+    public void getRequestId(final Dictionary<String, String> loginproperties,
+            final EventResult<AuthRequestResponseEntity> Primaryresult,
+            @Nullable HashMap<String, String>... extraParams) {
         RequestIdController.getShared(context).getRequestId(loginproperties, Primaryresult, extraParams);
     }
 
     // -----------------------------------------------------------*******ClientID****----------------------------------------------------------------------
 
-    //Client Id With out Passing RequestId
-    public void getClientInfo(final EventResult<ClientInfoEntity> clientInfoEntityResult, final HashMap<String, String>... extraParams) {
+    // Client Id With out Passing RequestId
+    public void getClientInfo(final EventResult<ClientInfoEntity> clientInfoEntityResult,
+            final HashMap<String, String>... extraParams) {
         try {
             getRequestId(new EventResult<AuthRequestResponseEntity>() {
                 @Override
@@ -194,25 +204,30 @@ public class CidaasNative {
                 }
             }, extraParams);
         } catch (Exception e) {
-            clientInfoEntityResult.failure(WebAuthError.getShared(context).methodException("Exception :Cidaas :getClientInfo()", WebAuthErrorCode.CLIENT_INFO_FAILURE, e.getMessage()));
+            clientInfoEntityResult.failure(WebAuthError.getShared(context).methodException(
+                    "Exception :Cidaas :getClientInfo()", WebAuthErrorCode.CLIENT_INFO_FAILURE, e.getMessage()));
         }
     }
 
-    //*********ClientId With RequestId**********
+    // *********ClientId With RequestId**********
     public void getClientInfo(final String requestId, final EventResult<ClientInfoEntity> clientInfoEntityResult) {
         ClientController.getShared(context).getClientInfo(requestId, clientInfoEntityResult);
     }
 
-
-    // -----------------------------------------------------***** TENANT INFO *****------------------------------------------------------------------------
+    // -----------------------------------------------------***** TENANT INFO
+    // *****------------------------------------------------------------------------
     public void getTenantInfo(final EventResult<TenantInfoEntity> tenantresult) {
         TenantController.getShared(context).getTenantInfo(CidaasHelper.baseurl, tenantresult);
     }
 
-    // -----------------------------------------------------***** LOGIN WITH CREDENTIALS *****---------------------------------------------------------------
+    // -----------------------------------------------------***** LOGIN WITH
+    // CREDENTIALS
+    // *****---------------------------------------------------------------
 
     // Login With Credentials With out request Id
-    public void loginWithCredentials(final LoginEntity loginEntity, final EventResult<LoginCredentialsResponseEntity> loginresult, final HashMap<String, String>... extraParams) {
+    public void loginWithCredentials(final LoginEntity loginEntity,
+            final EventResult<LoginCredentialsResponseEntity> loginresult,
+            final HashMap<String, String>... extraParams) {
         try {
             getRequestId(new EventResult<AuthRequestResponseEntity>() {
                 @Override
@@ -226,25 +241,29 @@ public class CidaasNative {
                 }
             }, extraParams);
         } catch (Exception e) {
-            loginresult.failure(WebAuthError.getShared(context).methodException("Exception :Cidaas :loginWithCredentials()", WebAuthErrorCode.LOGINWITH_CREDENTIALS_FAILURE, e.getMessage()));
+            loginresult.failure(
+                    WebAuthError.getShared(context).methodException("Exception :Cidaas :loginWithCredentials()",
+                            WebAuthErrorCode.LOGINWITH_CREDENTIALS_FAILURE, e.getMessage()));
         }
     }
 
     // Login With Credentials With request Id
-    public void loginWithCredentials(final String requestId, final LoginEntity loginEntity, final EventResult<LoginCredentialsResponseEntity> loginresult) {
+    public void loginWithCredentials(final String requestId, final LoginEntity loginEntity,
+            final EventResult<LoginCredentialsResponseEntity> loginresult) {
         NativeLoginController.getShared(context).loginwithCredentials(requestId, loginEntity, loginresult);
     }
 
     // logout functions
-    public void logout(String sub, final EventResult<Boolean> logoutresult){
-        NativeLoginController.getShared(context).logout(sub,logoutresult);
+    public void logout(String sub, final EventResult<Boolean> logoutresult) {
+        NativeLoginController.getShared(context).logout(sub, logoutresult);
     }
 
-    // -----------------------------------------------------***** REGISTER *****---------------------------------------------------------------
+    // -----------------------------------------------------***** REGISTER
+    // *****---------------------------------------------------------------
 
-
-    public void getRegistrationFields(final String locale, final EventResult<RegistrationSetupResponseEntity> registerFieldsresult,
-                                      final HashMap<String, String>... extraParams) {
+    public void getRegistrationFields(final String locale,
+            final EventResult<RegistrationSetupResponseEntity> registerFieldsresult,
+            final HashMap<String, String>... extraParams) {
         try {
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
                 @Override
@@ -268,12 +287,15 @@ public class CidaasNative {
                 }
             });
         } catch (Exception e) {
-            registerFieldsresult.failure(WebAuthError.getShared(context).methodException("Exception :Cidaas :getRegistrationFields()", WebAuthErrorCode.REGISTRATION_SETUP_FAILURE, e.getMessage()));
+            registerFieldsresult.failure(
+                    WebAuthError.getShared(context).methodException("Exception :Cidaas :getRegistrationFields()",
+                            WebAuthErrorCode.REGISTRATION_SETUP_FAILURE, e.getMessage()));
         }
     }
 
-    public void registerUser(final RegistrationEntity registrationEntity, final EventResult<RegisterNewUserResponseEntity> registerFieldsresult,
-                             final HashMap<String, String>... extraParams) {
+    public void registerUser(final RegistrationEntity registrationEntity,
+            final EventResult<RegisterNewUserResponseEntity> registerFieldsresult,
+            final HashMap<String, String>... extraParams) {
         try {
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
                 @Override
@@ -297,51 +319,63 @@ public class CidaasNative {
                 }
             });
         } catch (Exception e) {
-            registerFieldsresult.failure(WebAuthError.getShared(context).methodException("Exception :Cidaas : registerUser()", WebAuthErrorCode.REGISTRATION_SETUP_FAILURE, e.getMessage()));
+            registerFieldsresult.failure(WebAuthError.getShared(context).methodException(
+                    "Exception :Cidaas : registerUser()", WebAuthErrorCode.REGISTRATION_SETUP_FAILURE, e.getMessage()));
         }
     }
 
-
-    public void getRegistrationFields(@NonNull final String requestId, final String locale, final EventResult<RegistrationSetupResponseEntity> registerFieldsresult) {
+    public void getRegistrationFields(@NonNull final String requestId, final String locale,
+            final EventResult<RegistrationSetupResponseEntity> registerFieldsresult) {
         RegistrationController.getShared(context).getRegisterationFields(requestId, locale, registerFieldsresult);
     }
 
-
     public void registerUser(@NonNull final String requestId, final RegistrationEntity registrationEntity,
-                             final EventResult<RegisterNewUserResponseEntity> registerFieldsresult) {
+            final EventResult<RegisterNewUserResponseEntity> registerFieldsresult) {
         RegistrationController.getShared(context).registerNewUser(requestId, registrationEntity, registerFieldsresult);
     }
 
     public void updateUser(@NonNull final String access_token, final RegistrationEntity registrationEntity,
-                           final EventResult<UpdateUserResponseEntity> updateUserResponseEntity) {
-        RegistrationController.getShared(context).updateUser(access_token, registrationEntity, updateUserResponseEntity);
+            final EventResult<UpdateUserResponseEntity> updateUserResponseEntity) {
+        RegistrationController.getShared(context).updateUser(access_token, registrationEntity,
+                updateUserResponseEntity);
     }
-    // -----------------------------------------------------***** Initiate Verification *****---------------------------------------------------------------
+    // -----------------------------------------------------***** Initiate
+    // Verification
+    // *****---------------------------------------------------------------
 
-    public void initiateAccountVerification(@NonNull final InitiateAccountVerificationRequestEntity initiateAccountVerificationRequestEntity, final EventResult<InitiateAccountVerificationResponseEntity> EventResult) {
-        AccountVerificationController.getShared(context).initiateAccountVerificationService(initiateAccountVerificationRequestEntity, EventResult);
+    public void initiateAccountVerification(
+            @NonNull final InitiateAccountVerificationRequestEntity initiateAccountVerificationRequestEntity,
+            final EventResult<InitiateAccountVerificationResponseEntity> EventResult) {
+        AccountVerificationController.getShared(context)
+                .initiateAccountVerificationService(initiateAccountVerificationRequestEntity, EventResult);
     }
 
-    public void verifyAccount(@NonNull final String code, @NonNull final String accvid, final EventResult<VerifyAccountResponseEntity> result) {
+    public void verifyAccount(@NonNull final String code, @NonNull final String accvid,
+            final EventResult<VerifyAccountResponseEntity> result) {
         AccountVerificationController.getShared(context).verifyAccountVerificationService(code, accvid, result);
     }
 
-    public void getAccountVerificationList(@NonNull final String sub, final EventResult<AccountVerificationListResponseEntity> result) {
+    public void getAccountVerificationList(@NonNull final String sub,
+            final EventResult<AccountVerificationListResponseEntity> result) {
         AccountVerificationController.getShared(context).getAccountVerificationList(sub, result);
     }
 
-    //----------------------------------DEDEUPLICATION------------------------------------------------------------------------------------------------------
+    // ----------------------------------DEDEUPLICATION------------------------------------------------------------------------------------------------------
 
-    public void getDeduplicationDetails(@NonNull final String trackId, final EventResult<DeduplicationResponseEntity> deduplicaionResult) {
+    public void getDeduplicationDetails(@NonNull final String trackId,
+            final EventResult<DeduplicationResponseEntity> deduplicaionResult) {
         DeduplicationController.getShared(context).getDeduplicationList(trackId, deduplicaionResult);
     }
 
-    public void registerDeduplication(@NonNull final String trackId, final EventResult<RegisterDeduplicationEntity> deduplicaionResult) {
-        DeduplicationController.getShared(context).registerDeduplication(CidaasHelper.baseurl, trackId, deduplicaionResult);
+    public void registerDeduplication(@NonNull final String trackId,
+            final EventResult<RegisterDeduplicationEntity> deduplicaionResult) {
+        DeduplicationController.getShared(context).registerDeduplication(CidaasHelper.baseurl, trackId,
+                deduplicaionResult);
     }
 
     public void loginWithDeduplication(@NonNull final String sub, @NonNull final String password,
-                                       final EventResult<LoginCredentialsResponseEntity> loginresult, final HashMap<String, String>... extraParams) {
+            final EventResult<LoginCredentialsResponseEntity> loginresult,
+            final HashMap<String, String>... extraParams) {
         try {
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
                 @Override
@@ -361,24 +395,29 @@ public class CidaasNative {
 
                 @Override
                 public void failure(WebAuthError error) {
-                    loginresult.failure(WebAuthError.getShared(context).propertyMissingException(NativeConstants.DOMAIN_REDIRECT_URL_CLIENT_ID_EMPTY_MESSAGE, "Error :Cidaas :loginWithDeduplication()"));
+                    loginresult.failure(WebAuthError.getShared(context).propertyMissingException(
+                            NativeConstants.DOMAIN_REDIRECT_URL_CLIENT_ID_EMPTY_MESSAGE,
+                            "Error :Cidaas :loginWithDeduplication()"));
                 }
             });
         } catch (Exception e) {
-            //Exception loginWithDeduplication()
+            // Exception loginWithDeduplication()
         }
     }
 
-    public void loginWithDeduplication(final String requestId, @NonNull final String sub, @NonNull final String password,
-                                       final EventResult<LoginCredentialsResponseEntity> deduplicaionResult) {
+    public void loginWithDeduplication(final String requestId, @NonNull final String sub,
+            @NonNull final String password,
+            final EventResult<LoginCredentialsResponseEntity> deduplicaionResult) {
         DeduplicationController.getShared(context).loginDeduplication(requestId, sub, password, deduplicaionResult);
 
     }
 
-    //----------------------------------Forgot password------------------------------------------------------------------------------------------------------
+    // ----------------------------------Forgot
+    // password------------------------------------------------------------------------------------------------------
 
     public void initiateResetPasswordByEmail(final String email,
-                                             final EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult, final HashMap<String, String>... extraParams) {
+            final EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult,
+            final HashMap<String, String>... extraParams) {
         try {
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
                 @Override
@@ -386,7 +425,8 @@ public class CidaasNative {
                     getRequestId(loginProperties, new EventResult<AuthRequestResponseEntity>() {
                         @Override
                         public void success(AuthRequestResponseEntity result) {
-                            initiateResetPasswordByEmail(result.getData().getRequestId(), email, resetPasswordResponseEntityResult);
+                            initiateResetPasswordByEmail(result.getData().getRequestId(), email,
+                                    resetPasswordResponseEntityResult);
                         }
 
                         @Override
@@ -398,27 +438,34 @@ public class CidaasNative {
 
                 @Override
                 public void failure(WebAuthError error) {
-                    resetPasswordResponseEntityResult.failure(WebAuthError.getShared(context).propertyMissingException(NativeConstants.DOMAIN_REDIRECT_URL_CLIENT_ID_EMPTY_MESSAGE, "Error :Cidaas :initiateResetPasswordByEmail()"));
+                    resetPasswordResponseEntityResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                            NativeConstants.DOMAIN_REDIRECT_URL_CLIENT_ID_EMPTY_MESSAGE,
+                            "Error :Cidaas :initiateResetPasswordByEmail()"));
                 }
             });
         } catch (Exception e) {
-            resetPasswordResponseEntityResult.failure(WebAuthError.getShared(context).methodException("Exception :Cidaas :initiateResetPasswordByEmail()", WebAuthErrorCode.INITIATE_RESET_PASSWORD_FAILURE, e.getMessage()));
+            resetPasswordResponseEntityResult.failure(
+                    WebAuthError.getShared(context).methodException("Exception :Cidaas :initiateResetPasswordByEmail()",
+                            WebAuthErrorCode.INITIATE_RESET_PASSWORD_FAILURE, e.getMessage()));
         }
     }
 
-    private void initiateResetPasswordByEmail(String requestId, String email, EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult) {
-        ResetPasswordController.getShared(context).initiateresetPasswordService(requestId, email, "email", locale,resetPasswordResponseEntityResult);
+    private void initiateResetPasswordByEmail(String requestId, String email,
+            EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult) {
+        ResetPasswordController.getShared(context).initiateresetPasswordService(requestId, email, "email", locale,
+                resetPasswordResponseEntityResult);
     }
 
     // chang
-    public void initiateResetPasswordByEMail(final String requestId, final String email,final String processingType,
-                                             final EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult) {
-        ResetPasswordController.getShared(context).initiateresetPasswordServiceEmail(requestId, email,processingType, "email",locale, resetPasswordResponseEntityResult);
+    public void initiateResetPasswordByEMail(final String requestId, final String email, final String processingType,
+            final EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult) {
+        ResetPasswordController.getShared(context).initiateresetPasswordServiceEmail(requestId, email, processingType,
+                "email", locale, resetPasswordResponseEntityResult);
     }
 
-
     public void initiateResetPasswordBySMS(final String mobileNumber,
-                                           final EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult, final HashMap<String, String>... extraParams) {
+            final EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult,
+            final HashMap<String, String>... extraParams) {
         try {
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
                 @Override
@@ -426,7 +473,8 @@ public class CidaasNative {
                     getRequestId(loginProperties, new EventResult<AuthRequestResponseEntity>() {
                         @Override
                         public void success(AuthRequestResponseEntity result) {
-                            initiateResetPasswordBySMS(result.getData().getRequestId(), mobileNumber, resetPasswordResponseEntityResult);
+                            initiateResetPasswordBySMS(result.getData().getRequestId(), mobileNumber,
+                                    resetPasswordResponseEntityResult);
                         }
 
                         @Override
@@ -438,75 +486,80 @@ public class CidaasNative {
 
                 @Override
                 public void failure(WebAuthError error) {
-                    resetPasswordResponseEntityResult.failure(WebAuthError.getShared(context).propertyMissingException(NativeConstants.DOMAIN_REDIRECT_URL_CLIENT_ID_EMPTY_MESSAGE, "Exception :Cidaas :initiateResetPasswordBySMS()"));
+                    resetPasswordResponseEntityResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                            NativeConstants.DOMAIN_REDIRECT_URL_CLIENT_ID_EMPTY_MESSAGE,
+                            "Exception :Cidaas :initiateResetPasswordBySMS()"));
                 }
             });
         } catch (Exception e) {
-            resetPasswordResponseEntityResult.failure(WebAuthError.getShared(context).methodException("Exception :Cidaas :initiateResetPasswordBySMS()", WebAuthErrorCode.INITIATE_RESET_PASSWORD_FAILURE, e.getMessage()));
+            resetPasswordResponseEntityResult.failure(
+                    WebAuthError.getShared(context).methodException("Exception :Cidaas :initiateResetPasswordBySMS()",
+                            WebAuthErrorCode.INITIATE_RESET_PASSWORD_FAILURE, e.getMessage()));
         }
     }
 
     public void initiateResetPasswordBySMS(final String requestId, final String mobileNumber,
-                                           final EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult) {
-        ResetPasswordController.getShared(context).initiateresetPasswordService(requestId, mobileNumber, "sms", locale,resetPasswordResponseEntityResult);
+            final EventResult<ResetPasswordResponseEntity> resetPasswordResponseEntityResult) {
+        ResetPasswordController.getShared(context).initiateresetPasswordService(requestId, mobileNumber, "sms", locale,
+                resetPasswordResponseEntityResult);
     }
-
 
     public void handleResetPassword(@NonNull final String verificationCode, final String rprq,
-                                    final EventResult<ResetPasswordValidateCodeResponseEntity> resetpasswordResult) {
-        ResetPasswordController.getShared(context).resetPasswordValidateCode(verificationCode, rprq, resetpasswordResult);
+            final EventResult<ResetPasswordValidateCodeResponseEntity> resetpasswordResult) {
+        ResetPasswordController.getShared(context).resetPasswordValidateCode(verificationCode, rprq,
+                resetpasswordResult);
     }
 
-    //done Change to entity
-    public void resetPassword(@NonNull final ResetPasswordEntity resetPasswordEntity, final EventResult<ResetNewPasswordResponseEntity> resetpasswordResult) {
+    // done Change to entity
+    public void resetPassword(@NonNull final ResetPasswordEntity resetPasswordEntity,
+            final EventResult<ResetNewPasswordResponseEntity> resetpasswordResult) {
         ResetPasswordController.getShared(context).resetNewPassword(resetPasswordEntity, resetpasswordResult);
 
     }
 
-    //----------------------------------Change password------------------------------------------------------------------------------------------------------
+    // ----------------------------------Change
+    // password------------------------------------------------------------------------------------------------------
 
     // change the sub to access token
-    public void changePassword(String accessToken, final ChangePasswordRequestEntity changePasswordRequestEntity, final EventResult<ChangePasswordResponseEntity> result) {
-        if(accessToken != null && !accessToken.isEmpty()) {
+    public void changePassword(String accessToken, final ChangePasswordRequestEntity changePasswordRequestEntity,
+            final EventResult<ChangePasswordResponseEntity> result) {
+        if (accessToken != null && !accessToken.isEmpty()) {
             changePasswordRequestEntity.setAccess_token(accessToken);
             ChangePasswordController.getShared(context).changePassword(changePasswordRequestEntity, result);
-        }
-        else
-        {
-            result.failure(WebAuthError.getShared(context).propertyMissingException("Access Token must not be empty", "Exception :Cidaas :changePassword()"));
+        } else {
+            result.failure(WebAuthError.getShared(context).propertyMissingException("Access Token must not be empty",
+                    "Exception :Cidaas :changePassword()"));
         }
     }
 
-    //----------------------------------------------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------
 
-
-    //----------------------------------Progressive Registration------------------------------------------------------------------------------------------------------
+    // ----------------------------------Progressive
+    // Registration------------------------------------------------------------------------------------------------------
 
     // Progressive Registration
     public void preLoginCheck(String trackId, final EventResult<ProgressiveRegistrationResponseEntity> result) {
-        if(trackId != null && !trackId.isEmpty()) {
+        if (trackId != null && !trackId.isEmpty()) {
 
             ProgressiveRegistrationController.getShared(context).preLoginCheck(trackId, result);
-        }
-        else
-        {
-            result.failure(WebAuthError.getShared(context).propertyMissingException("track_id must not be empty", "Exception :CidaasNative :preLoginCheck()"));
-        }
-    }
-
-
-    public void progressiveUpdate(String trackId,String requestId, final ProgressiveUpdateRequestEntity progressiveUpdateRequest, final EventResult<ProgressiveUpdateResponseEntity> result) {
-        if(trackId != null && !trackId.isEmpty()) {
-
-
-            ProgressiveRegistrationController.getShared(context).progressiveUpdate(trackId,requestId,progressiveUpdateRequest, result);
-        }
-        else
-        {
-            result.failure(WebAuthError.getShared(context).propertyMissingException("track_id must not be empty", "Exception :CidaasNative :preLoginCheck()"));
+        } else {
+            result.failure(WebAuthError.getShared(context).propertyMissingException("track_id must not be empty",
+                    "Exception :CidaasNative :preLoginCheck()"));
         }
     }
-    //----------------------------------------------------------------------------------------------------------------------------------------
 
+    public void progressiveUpdate(String trackId, String requestId,
+            final ProgressiveUpdateRequestEntity progressiveUpdateRequest,
+            final EventResult<ProgressiveUpdateResponseEntity> result) {
+        if (trackId != null && !trackId.isEmpty()) {
+
+            ProgressiveRegistrationController.getShared(context).progressiveUpdate(trackId, requestId,
+                    progressiveUpdateRequest, result);
+        } else {
+            result.failure(WebAuthError.getShared(context).propertyMissingException("track_id must not be empty",
+                    "Exception :CidaasNative :preLoginCheck()"));
+        }
+    }
+    // ----------------------------------------------------------------------------------------------------------------------------------------
 
 }

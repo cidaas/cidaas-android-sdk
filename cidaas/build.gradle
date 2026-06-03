@@ -1,6 +1,7 @@
 plugins {
     id 'maven-publish'
     id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
     id 'jacoco'
     id 'org.owasp.dependencycheck'
 }
@@ -53,6 +54,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
     namespace 'de.cidaas.sdk.android'
     lint {
         abortOnError false
@@ -87,6 +91,7 @@ dependencies {
 
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.fragment:fragment:1.8.5'
 
     //testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.1'
     //testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
@@ -142,6 +147,16 @@ dependencies {
     testImplementation 'androidx.test:monitor:1.7.2'
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.11.2'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
+    implementation 'androidx.biometric:biometric:1.1.0'
+    implementation 'com.google.android.play:integrity:1.4.0'
+
+    // Firebase App Check token when device registration uses provider=firebase
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity'
+    // Local / debuggable builds: register debug token from logcat in Firebase Console → App Check
+    implementation 'com.google.firebase:firebase-appcheck-debug'
 
     /*///For ID card Scannner
     compile 'io.card:android-sdk:5.5.1'*/
