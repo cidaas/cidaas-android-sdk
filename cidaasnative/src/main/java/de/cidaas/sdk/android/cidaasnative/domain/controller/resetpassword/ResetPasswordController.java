@@ -125,6 +125,42 @@ public class ResetPasswordController {
         }
     }
 
+    /**
+     * Resolve tenant URL from {@link CidaasProperties}, then initiate reset using the given request entity.
+     */
+    public void initiateResetPasswordWithEntity(@NonNull final ResetPasswordRequestEntity entity,
+            @NonNull final String locale, @NonNull final EventResult<ResetPasswordResponseEntity> callback) {
+        final String methodName = "ResetPasswordController :initiateResetPasswordWithEntity()";
+        try {
+            if (entity.getRequestId() == null || entity.getRequestId().isEmpty()) {
+                callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                        "requestId must not be empty", NativeConstants.ERROR_LOGGING_PREFIX + methodName));
+                return;
+            }
+            CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
+                @Override
+                public void success(Dictionary<String, String> loginPropertiesResult) {
+                    String baseurl = loginPropertiesResult.get(NativeConstants.DOMAIN_URL);
+                    if (baseurl == null || baseurl.isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "Domain URL must not be empty", NativeConstants.ERROR_LOGGING_PREFIX + methodName));
+                        return;
+                    }
+                    initiateresetPasswordService(baseurl, entity, locale, callback);
+                }
+
+                @Override
+                public void failure(WebAuthError error) {
+                    callback.failure(error);
+                }
+            });
+        } catch (Exception e) {
+            callback.failure(WebAuthError.getShared(context).methodException(
+                    NativeConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                    WebAuthErrorCode.VERIFY_ACCOUNT_VERIFICATION_FAILURE, e.getMessage()));
+        }
+    }
+
 
     //----------------------------------------------------ResetResetPasswordValidateCodeService---------------------------------------------------
     public void resetPasswordValidateCode(@NonNull final String verificationCode, @NonNull final String rprq,

@@ -15,6 +15,7 @@ import java.util.Map;
 
 import de.cidaas.sdk.android.browser.WebAuth;
 import de.cidaas.sdk.android.device.Device;
+import de.cidaas.sdk.android.users.Users;
 import de.cidaas.sdk.android.controller.AccessTokenController;
 import de.cidaas.sdk.android.controller.DocumentScannnerController;
 import de.cidaas.sdk.android.controller.LocalAuthenticationController;
@@ -187,6 +188,15 @@ public class Cidaas {
     @NonNull
     public WebAuth webAuth(@NonNull Context activityContext) {
         return new WebAuth(this, activityContext);
+    }
+
+    /**
+     * User self-service (e.g. password reset; delegates to {@code cidaasnative} at runtime). Example:
+     * {@code cidaas.users().passwordReset().initiate(requestEntity, callback);}
+     */
+    @NonNull
+    public Users users() {
+        return new Users(context);
     }
 
     @NonNull

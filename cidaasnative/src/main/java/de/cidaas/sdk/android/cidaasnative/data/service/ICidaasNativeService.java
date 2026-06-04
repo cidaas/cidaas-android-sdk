@@ -28,8 +28,6 @@ import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepasswo
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepassword.ChangePasswordResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetNewPasswordResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetPasswordEntity;
-import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetpasswordvalidatecode.ResetPasswordValidateCodeRequestEntity;
-import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetpasswordvalidatecode.ResetPasswordValidateCodeResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.tenantinfo.TenantInfoEntity;
 import de.cidaas.sdk.android.entities.LoginCredentialsResponseEntity;
 import okhttp3.ResponseBody;
@@ -82,12 +80,6 @@ public interface ICidaasNativeService {
     @POST
     Call<ResetPasswordResponseEntity> initiateresetPassword(@Url String url, @HeaderMap Map<String, String> headers, @Body ResetPasswordRequestEntity resetPasswordRequestEntity);
 
-    //Reset Password validate code
-    @POST
-    Call<ResetPasswordValidateCodeResponseEntity> resetPasswordValidateCode(@Url String url, @HeaderMap Map<String, String> headers,
-                                                                            @Body ResetPasswordValidateCodeRequestEntity resetPasswordValidateCodeRequestEntity);
-
-    //Reset New Password
     @POST
     Call<ResetNewPasswordResponseEntity> ResetNewPassword(@Url String url, @HeaderMap Map<String, String> headers,
                                                           @Body ResetPasswordEntity resetPasswordEntity);

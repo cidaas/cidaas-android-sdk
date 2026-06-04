@@ -70,7 +70,7 @@ public class ChangePasswordService {
 
             if (baseurl != null && !baseurl.equals("")) {
                 //Construct URL For Change Password
-                String changePasswordUrl = baseurl + NativeURLHelper.getShared().getChangePasswordURl();
+                String changePasswordUrl = baseurl + NativeURLHelper.getShared().getChangePasswordURL();
 
 
                 //Construct header

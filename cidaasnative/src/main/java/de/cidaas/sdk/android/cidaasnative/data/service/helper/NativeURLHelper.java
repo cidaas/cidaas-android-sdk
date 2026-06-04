@@ -48,13 +48,8 @@ public class NativeURLHelper {
 
     String updateFCMTokenURL = "/device-srv/device/updatefcm";
 
-    String initiateResetPassword = "/users-srv/resetpassword/initiate";
-    String ResetPasswordValidateCode = "/users-srv/resetpassword/validatecode";
-    String ResetNewPasswordURl = "/users-srv/resetpassword/accept";
-    String ChangePasswordURl = "/users-srv/changepassword";
-    String resetPasswordValidateCodeV3 = "/password-srv/resetpassword?action=validatecode";
-    String resetNewPasswordV3 = "/password-srv/resetpassword?action=acceptreset";
-
+    String resetPasswordURL = "/password-srv/resetpassword";
+    String ChangePasswordURL = "/password-srv/password";
 
     String RegisterUserAccountInitiate = "/verification-srv/account/initiate/sdk";
     String RegisterUserAccountVerify = "/verification-srv/account/verify";
@@ -202,29 +197,12 @@ public class NativeURLHelper {
         return accountVerificationList + sub;
     }
 
-
-    public String getResetNewPasswordURl() {
-        return ResetNewPasswordURl;
+    public String getChangePasswordURL() {
+        return ChangePasswordURL;
     }
 
-    public String getChangePasswordURl() {
-        return ChangePasswordURl;
-    }
-
-    public String getResetPasswordValidateCode() {
-        return ResetPasswordValidateCode;
-    }
-
-    public String getResetPasswordValidateCodeV3() {
-        return resetPasswordValidateCodeV3;
-    }    
-    
-    public String getResetNewPasswordV3() {
-        return resetNewPasswordV3;
-    }
-
-    public String getInitiateResetPassword() {
-        return initiateResetPassword;
+    public String getResetPassword() {
+        return resetPasswordURL;
     }
 
     public String getMfa_URL() {
