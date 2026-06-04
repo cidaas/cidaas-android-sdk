@@ -19,6 +19,8 @@ import de.cidaas.sdk.android.helper.enums.EventResult;
  *
  * <pre>{@code
  * cidaas.users().passwordReset().initiate(requestEntity, callback);
+ * cidaas.users().accountVerification().initiate(initiateRequestEntity, callback);
+ * cidaas.users().accountVerification().validate(verifyRequestEntity, callback);
  * cidaas.users().register(registrationEntity, callback);
  * cidaas.users().register(requestId, registrationEntity, callback);
  * }</pre>
@@ -47,6 +49,14 @@ public final class Users {
     @NonNull
     public PasswordReset passwordReset() {
         return new PasswordReset(this);
+    }
+
+    /**
+     * Account verification (initiate challenge, then validate code). See {@link AccountVerification}.
+     */
+    @NonNull
+    public AccountVerification accountVerification() {
+        return new AccountVerification(this);
     }
 
     /**
@@ -109,11 +119,43 @@ public final class Users {
             return getInstance.invoke(null, context);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(
-                    "cidaasnative is required for registration. Add implementation project(':cidaasnative') (or your "
-                            + "published cidaasnative artifact) to the consuming module.",
+                    "cidaasnative is required for Users native APIs. Add implementation project(':cidaasnative') (or "
+                            + "your published cidaasnative artifact) to the consuming module.",
                     e);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to resolve CidaasNative from cidaasnative.", e);
+        }
+    }
+
+    private void accountVerificationInitiateInternal(@NonNull Object initiateRequestEntity,
+            @NonNull EventResult<?> callback) {
+        Object cidaasNative = nativeCidaasNative(context);
+        invoke(cidaasNative, "initiateAccountVerification",
+                new Class<?>[] { initiateRequestEntity.getClass(), EventResult.class },
+                new Object[] { initiateRequestEntity, callback });
+    }
+
+    private void accountVerificationValidateInternal(@NonNull String code, @NonNull String accvid,
+            @NonNull EventResult<?> callback) {
+        Object cidaasNative = nativeCidaasNative(context);
+        invoke(cidaasNative, "verifyAccount",
+                new Class<?>[] { String.class, String.class, EventResult.class },
+                new Object[] { code, accvid, callback });
+    }
+
+    private void accountVerificationValidateFromEntityInternal(@NonNull Object verifyAccountRequestEntity,
+            @NonNull EventResult<?> callback) {
+        try {
+            Class<?> ec = verifyAccountRequestEntity.getClass();
+            String code = (String) ec.getMethod("getCode").invoke(verifyAccountRequestEntity);
+            String accvid = (String) ec.getMethod("getAccvid").invoke(verifyAccountRequestEntity);
+            accountVerificationValidateInternal(code, accvid, callback);
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException(
+                    "accountVerification().validate: entity must expose getCode() and getAccvid().", cause);
         }
     }
 
@@ -221,6 +263,44 @@ public final class Users {
 
         public void complete(@NonNull Object resetPasswordEntity, @NonNull EventResult<?> callback) {
             users.completeInternal(resetPasswordEntity, callback);
+        }
+    }
+
+    /**
+     * Account verification from {@link Users#accountVerification()}. Delegates to {@code CidaasNative}
+     * ({@code initiateAccountVerification}, {@code verifyAccount}).
+     */
+    public static final class AccountVerification {
+
+        private final Users users;
+
+        AccountVerification(@NonNull Users users) {
+            this.users = users;
+        }
+
+        /**
+         * Start account verification. {@code initiateRequestEntity} must be a
+         * {@code de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationRequestEntity}.
+         */
+        public void initiate(@NonNull Object initiateRequestEntity, @NonNull EventResult<?> callback) {
+            users.accountVerificationInitiateInternal(initiateRequestEntity, callback);
+        }
+
+        /**
+         * Validate the verification code. {@code verifyAccountRequestEntity} must be a
+         * {@code de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.VerifyAccountRequestEntity} (or
+         * otherwise expose {@code getCode()} and {@code getAccvid()}).
+         */
+        public void validate(@NonNull Object verifyAccountRequestEntity, @NonNull EventResult<?> callback) {
+            users.accountVerificationValidateFromEntityInternal(verifyAccountRequestEntity, callback);
+        }
+
+        /**
+         * Same as {@link #validate(Object, EventResult)} with explicit {@code code} and {@code accvid} (account
+         * verification id).
+         */
+        public void validate(@NonNull String code, @NonNull String accvid, @NonNull EventResult<?> callback) {
+            users.accountVerificationValidateInternal(code, accvid, callback);
         }
     }
 }
