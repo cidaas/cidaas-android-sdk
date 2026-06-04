@@ -191,8 +191,10 @@ public class Cidaas {
     }
 
     /**
-     * User self-service (e.g. password reset; delegates to {@code cidaasnative} at runtime). Example:
+     * User self-service (password reset, registration; delegates to {@code cidaasnative} at runtime). Example:
      * {@code cidaas.users().passwordReset().initiate(requestEntity, callback);}
+     * {@code cidaas.users().register(registrationEntity, callback);} or
+     * {@code cidaas.users().register(requestId, registrationEntity, callback);}
      */
     @NonNull
     public Users users() {
