@@ -191,6 +191,15 @@ public class Cidaas {
     }
 
     /**
+     * OAuth / hosted-flow {@code requestId} (delegates to {@code CidaasNative.getRequestId} at runtime). Example:
+     * {@code cidaas.requestId().fetch(callback);}
+     */
+    @NonNull
+    public AuthRequestId requestId() {
+        return new AuthRequestId(this, null);
+    }
+
+    /**
      * User self-service (password reset, registration; delegates to {@code cidaasnative} at runtime). Example:
      * {@code cidaas.users().passwordReset().initiate(requestEntity, callback);}
      * {@code cidaas.users().register(registrationEntity, callback);} or
