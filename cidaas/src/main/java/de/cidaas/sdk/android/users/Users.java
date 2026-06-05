@@ -9,18 +9,28 @@ import androidx.annotation.NonNull;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
+import de.cidaas.sdk.android.controller.AccessTokenController;
+import de.cidaas.sdk.android.controller.UserProfileController;
 import de.cidaas.sdk.android.helper.enums.EventResult;
+import de.cidaas.sdk.android.helper.extension.WebAuthError;
+import de.cidaas.sdk.android.service.entity.UserInfo.UserInfoEntity;
+import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 
 /**
- * User self-service on {@link de.cidaas.sdk.android.Cidaas}. These flows run in {@code cidaasnative}; this class
- * forwards via reflection so the core module does not depend on native at compile time.
+ * User self-service on {@link de.cidaas.sdk.android.Cidaas}. Password reset, change password, registration, and
+ * account verification delegate to {@code cidaasnative} via reflection so the core module does not depend on native at
+ * compile time.
+ * {@link #fetch(String, EventResult)} loads profile data via {@link UserProfileController} in this module.
  *
- * <p>Add the {@code cidaasnative} dependency and use the documented native entity types at runtime.</p>
+ * <p>Add the {@code cidaasnative} dependency for reflected flows and use the documented native entity types at
+ * runtime.</p>
  *
  * <pre>{@code
  * cidaas.users().passwordReset().initiate(requestEntity, callback);
  * cidaas.users().accountVerification().initiate(initiateRequestEntity, callback);
  * cidaas.users().accountVerification().validate(verifyRequestEntity, callback);
+ * cidaas.users().changePassword(sub, changePasswordRequestEntity, callback);
+ * cidaas.users().fetch(sub, callback);
  * cidaas.users().register(registrationEntity, callback);
  * cidaas.users().register(requestId, registrationEntity, callback);
  * }</pre>
@@ -33,6 +43,8 @@ public final class Users {
             "de.cidaas.sdk.android.cidaasnative.view.CidaasNative";
     private static final String REGISTRATION_ENTITY_CLASS =
             "de.cidaas.sdk.android.cidaasnative.data.entity.register.RegistrationEntity";
+    private static final String CHANGE_PASSWORD_REQUEST_ENTITY_CLASS =
+            "de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepassword.ChangePasswordRequestEntity";
 
     private final Context context;
 
@@ -57,6 +69,45 @@ public final class Users {
     @NonNull
     public AccountVerification accountVerification() {
         return new AccountVerification(this);
+    }
+
+    /**
+     * Change password for the user identified by {@code sub}. Loads the access token from local storage (same idea as
+     * {@link #fetch(String, EventResult)}), then delegates to {@code CidaasNative.changePassword}. {@code
+     * changePasswordRequestEntity} must be a
+     * {@code de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepassword.ChangePasswordRequestEntity}.
+     */
+    public void changePassword(@NonNull String sub, @NonNull Object changePasswordRequestEntity,
+            @NonNull EventResult<?> callback) {
+        if (sub == null || sub.isEmpty()) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException("Sub must not be null or empty",
+                    "Users.changePassword"));
+            return;
+        }
+        AccessTokenController.getShared(context).getAccessToken(sub, new EventResult<AccessTokenEntity>() {
+            @Override
+            public void success(AccessTokenEntity accessTokenEntity) {
+                String token = accessTokenEntity.getAccess_token();
+                if (token == null || token.isEmpty()) {
+                    callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                            "Access Token must not be empty", "Users.changePassword"));
+                    return;
+                }
+                changePasswordInternal(token, changePasswordRequestEntity, callback);
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                callback.failure(error);
+            }
+        });
+    }
+
+    /**
+     * Fetch user profile for {@code sub}. Same as {@link de.cidaas.sdk.android.Cidaas#getUserInfo(String, EventResult)}.
+     */
+    public void fetch(@NonNull String sub, @NonNull EventResult<UserInfoEntity> callback) {
+        UserProfileController.getShared(context).getUserProfile(sub, callback);
     }
 
     /**
@@ -239,6 +290,26 @@ public final class Users {
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw new IllegalStateException("users().register(requestId, ...) delegation failed.", cause);
+        }
+    }
+
+    private void changePasswordInternal(@NonNull String accessToken, @NonNull Object changePasswordRequestEntity,
+            @NonNull EventResult<?> callback) {
+        try {
+            Class<?> reqClazz = Class.forName(CHANGE_PASSWORD_REQUEST_ENTITY_CLASS);
+            if (!reqClazz.isAssignableFrom(changePasswordRequestEntity.getClass())) {
+                throw new IllegalArgumentException(
+                        "changePasswordRequestEntity must be an instance of " + CHANGE_PASSWORD_REQUEST_ENTITY_CLASS);
+            }
+            Object cidaasNative = nativeCidaasNative(context);
+            invoke(cidaasNative, "changePassword",
+                    new Class<?>[] { String.class, changePasswordRequestEntity.getClass(), EventResult.class },
+                    new Object[] { accessToken, changePasswordRequestEntity, callback });
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException("users().changePassword delegation failed.", cause);
         }
     }
 

@@ -85,7 +85,7 @@ public interface ICidaasNativeService {
                                                           @Body ResetPasswordEntity resetPasswordEntity);
 
     //Change Password
-    @POST
+    @PUT
     Call<ChangePasswordResponseEntity> changePassword(@Url String url, @HeaderMap Map<String, String> headers,
                                                       @Body ChangePasswordRequestEntity changePasswordRequestEntity);
 

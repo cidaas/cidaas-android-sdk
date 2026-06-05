@@ -204,6 +204,8 @@ public class Cidaas {
      * {@code cidaas.users().passwordReset().initiate(requestEntity, callback);}
      * {@code cidaas.users().accountVerification().initiate(initiateRequestEntity, callback);}
      * {@code cidaas.users().accountVerification().validate(verifyRequestEntity, callback);}
+     * {@code cidaas.users().changePassword(sub, changePasswordRequestEntity, callback);}
+     * {@code cidaas.users().fetch(sub, callback);}
      * {@code cidaas.users().register(registrationEntity, callback);} or
      * {@code cidaas.users().register(requestId, registrationEntity, callback);}
      */
