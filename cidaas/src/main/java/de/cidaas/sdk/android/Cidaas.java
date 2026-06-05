@@ -229,6 +229,21 @@ public class Cidaas {
         return new Device(this);
     }
 
+    /**
+     * Persists the Firebase Cloud Messaging (FCM) registration token as the device push id. The token is stored for
+     * subsequent SDK calls that send {@code push_id} (for example device registration and verification flows).
+     * Equivalent to the internal {@linkplain de.cidaas.sdk.android.helper.general.DBHelper#setFCMToken(String)} storage.
+     *
+     * @param fcmToken the FCM token from {@code FirebaseMessaging#getToken()} or your messaging delegate; null or
+     *                 blank values are ignored
+     */
+    public void registerFCM(@Nullable String fcmToken) {
+        if (fcmToken == null || fcmToken.trim().isEmpty()) {
+            return;
+        }
+        DBHelper.getShared().setFCMToken(fcmToken);
+    }
+
     // Get Login URL
     public void getLoginURL(final EventResult<String> callback) {
         LoginController.getShared(context).getLoginURL(callback);
