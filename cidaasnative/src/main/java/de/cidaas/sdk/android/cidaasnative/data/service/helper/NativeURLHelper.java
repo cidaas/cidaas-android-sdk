@@ -1,15 +1,13 @@
 package de.cidaas.sdk.android.cidaasnative.data.service.helper;
 
-
 import de.cidaas.sdk.android.helper.AuthenticationType;
 
 public class NativeURLHelper {
     public static String contentType = "application/x-www-form-urlencoded";
     public static String contentTypeJson = "application/json";
 
-    //Shared Instances
+    // Shared Instances
     public static NativeURLHelper shared;
-
 
     public static NativeURLHelper getShared() {
         if (shared == null) {
@@ -17,7 +15,6 @@ public class NativeURLHelper {
         }
         return shared;
     }
-
 
     String request_id_url = "/authz-srv/authrequest/authz/generate";
     String clientUrl = "/public-srv/public/";
@@ -52,29 +49,25 @@ public class NativeURLHelper {
     String ChangePasswordURL = "/password-srv/password";
 
     String RegisterUserAccountInitiate = "/verification-actions-srv/account/initiation";
-    String RegisterUserAccountVerify = "/verification-srv/account/verify";
+    String RegisterUserAccountVerify = "/verification-actions-srv/account";
+    String verificationConfigs = "/verification-actions-srv/config";
     String accountVerificationList = "/users-srv/user/communication/status/";
 
     String validateDeviceURL = "/verification-srv/device/validate";
 
+    // Token SRV
+    String preLoginCheckURL = "/token-srv/prelogin/metadata/";
 
-
-
-    //Token SRV
-    String preLoginCheckURL="/token-srv/prelogin/metadata/";
-
-
-    String progressiveUpdateURL="/login-srv/progressive/update/user";
-
+    String progressiveUpdateURL = "/login-srv/progressive/update/user";
 
     public String getProgressiveUpdateURL() {
         return progressiveUpdateURL;
     }
 
-
     public String getPreLoginCheckUrl(String trackId) {
-        return preLoginCheckURL+trackId;
+        return preLoginCheckURL + trackId;
     }
+
     public String getRequest_id_url() {
         return request_id_url;
     }
@@ -90,7 +83,8 @@ public class NativeURLHelper {
     public String getLoginWithCredentials() {
         return loginWithCredentials;
     }
-    public String getLogoutUrl(String accessToken){
+
+    public String getLogoutUrl(String accessToken) {
         return logoutUrl + "?access_token_hint=" + accessToken;
     }
 
@@ -117,7 +111,6 @@ public class NativeURLHelper {
     public String getDeleteMFA(String userDeviceId, String verificationType) {
         return deleteMFA + userDeviceId + "/" + verificationType;
     }
-
 
     public String getUpdateFCMTokenURL() {
         return updateFCMTokenURL;
@@ -167,7 +160,6 @@ public class NativeURLHelper {
         return deleteMFA + userDeviceId + "/VOICE";
     }
 
-
     public String getDeleteFIDOMFA(String userDeviceId) {
         return deleteMFA + userDeviceId + "/FIDOU2F";
     }
@@ -175,7 +167,6 @@ public class NativeURLHelper {
     public String getDeleteTOTPMFA(String userDeviceId) {
         return deleteMFA + userDeviceId + "/TOTP";
     }
-
 
     public String getMfaList() {
         return mfaList;
@@ -191,6 +182,10 @@ public class NativeURLHelper {
 
     public String getRegisterUserAccountVerify() {
         return RegisterUserAccountVerify;
+    }
+
+    public String getVerificationConfigs() {
+        return verificationConfigs;
     }
 
     public String getAccountVerificationList(String sub) {

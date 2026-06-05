@@ -10,6 +10,7 @@ import java.util.Dictionary;
 import java.util.HashMap;
 
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.AccountVerificationListResponseEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.VerifyAccountResponseEntity;
@@ -43,6 +44,7 @@ import de.cidaas.sdk.android.cidaasnative.domain.controller.registration.Registr
 import de.cidaas.sdk.android.cidaasnative.domain.controller.requestid.RequestIdController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.resetpassword.ResetPasswordController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.tenant.TenantController;
+import de.cidaas.sdk.android.cidaasnative.domain.controller.verificationconfigs.VerificationConfigsController;
 import de.cidaas.sdk.android.cidaasnative.util.NativeConstants;
 import de.cidaas.sdk.android.entities.LoginCredentialsResponseEntity;
 import de.cidaas.sdk.android.helper.enums.EventResult;
@@ -358,6 +360,15 @@ public class CidaasNative {
     public void getAccountVerificationList(@NonNull final String sub,
             final EventResult<AccountVerificationListResponseEntity> result) {
         AccountVerificationController.getShared(context).getAccountVerificationList(sub, result);
+    }
+
+    /**
+     * Lists tenant verification method configurations (GET {@code verification-actions-srv/config}). Pass the user's
+     * access token; it is sent in request headers (same as other authenticated native calls).
+     */
+    public void getVerificationConfigs(@NonNull final String accessToken,
+            final EventResult<VerificationConfigsResponseEntity> result) {
+        VerificationConfigsController.getShared(context).getVerificationConfigs(accessToken, result);
     }
 
     // ----------------------------------DEDEUPLICATION------------------------------------------------------------------------------------------------------

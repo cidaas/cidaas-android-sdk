@@ -16,6 +16,7 @@ import java.util.Map;
 import de.cidaas.sdk.android.browser.WebAuth;
 import de.cidaas.sdk.android.device.Device;
 import de.cidaas.sdk.android.users.Users;
+import de.cidaas.sdk.android.verifications.Verifications;
 import de.cidaas.sdk.android.controller.AccessTokenController;
 import de.cidaas.sdk.android.controller.DocumentScannnerController;
 import de.cidaas.sdk.android.controller.LocalAuthenticationController;
@@ -212,6 +213,15 @@ public class Cidaas {
     @NonNull
     public Users users() {
         return new Users(context);
+    }
+
+    /**
+     * Tenant verification methods configuration (GET {@code verification-actions-srv/config}). Example:
+     * {@code cidaas.verifications().fetch(sub, callback);}
+     */
+    @NonNull
+    public Verifications verifications() {
+        return new Verifications(context);
     }
 
     @NonNull
