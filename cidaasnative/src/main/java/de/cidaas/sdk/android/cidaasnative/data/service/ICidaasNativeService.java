@@ -3,8 +3,6 @@ package de.cidaas.sdk.android.cidaasnative.data.service;
 import java.util.Map;
 
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.AccountVerificationListResponseEntity;
-import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationRequestEntity;
-import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.VerifyAccountRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.VerifyAccountResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.authrequest.AuthRequestResponseEntity;
@@ -98,10 +96,6 @@ public interface ICidaasNativeService {
     @PUT
     Call<UpdateUserResponseEntity> updateUserProfile(@Url String url, @HeaderMap Map<String, String> headers, @Body RegistrationEntity registrationEntity);
 
-
-    @POST
-    Call<InitiateAccountVerificationResponseEntity> initiateAccountVerification(@Url String url, @HeaderMap Map<String, String> headers,
-                                                                                @Body InitiateAccountVerificationRequestEntity initiateAccountVerificationRequestEntity);
 
     @POST
     Call<VerifyAccountResponseEntity> verifyAccountVerification(@Url String url, @HeaderMap Map<String, String> headers,

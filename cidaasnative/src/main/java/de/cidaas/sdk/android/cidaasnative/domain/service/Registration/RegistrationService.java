@@ -17,6 +17,7 @@ import de.cidaas.sdk.android.cidaasnative.data.entity.register.registeruser.Regi
 import de.cidaas.sdk.android.cidaasnative.data.entity.register.registeruser.RegisterNewUserResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.register.registrationsetup.RegistrationSetupRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.register.registrationsetup.RegistrationSetupResponseEntity;
+import de.cidaas.sdk.android.cidaasnative.domain.service.AccountVerification.AccountVerificationService;
 import de.cidaas.sdk.android.cidaasnative.data.service.CidaasNativeService;
 import de.cidaas.sdk.android.cidaasnative.data.service.ICidaasNativeService;
 import de.cidaas.sdk.android.cidaasnative.data.service.helper.NativeURLHelper;
@@ -269,60 +270,18 @@ public class RegistrationService {
     //----------------------------------------------------Register New User initiate  Account Verification--------------------------------------------------
     public void initiateAccountVerification(String baseurl, final InitiateAccountVerificationRequestEntity initiateAccountVerificationRequestEntity,
                                             final EventResult<InitiateAccountVerificationResponseEntity> callback) {
-        //Local Variables
 
         String methodName = "RegistrationService :initiateAccountVerification()";
         try {
 
-            if (baseurl != null || !baseurl.equals("")) {
-                //Construct URL For RequestId
-                String initiateAccountVerificationUrl = baseurl + NativeURLHelper.getShared().getRegisterUserAccountInitiate();
-
-                Map<String, String> headers = Headers.getShared(context).getHeaders(null, false, NativeURLHelper.contentTypeJson);
-
-                serviceForInitiateAccountVerification(initiateAccountVerificationUrl, initiateAccountVerificationRequestEntity, headers, callback);
+            if (baseurl != null && !baseurl.equals("")) {
+                AccountVerificationService.getShared(context).initiateAccountVerification(baseurl,
+                        initiateAccountVerificationRequestEntity, callback);
             } else {
                 callback.failure(WebAuthError.getShared(context).propertyMissingException(context.getString(R.string.EMPTY_BASE_URL_SERVICE), NativeConstants.ERROR_LOGGING_PREFIX + methodName));
                 return;
             }
 
-        } catch (Exception e) {
-            callback.failure(WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.INITIATE_ACCOUNT_VERIFICATION_FAILURE,
-                    e.getMessage()));
-        }
-    }
-
-    private void serviceForInitiateAccountVerification(String initiateAccountVerificationUrl,
-                                                       InitiateAccountVerificationRequestEntity initiateAccountVerificationRequestEntity,
-                                                       Map<String, String> headers, final EventResult<InitiateAccountVerificationResponseEntity> callback) {
-        final String methodName = NativeConstants.METHOD_VERIFY_ACCOUNT_VERFICATION_REGISTRATION_SERVICE;
-        try {
-            //Call Service-getRequestId
-            ICidaasNativeService cidaasNativeService = service.getInstance();
-
-            cidaasNativeService.initiateAccountVerification(initiateAccountVerificationUrl, headers, initiateAccountVerificationRequestEntity)
-                    .enqueue(new Callback<InitiateAccountVerificationResponseEntity>() {
-                        @Override
-                        public void onResponse(Call<InitiateAccountVerificationResponseEntity> call, Response<InitiateAccountVerificationResponseEntity> response) {
-                            if (response.isSuccessful()) {
-                                if (response.code() == 200) {
-                                    callback.success(response.body());
-                                } else {
-                                    callback.failure(WebAuthError.getShared(context).emptyResponseException(WebAuthErrorCode.INITIATE_ACCOUNT_VERIFICATION_FAILURE,
-                                            response.code(), NativeConstants.ERROR_LOGGING_PREFIX + methodName));
-                                }
-                            } else {
-                                callback.failure(CommonError.getShared(context).generateCommonErrorEntity(WebAuthErrorCode.INITIATE_ACCOUNT_VERIFICATION_FAILURE,
-                                        response, NativeConstants.ERROR_LOGGING_PREFIX + methodName));
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<InitiateAccountVerificationResponseEntity> call, Throwable t) {
-                            callback.failure(WebAuthError.getShared(context).serviceCallFailureException(WebAuthErrorCode.INITIATE_ACCOUNT_VERIFICATION_FAILURE,
-                                    t.getMessage(), NativeConstants.ERROR_LOGGING_PREFIX + methodName));
-                        }
-                    });
         } catch (Exception e) {
             callback.failure(WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.INITIATE_ACCOUNT_VERIFICATION_FAILURE,
                     e.getMessage()));

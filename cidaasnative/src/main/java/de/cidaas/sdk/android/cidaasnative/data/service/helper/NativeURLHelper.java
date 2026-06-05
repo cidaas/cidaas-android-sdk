@@ -51,7 +51,7 @@ public class NativeURLHelper {
     String resetPasswordURL = "/password-srv/resetpassword";
     String ChangePasswordURL = "/password-srv/password";
 
-    String RegisterUserAccountInitiate = "/verification-srv/account/initiate/sdk";
+    String RegisterUserAccountInitiate = "/verification-actions-srv/account/initiation";
     String RegisterUserAccountVerify = "/verification-srv/account/verify";
     String accountVerificationList = "/users-srv/user/communication/status/";
 
