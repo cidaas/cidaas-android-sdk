@@ -28,4 +28,6 @@ public final class NativeConstants {
     public static final String METHOD_VERIFY_ACCOUNT_VERFICATION = "AccountVerificationService :verifyAccountVerification()";
     public static final String METHOD_VERIFY_ACCOUNT_VERFICATION_REGISTRATION_SERVICE = "RegistrationService :verifyAccountVerification()";
     public static final String METHOD_VERIFICATION_CONFIGS = "VerificationConfigsService :getVerificationConfigs()";
+    public static final String METHOD_USER_CONFIGURED_VERIFICATIONS_LIST =
+            "UserConfiguredVerificationsListService :getUserConfiguredVerificationsList()";
 }

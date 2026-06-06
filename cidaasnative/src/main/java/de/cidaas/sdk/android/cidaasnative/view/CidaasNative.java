@@ -10,6 +10,7 @@ import java.util.Dictionary;
 import java.util.HashMap;
 
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.AccountVerificationListResponseEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.userconfiguredverification.UserConfiguredVerificationsListResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationResponseEntity;
@@ -44,6 +45,7 @@ import de.cidaas.sdk.android.cidaasnative.domain.controller.registration.Registr
 import de.cidaas.sdk.android.cidaasnative.domain.controller.requestid.RequestIdController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.resetpassword.ResetPasswordController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.tenant.TenantController;
+import de.cidaas.sdk.android.cidaasnative.domain.controller.userconfiguredverifications.UserConfiguredVerificationsListController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.verificationconfigs.VerificationConfigsController;
 import de.cidaas.sdk.android.cidaasnative.util.NativeConstants;
 import de.cidaas.sdk.android.entities.LoginCredentialsResponseEntity;
@@ -369,6 +371,16 @@ public class CidaasNative {
     public void getVerificationConfigs(@NonNull final String accessToken,
             final EventResult<VerificationConfigsResponseEntity> result) {
         VerificationConfigsController.getShared(context).getVerificationConfigs(accessToken, result);
+    }
+
+    /**
+     * Lists verification methods the user has configured (GET {@code verification-actions-srv/setup/users}). Requires
+     * access token in headers.
+     */
+    public void getUserConfiguredVerificationsList(@NonNull final String accessToken,
+            final EventResult<UserConfiguredVerificationsListResponseEntity> result) {
+        UserConfiguredVerificationsListController.getShared(context).getUserConfiguredVerificationsList(accessToken,
+                result);
     }
 
     // ----------------------------------DEDEUPLICATION------------------------------------------------------------------------------------------------------

@@ -17,13 +17,19 @@ import de.cidaas.sdk.android.service.entity.UserInfo.UserInfoEntity;
 import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 
 /**
- * User self-service on {@link de.cidaas.sdk.android.Cidaas}. Password reset, change password, registration, and
- * account verification delegate to {@code cidaasnative} via reflection so the core module does not depend on native at
+ * User self-service on {@link de.cidaas.sdk.android.Cidaas}. Password reset,
+ * change password, registration, and
+ * account verification delegate to {@code cidaasnative} via reflection so the
+ * core module does not depend on native at
  * compile time.
- * {@link #fetch(String, EventResult)} loads profile data via {@link UserProfileController} in this module.
+ * {@link #fetch(String, EventResult)} loads profile data via
+ * {@link UserProfileController} in this module.
  *
- * <p>Add the {@code cidaasnative} dependency for reflected flows and use the documented native entity types at
- * runtime.</p>
+ * <p>
+ * Add the {@code cidaasnative} dependency for reflected flows and use the
+ * documented native entity types at
+ * runtime.
+ * </p>
  *
  * <pre>{@code
  * cidaas.users().passwordReset().initiate(requestEntity, callback);
@@ -33,18 +39,15 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * cidaas.users().fetch(sub, callback);
  * cidaas.users().register(registrationEntity, callback);
  * cidaas.users().register(requestId, registrationEntity, callback);
+ * cidaas.users().verifications().fetch(sub, callback);
  * }</pre>
  */
 public final class Users {
 
-    private static final String NATIVE_RESET_CONTROLLER =
-            "de.cidaas.sdk.android.cidaasnative.domain.controller.resetpassword.ResetPasswordController";
-    private static final String NATIVE_CIDAAS_NATIVE =
-            "de.cidaas.sdk.android.cidaasnative.view.CidaasNative";
-    private static final String REGISTRATION_ENTITY_CLASS =
-            "de.cidaas.sdk.android.cidaasnative.data.entity.register.RegistrationEntity";
-    private static final String CHANGE_PASSWORD_REQUEST_ENTITY_CLASS =
-            "de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepassword.ChangePasswordRequestEntity";
+    private static final String NATIVE_RESET_CONTROLLER = "de.cidaas.sdk.android.cidaasnative.domain.controller.resetpassword.ResetPasswordController";
+    private static final String NATIVE_CIDAAS_NATIVE = "de.cidaas.sdk.android.cidaasnative.view.CidaasNative";
+    private static final String REGISTRATION_ENTITY_CLASS = "de.cidaas.sdk.android.cidaasnative.data.entity.register.RegistrationEntity";
+    private static final String CHANGE_PASSWORD_REQUEST_ENTITY_CLASS = "de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepassword.ChangePasswordRequestEntity";
 
     private final Context context;
 
@@ -64,7 +67,8 @@ public final class Users {
     }
 
     /**
-     * Account verification (initiate challenge, then validate code). See {@link AccountVerification}.
+     * Account verification (initiate challenge, then validate code). See
+     * {@link AccountVerification}.
      */
     @NonNull
     public AccountVerification accountVerification() {
@@ -72,8 +76,19 @@ public final class Users {
     }
 
     /**
-     * Change password for the user identified by {@code sub}. Loads the access token from local storage (same idea as
-     * {@link #fetch(String, EventResult)}), then delegates to {@code CidaasNative.changePassword}. {@code
+     * User-scoped verification setup (e.g. configured methods for the signed-in
+     * user). See {@link Verifications}.
+     */
+    @NonNull
+    public Verifications verifications() {
+        return new Verifications(this);
+    }
+
+    /**
+     * Change password for the user identified by {@code sub}. Loads the access
+     * token from local storage (same idea as
+     * {@link #fetch(String, EventResult)}), then delegates to
+     * {@code CidaasNative.changePassword}. {@code
      * changePasswordRequestEntity} must be a
      * {@code de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepassword.ChangePasswordRequestEntity}.
      */
@@ -104,7 +119,8 @@ public final class Users {
     }
 
     /**
-     * Fetch user profile for {@code sub}. Same as {@link de.cidaas.sdk.android.Cidaas#getUserInfo(String, EventResult)}.
+     * Fetch user profile for {@code sub}. Same as
+     * {@link de.cidaas.sdk.android.Cidaas#getUserInfo(String, EventResult)}.
      */
     public void fetch(@NonNull String sub, @NonNull EventResult<UserInfoEntity> callback) {
         UserProfileController.getShared(context).getUserProfile(sub, callback);
@@ -121,8 +137,10 @@ public final class Users {
     }
 
     /**
-     * Same as {@link #register(Object, EventResult)} with optional URL/query parameters forwarded to
-     * {@code getRequestId} (same semantics as {@code CidaasNative.registerUser(..., extraParams)}).
+     * Same as {@link #register(Object, EventResult)} with optional URL/query
+     * parameters forwarded to
+     * {@code getRequestId} (same semantics as
+     * {@code CidaasNative.registerUser(..., extraParams)}).
      */
     @SuppressWarnings("unchecked")
     public void register(@NonNull Object registrationEntity, @NonNull EventResult<?> callback,
@@ -131,9 +149,13 @@ public final class Users {
     }
 
     /**
-     * Register when you already have an auth {@code requestId} (e.g. after {@code getRegistrationFields}). Delegates
-     * to {@code CidaasNative.registerUser(String, RegistrationEntity, EventResult)}. {@code registrationEntity} must
-     * be a {@code de.cidaas.sdk.android.cidaasnative.data.entity.register.RegistrationEntity}.
+     * Register when you already have an auth {@code requestId} (e.g. after
+     * {@code getRegistrationFields}). Delegates
+     * to
+     * {@code CidaasNative.registerUser(String, RegistrationEntity, EventResult)}.
+     * {@code registrationEntity} must
+     * be a
+     * {@code de.cidaas.sdk.android.cidaasnative.data.entity.register.RegistrationEntity}.
      */
     public void register(@NonNull String requestId, @NonNull Object registrationEntity,
             @NonNull EventResult<?> callback) {
@@ -313,6 +335,46 @@ public final class Users {
         }
     }
 
+    void userConfiguredVerificationsListInternal(@NonNull String sub, @NonNull EventResult<?> callback) {
+        if (sub == null || sub.isEmpty()) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException("Sub must not be null or empty",
+                    "Users.verifications().fetch"));
+            return;
+        }
+        AccessTokenController.getShared(context).getAccessToken(sub, new EventResult<AccessTokenEntity>() {
+            @Override
+            public void success(AccessTokenEntity accessTokenEntity) {
+                String token = accessTokenEntity.getAccess_token();
+                if (token == null || token.isEmpty()) {
+                    callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                            "Access Token must not be empty", "Users.verifications().fetch"));
+                    return;
+                }
+                invokeUserConfiguredVerificationsList(token, callback);
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                callback.failure(error);
+            }
+        });
+    }
+
+    private void invokeUserConfiguredVerificationsList(@NonNull String accessToken,
+            @NonNull EventResult<?> callback) {
+        try {
+            Object cidaasNative = nativeCidaasNative(context);
+            invoke(cidaasNative, "getUserConfiguredVerificationsList",
+                    new Class<?>[] { String.class, EventResult.class },
+                    new Object[] { accessToken, callback });
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException("users().verifications().fetch delegation failed.", cause);
+        }
+    }
+
     /**
      * Scoped password-reset actions from {@link Users#passwordReset()}.
      */
@@ -338,7 +400,8 @@ public final class Users {
     }
 
     /**
-     * Account verification from {@link Users#accountVerification()}. Delegates to {@code CidaasNative}
+     * Account verification from {@link Users#accountVerification()}. Delegates to
+     * {@code CidaasNative}
      * ({@code initiateAccountVerification}, {@code verifyAccount}).
      */
     public static final class AccountVerification {
@@ -359,7 +422,8 @@ public final class Users {
 
         /**
          * Validate the verification code. {@code verifyAccountRequestEntity} must be a
-         * {@code de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.VerifyAccountRequestEntity} (or
+         * {@code de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.VerifyAccountRequestEntity}
+         * (or
          * otherwise expose {@code getCode()} and {@code getAccvid()}).
          */
         public void validate(@NonNull Object verifyAccountRequestEntity, @NonNull EventResult<?> callback) {
@@ -367,11 +431,38 @@ public final class Users {
         }
 
         /**
-         * Same as {@link #validate(Object, EventResult)} with explicit {@code code} and {@code accvid} (account
+         * Same as {@link #validate(Object, EventResult)} with explicit {@code code} and
+         * {@code accvid} (account
          * verification id).
          */
         public void validate(@NonNull String code, @NonNull String accvid, @NonNull EventResult<?> callback) {
             users.accountVerificationValidateInternal(code, accvid, callback);
+        }
+    }
+
+    /**
+     * Configured verification methods for the current user (delegates to
+     * {@code CidaasNative}).
+     */
+    public static final class Verifications {
+
+        private final Users users;
+
+        Verifications(@NonNull Users users) {
+            this.users = users;
+        }
+
+        /**
+         * GET {@code verification-actions-srv/setup/users}. Resolves access token for
+         * {@code sub} from local storage.
+         *
+         * <p>
+         * On success, the callback receives
+         * {@code de.cidaas.sdk.android.cidaasnative.data.entity.userconfiguredverification.UserConfiguredVerificationsListResponseEntity}.
+         * </p>
+         */
+        public void fetch(@NonNull String sub, @NonNull EventResult<?> callback) {
+            users.userConfiguredVerificationsListInternal(sub, callback);
         }
     }
 }

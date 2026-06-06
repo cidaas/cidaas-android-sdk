@@ -101,10 +101,12 @@ public class Cidaas {
     }
 
     /**
-     * Enable optional certificate pinning for Retrofit/OkHttp calls to the cidaas instance.
+     * Enable optional certificate pinning for Retrofit/OkHttp calls to the cidaas
+     * instance.
      * Pins are applied to the host from the configured domain URL.
      *
-     * @param pinHashes SHA-256 pins in OkHttp format, e.g. {@code sha256/AAAAAAAA...=}
+     * @param pinHashes SHA-256 pins in OkHttp format, e.g.
+     *                  {@code sha256/AAAAAAAA...=}
      */
     public void setCertificatePinning(@NonNull String... pinHashes) {
         CidaasHelper.setCertificatePinning(pinHashes);
@@ -192,7 +194,8 @@ public class Cidaas {
     }
 
     /**
-     * OAuth / hosted-flow {@code requestId} (delegates to {@code CidaasNative.getRequestId} at runtime). Example:
+     * OAuth / hosted-flow {@code requestId} (delegates to
+     * {@code CidaasNative.getRequestId} at runtime). Example:
      * {@code cidaas.requestId().fetch(callback);}
      */
     @NonNull
@@ -201,7 +204,8 @@ public class Cidaas {
     }
 
     /**
-     * User self-service (password reset, registration; delegates to {@code cidaasnative} at runtime). Example:
+     * User self-service (password reset, registration; delegates to
+     * {@code cidaasnative} at runtime). Example:
      * {@code cidaas.users().passwordReset().initiate(requestEntity, callback);}
      * {@code cidaas.users().accountVerification().initiate(initiateRequestEntity, callback);}
      * {@code cidaas.users().accountVerification().validate(verifyRequestEntity, callback);}
@@ -209,6 +213,7 @@ public class Cidaas {
      * {@code cidaas.users().fetch(sub, callback);}
      * {@code cidaas.users().register(registrationEntity, callback);} or
      * {@code cidaas.users().register(requestId, registrationEntity, callback);}
+     * {@code cidaas.users().verifications().fetch(sub, callback);}
      */
     @NonNull
     public Users users() {
@@ -216,7 +221,8 @@ public class Cidaas {
     }
 
     /**
-     * Tenant verification methods configuration (GET {@code verification-actions-srv/config}). Example:
+     * Tenant verification methods configuration (GET
+     * {@code verification-actions-srv/config}). Example:
      * {@code cidaas.verifications().fetch(sub, callback);}
      */
     @NonNull
@@ -230,11 +236,16 @@ public class Cidaas {
     }
 
     /**
-     * Persists the Firebase Cloud Messaging (FCM) registration token as the device push id. The token is stored for
-     * subsequent SDK calls that send {@code push_id} (for example device registration and verification flows).
-     * Equivalent to the internal {@linkplain de.cidaas.sdk.android.helper.general.DBHelper#setFCMToken(String)} storage.
+     * Persists the Firebase Cloud Messaging (FCM) registration token as the device
+     * push id. The token is stored for
+     * subsequent SDK calls that send {@code push_id} (for example device
+     * registration and verification flows).
+     * Equivalent to the internal
+     * {@linkplain de.cidaas.sdk.android.helper.general.DBHelper#setFCMToken(String)}
+     * storage.
      *
-     * @param fcmToken the FCM token from {@code FirebaseMessaging#getToken()} or your messaging delegate; null or
+     * @param fcmToken the FCM token from {@code FirebaseMessaging#getToken()} or
+     *                 your messaging delegate; null or
      *                 blank values are ignored
      */
     public void registerFCM(@Nullable String fcmToken) {

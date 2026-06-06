@@ -51,6 +51,7 @@ public class NativeURLHelper {
     String RegisterUserAccountInitiate = "/verification-actions-srv/account/initiation";
     String RegisterUserAccountVerify = "/verification-actions-srv/account";
     String verificationConfigs = "/verification-actions-srv/config";
+    String userConfiguredVerificationsList = "/verification-actions-srv/users/configurations";
     String accountVerificationList = "/users-srv/user/communication/status/";
 
     String validateDeviceURL = "/verification-srv/device/validate";
@@ -186,6 +187,10 @@ public class NativeURLHelper {
 
     public String getVerificationConfigs() {
         return verificationConfigs;
+    }
+
+    public String getUserConfiguredVerificationsList() {
+        return userConfiguredVerificationsList;
     }
 
     public String getAccountVerificationList(String sub) {
