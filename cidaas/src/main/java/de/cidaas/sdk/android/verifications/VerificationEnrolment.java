@@ -118,6 +118,55 @@ public final class VerificationEnrolment {
         push(activity, sub, dialogTitle, dialogMessage, null, 0, callback);
     }
 
+    /**
+     * Pattern enrollment: after scan, shows a modal with a 9-dot pattern lock; {@code pass_code} is the SHA-256
+     * hash (lowercase hex, UTF-8) of {@code PREFIX[d1,d2,...]} (1-based indices, default prefix {@code RED}).
+     */
+    public void pattern(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @Nullable String patternCodePrefix,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<?> callback) {
+        if (sub == null || sub.isEmpty()) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Sub must not be null or empty", "VerificationEnrolment.pattern"));
+            return;
+        }
+        invokeEnrolPattern(activity, sub, dialogTitle, dialogMessage, patternCodePrefix, dialogThemeResId, callback);
+    }
+
+    public void pattern(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @NonNull EventResult<?> callback) {
+        pattern(activity, sub, dialogTitle, dialogMessage, null, 0, callback);
+    }
+
+    public void pattern(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<?> callback) {
+        pattern(activity, sub, dialogTitle, dialogMessage, null, dialogThemeResId, callback);
+    }
+
+    public void pattern(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @Nullable String patternCodePrefix,
+            @NonNull EventResult<?> callback) {
+        pattern(activity, sub, dialogTitle, dialogMessage, patternCodePrefix, 0, callback);
+    }
+
     private void invokeEnrolFingerprint(
             @NonNull FragmentActivity activity,
             @NonNull String sub,
@@ -171,6 +220,38 @@ public final class VerificationEnrolment {
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw new IllegalStateException("verifications().enrolment().push delegation failed.", cause);
+        }
+    }
+
+    private void invokeEnrolPattern(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @Nullable String patternCodePrefix,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<?> callback) {
+        try {
+            Class<?> clazz = Class.forName(CIDAAS_VERIFICATION);
+            Object inst = clazz.getMethod("getInstance", Context.class).invoke(null, context);
+            Method m = clazz.getMethod(
+                    "enrolPatternWithLockDialog",
+                    FragmentActivity.class,
+                    String.class,
+                    String.class,
+                    String.class,
+                    String.class,
+                    int.class,
+                    EventResult.class);
+            m.invoke(inst, activity, sub, dialogTitle, dialogMessage, patternCodePrefix, dialogThemeResId, callback);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(
+                    "cidaasverification is required for verifications().enrolment().pattern(...). Add "
+                            + "project(':cidaasverification') (or your published cidaasverification artifact) to the consuming module.",
+                    e);
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException("verifications().enrolment().pattern delegation failed.", cause);
         }
     }
 }

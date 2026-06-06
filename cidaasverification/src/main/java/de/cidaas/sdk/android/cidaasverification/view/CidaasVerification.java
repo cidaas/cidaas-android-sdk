@@ -51,6 +51,7 @@ import de.cidaas.sdk.android.cidaasverification.domain.controller.authentication
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushreject.PushRejectController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.configuration.ConfigurationController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FingerprintAttestationEnrollmentController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.PatternEnrollmentController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.PushEnrollmentController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.EnrollController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.scanned.ScannedController;
@@ -296,6 +297,39 @@ public class CidaasVerification {
             @NonNull EventResult<EnrollResponse> callback) {
         PushEnrollmentController.getShared(context).enrollWithAcceptDialog(
                 activity, sub, dialogTitle, dialogMessage, acceptButtonText, dialogThemeResId, callback);
+    }
+
+    /**
+     * Pattern MFA enrollment: initiate → scan → modal with 9-dot pattern UI → enroll with {@code pass_code} as
+     * SHA-256 lowercase hex (UTF-8) of the pattern string (default prefix {@code RED}, e.g. hash of {@code RED[1,2,3,4]}).
+     * Prefer {@code cidaas.verifications().enrolment().pattern(...)} from the main SDK module.
+     *
+     * @param patternCodePrefix optional prefix before hashing (default {@code RED})
+     */
+    public void enrolPatternWithLockDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolPatternWithLockDialog(activity, sub, dialogTitle, dialogMessage, null, 0, callback);
+    }
+
+    public void enrolPatternWithLockDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage, @StyleRes int dialogThemeResId,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolPatternWithLockDialog(activity, sub, dialogTitle, dialogMessage, null, dialogThemeResId, callback);
+    }
+
+    public void enrolPatternWithLockDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage, @Nullable String patternCodePrefix,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolPatternWithLockDialog(activity, sub, dialogTitle, dialogMessage, patternCodePrefix, 0, callback);
+    }
+
+    public void enrolPatternWithLockDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage, @Nullable String patternCodePrefix,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<EnrollResponse> callback) {
+        PatternEnrollmentController.getShared(context).enrollWithPatternLockDialog(
+                activity, sub, dialogTitle, dialogMessage, patternCodePrefix, dialogThemeResId, callback);
     }
 
     //-------------------------------------------------------SCANNED CALL COMMON--------------------------------------------------------------

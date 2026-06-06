@@ -227,6 +227,7 @@ public class Cidaas {
      * {@code cidaas.verifications().fetch(sub, callback);}
      * {@code cidaas.verifications().enrolment().fingerprint(activity, sub, callback);}
      * {@code cidaas.verifications().enrolment().push(activity, sub, dialogTitle, dialogMessage, R.style.MyPushDialog, callback);}
+     * {@code cidaas.verifications().enrolment().pattern(activity, sub, dialogTitle, dialogMessage, R.style.MyPatternDialog, callback);}
      */
     @NonNull
     public Verifications verifications() {
