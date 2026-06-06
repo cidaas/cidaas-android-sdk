@@ -13,13 +13,8 @@ public class LoginCredentialsErrorDataEntity implements Serializable {
     private String requestId;
     private String suggested_url;
     private String track_id;
-    private String consent_version_id;
-    private String consent_id;
 
     private String client_id;
-    private String consent_name;
-    private String consent_version;
-
 
     public String getTrack_id() {
         return track_id;
@@ -35,15 +30,6 @@ public class LoginCredentialsErrorDataEntity implements Serializable {
 
     public void setClient_id(String client_id) {
         this.client_id = client_id;
-    }
-
-
-    public String getConsent_name() {
-        return consent_name;
-    }
-
-    public void setConsent_name(String consent_name) {
-        this.consent_name = consent_name;
     }
 
     public String getError() {
@@ -94,27 +80,4 @@ public class LoginCredentialsErrorDataEntity implements Serializable {
         this.suggested_url = suggested_url;
     }
 
-    public String getConsent_version_id() {
-        return consent_version_id;
-    }
-
-    public void setConsent_version_id(String consent_version_id) {
-        this.consent_version_id = consent_version_id;
-    }
-
-    public String getConsent_id() {
-        return consent_id;
-    }
-
-    public void setConsent_id(String consent_id) {
-        this.consent_id = consent_id;
-    }
-
-    public String getConsent_version() {
-        return consent_version;
-    }
-
-    public void setConsent_version(String consent_version) {
-        this.consent_version = consent_version;
-    }
 }

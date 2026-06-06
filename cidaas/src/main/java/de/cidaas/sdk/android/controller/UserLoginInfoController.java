@@ -18,8 +18,6 @@ import timber.log.Timber;
 public class UserLoginInfoController {
 
     private Context context;
-    private String ConsentName;
-    private String ConsentVersion;
     private String TrackId;
 
     public static UserLoginInfoController shared;
@@ -42,52 +40,62 @@ public class UserLoginInfoController {
         return shared;
     }
 
-    public void getUserLoginInfo(final UserLoginInfoEntity userLoginInfoEntity, final EventResult<UserLoginInfoResponseEntity> result) {
+    public void getUserLoginInfo(final UserLoginInfoEntity userLoginInfoEntity,
+            final EventResult<UserLoginInfoResponseEntity> result) {
         final String methodName = "UserLoginInfoController :getUserLoginInfo()";
         try {
             if (userLoginInfoEntity.getSub() != null && !userLoginInfoEntity.getSub().equals("")) {
-                CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
-                    @Override
-                    public void success(final Dictionary<String, String> lpresult) {
-                        final String baseurl = lpresult.get("DomainURL");
-
-                        //Get AccessToken From Sub
-                        AccessTokenController.getShared(context).getAccessToken(userLoginInfoEntity.getSub(), new EventResult<AccessTokenEntity>() {
+                CidaasProperties.getShared(context)
+                        .checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
                             @Override
-                            public void success(AccessTokenEntity accessTokenresult) {
-                                getUserLoginInfo(baseurl, accessTokenresult.getAccess_token(), userLoginInfoEntity, result);
+                            public void success(final Dictionary<String, String> lpresult) {
+                                final String baseurl = lpresult.get("DomainURL");
+
+                                // Get AccessToken From Sub
+                                AccessTokenController.getShared(context).getAccessToken(userLoginInfoEntity.getSub(),
+                                        new EventResult<AccessTokenEntity>() {
+                                            @Override
+                                            public void success(AccessTokenEntity accessTokenresult) {
+                                                getUserLoginInfo(baseurl, accessTokenresult.getAccess_token(),
+                                                        userLoginInfoEntity, result);
+                                            }
+
+                                            @Override
+                                            public void failure(WebAuthError error) {
+                                                result.failure(error);
+                                            }
+                                        });
+
                             }
 
                             @Override
                             public void failure(WebAuthError error) {
-                                result.failure(error);
+                                result.failure(WebAuthError.getShared(context).cidaasPropertyMissingException(
+                                        error.getErrorMessage(), CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
                             }
                         });
-
-                    }
-
-                    @Override
-                    public void failure(WebAuthError error) {
-                        result.failure(WebAuthError.getShared(context).cidaasPropertyMissingException(error.getErrorMessage(), CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
-                    }
-                });
             } else {
                 // handle Faliure
-                result.failure(WebAuthError.getShared(context).propertyMissingException("Sub must not be empty", CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                result.failure(WebAuthError.getShared(context).propertyMissingException("Sub must not be empty",
+                        CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
             }
         } catch (Exception e) {
             // handle Faliure Exception
-            result.failure(WebAuthError.getShared(context).methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.USER_LOGIN_INFO_SERVICE_FAILURE, e.getMessage()));
+            result.failure(WebAuthError.getShared(context).methodException(
+                    CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                    WebAuthErrorCode.USER_LOGIN_INFO_SERVICE_FAILURE, e.getMessage()));
         }
     }
 
     public void getUserLoginInfo(String baseurl, String accessToken, UserLoginInfoEntity locationHistoryEntity,
-                                 EventResult<UserLoginInfoResponseEntity> locationHistoryResponseEntityResult) {
+            EventResult<UserLoginInfoResponseEntity> locationHistoryResponseEntityResult) {
         String methodName = "UserLoginInfoController :getUserLoginInfo()";
         if (baseurl != null && !baseurl.equals("") && accessToken != null && !accessToken.equals("")) {
-            UserLoginInfoService.getShared(context).getUserLoginInfoService(baseurl, accessToken, locationHistoryEntity, locationHistoryResponseEntityResult);
+            UserLoginInfoService.getShared(context).getUserLoginInfoService(baseurl, accessToken, locationHistoryEntity,
+                    locationHistoryResponseEntityResult);
         } else {
-            locationHistoryResponseEntityResult.failure(WebAuthError.getShared(context).propertyMissingException("Base URL and Access Token must not be empty",
+            locationHistoryResponseEntityResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Base URL and Access Token must not be empty",
                     "Error" + methodName));
         }
 

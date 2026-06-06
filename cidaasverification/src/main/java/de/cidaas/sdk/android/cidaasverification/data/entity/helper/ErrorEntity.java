@@ -1,12 +1,10 @@
 package de.cidaas.sdk.android.cidaasverification.data.entity.helper;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.io.Serializable;
 
 import de.cidaas.sdk.android.cidaasverification.data.entity.enroll.FaceMetaData;
-
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ErrorEntity implements Serializable {
@@ -23,9 +21,6 @@ public class ErrorEntity implements Serializable {
     public String sub = "";
     public String requestId = "";
     public String client_id = "";
-    public String consent_name = "";
-    public String consent_id = "";
-    public String consent_version_id = "";
     public String suggested_url = "";
 
     public String getTrack_id() {
@@ -58,30 +53,6 @@ public class ErrorEntity implements Serializable {
 
     public void setClient_id(String client_id) {
         this.client_id = client_id;
-    }
-
-    public String getConsent_name() {
-        return consent_name;
-    }
-
-    public void setConsent_name(String consent_name) {
-        this.consent_name = consent_name;
-    }
-
-    public String getConsent_id() {
-        return consent_id;
-    }
-
-    public void setConsent_id(String consent_id) {
-        this.consent_id = consent_id;
-    }
-
-    public String getConsent_version_id() {
-        return consent_version_id;
-    }
-
-    public void setConsent_version_id(String consent_version_id) {
-        this.consent_version_id = consent_version_id;
     }
 
     public String getSuggested_url() {

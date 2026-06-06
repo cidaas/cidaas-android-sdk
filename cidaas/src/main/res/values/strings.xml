@@ -49,7 +49,6 @@
     <string name="NO_USER_FOUND">No user found.</string>
     <string name="REFRESH_TOKEN_SERVICE_FAILURE">Refresh token service failure.</string>
 
-    <string name="USER_FACEBOOK_CANCEL">USER CANCEL THE FACEBOOK</string>
 
     <string name="biometric_failed">Fingerprint not recognized</string>
     <string name="cancel">Cancel</string>

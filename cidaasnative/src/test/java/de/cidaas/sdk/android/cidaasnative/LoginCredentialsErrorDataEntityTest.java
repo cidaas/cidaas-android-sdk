@@ -8,7 +8,6 @@ import de.cidaas.sdk.android.cidaasnative.data.entity.login.LoginCredentialsErro
 
 public class LoginCredentialsErrorDataEntityTest {
 
-
     LoginCredentialsErrorDataEntity loginCredentialsErrorDataEntity = new LoginCredentialsErrorDataEntity();
 
     @Test
@@ -58,14 +57,7 @@ public class LoginCredentialsErrorDataEntityTest {
         loginCredentialsErrorDataEntity.setClient_id("ClientId");
         Assert.assertEquals("ClientId", loginCredentialsErrorDataEntity.getClient_id());
     }
-
-    @Test
-    public void setConsent_name() {
-        loginCredentialsErrorDataEntity.setConsent_name("ConsentName");
-        Assert.assertEquals("ConsentName", loginCredentialsErrorDataEntity.getConsent_name());
-    }
-
 }
 
-
-//Generated with love by TestMe :) Please report issues and submit feature requests at: http://weirddev.com/forum#!/testme
+// Generated with love by TestMe :) Please report issues and submit feature
+// requests at: http://weirddev.com/forum#!/testme

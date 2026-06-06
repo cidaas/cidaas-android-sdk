@@ -14,7 +14,6 @@ import org.robolectric.RuntimeEnvironment;
 
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 
-
 @RunWith(RobolectricTestRunner.class)
 @Ignore
 public class WebAuthErrorTest {
@@ -113,17 +112,13 @@ public class WebAuthErrorTest {
         Assert.assertTrue(result instanceof WebAuthError);
     }
 
-
     @Test
     public void testErrorCode() throws Exception {
-        //WebAuthError.getShared(context).setConsentUrl("ConsentURL");
         WebAuthError.getShared(context).setError(error);
         WebAuthError.getShared(context).setErrorCode(27);
         WebAuthError.getShared(context).setErrorMessage("Message");
         WebAuthError.getShared(context).setStatusCode(17);
 
-
-        // Assert.assertEquals("ConsentURL",WebAuthError.getShared(context).getConsentUrl());
         Assert.assertEquals("Message", WebAuthError.getShared(context).getErrorMessage());
         Assert.assertEquals(27, WebAuthError.getShared(context).getErrorCode());
         Assert.assertEquals(17, WebAuthError.getShared(context).getStatusCode());
@@ -132,4 +127,5 @@ public class WebAuthErrorTest {
     }
 }
 
-//Generated with love by TestMe :) Please report issues and submit feature requests at: http://weirddev.com/forum#!/testme
+// Generated with love by TestMe :) Please report issues and submit feature
+// requests at: http://weirddev.com/forum#!/testme

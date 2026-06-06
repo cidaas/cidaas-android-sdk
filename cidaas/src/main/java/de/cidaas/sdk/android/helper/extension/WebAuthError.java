@@ -84,7 +84,6 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
     public Object error;
     private static WebAuthError shared;
 
-
     public static WebAuthError getShared(Context contextFromCidaas) {
         try {
 
@@ -102,8 +101,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         context = contextFromCidaas;
     }
 
-
-    //File NotFound Exception
+    // File NotFound Exception
     @Override
     public WebAuthError fileNotFoundException(String methodName) {
 
@@ -116,14 +114,16 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         errorEntity.setStatus(statusCode);
         errorEntity.setError(context.getString(R.string.FILE_NOT_FOUND));
 
-        String loggerMessage = "File not found Error :- " + methodName + CidaasConstants.ERROR_CODE + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE + context.getString(R.string.FILE_NOT_FOUND);
+        String loggerMessage = "File not found Error :- " + methodName + CidaasConstants.ERROR_CODE
+                + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE
+                + context.getString(R.string.FILE_NOT_FOUND);
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
         WebAuthError.shared.setErrorEntity(errorEntity);
         return WebAuthError.shared;
     }
 
-    //NoContentinFileException
+    // NoContentinFileException
     @Override
     public WebAuthError noContentInFileException(String methodName) {
 
@@ -136,7 +136,8 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         errorEntity.setStatus(HttpStatusCode.NO_CONTENT);
         errorEntity.setError(context.getString(R.string.NO_CONTENT_IN_FILE));
 
-        String loggerMessage = "No Content in Files Exception :- " + methodName + "ErrorCode :- " + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE +
+        String loggerMessage = "No Content in Files Exception :- " + methodName + "ErrorCode :- "
+                + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE +
                 context.getString(R.string.NO_CONTENT_IN_FILE);
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
@@ -144,7 +145,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //PropertyMissingException
+    // PropertyMissingException
     @Override
     public WebAuthError propertyMissingException(String errorDetails, String methodName) {
 
@@ -159,7 +160,8 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         errorEntity.setError(context.getString(R.string.PROPERTY_MISSING));
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-        String loggerMessage = "Property Missing Error :-" + methodName + "ErrorCode :- " + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE + errorDetails;
+        String loggerMessage = "Property Missing Error :-" + methodName + "ErrorCode :- "
+                + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE + errorDetails;
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
         WebAuthError.shared.setErrorEntity(errorEntity);
@@ -179,8 +181,8 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         errorEntity.setStatus(HttpStatusCode.EXPECTATION_FAILED);
         errorEntity.setError(context.getString(R.string.CIDAAS_PROPERTY_MISSING));
 
-
-        String loggerMessage = "Cidaas Property Missing Error :-" + methodName + "ErrorCode :- " + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE + errorDetails;
+        String loggerMessage = "Cidaas Property Missing Error :-" + methodName + "ErrorCode :- "
+                + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE + errorDetails;
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
         WebAuthError.shared.setErrorEntity(errorEntity);
@@ -188,7 +190,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //Access Token Exception
+    // Access Token Exception
     @Override
     public WebAuthError accessTokenException(String errorDetails, String methodName) {
 
@@ -207,7 +209,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //Service FailureException
+    // Service FailureException
     @Override
     public WebAuthError serviceCallFailureException(int errorCode, String errorMessage, String methodName) {
 
@@ -227,42 +229,39 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
 
         WebAuthError.shared.setErrorEntity(errorEntityServiceCallFailure);
 
-        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " " + CidaasConstants.ERROR_MESSAGE + errorMessage + CidaasConstants.STATUS_CODE + statusCode;
+        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " "
+                + CidaasConstants.ERROR_MESSAGE + errorMessage + CidaasConstants.STATUS_CODE + statusCode;
         LogFile.getShared(context).addFailureLog(loggerMessage);
         Timber.d(loggerMessage);
 
-
         return WebAuthError.shared;
-
 
     }
 
+    // Service FailureException
 
-    //Service FailureException
-
-    public WebAuthError serviceCallException(int errorCode, String errorMessage, int statusCode, ErrorEntity errorEntity, String errorResponse, String methodName) {
+    public WebAuthError serviceCallException(int errorCode, String errorMessage, int statusCode,
+            ErrorEntity errorEntity, String errorResponse, String methodName) {
 
         WebAuthError.shared.setErrorCode(errorCode);
         WebAuthError.shared.setStatusCode(statusCode);
         WebAuthError.shared.setErrorMessage(errorMessage);
         WebAuthError.shared.jsonMessage = errorResponse;
 
-
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " " + CidaasConstants.ERROR_MESSAGE + errorMessage + CidaasConstants.STATUS_CODE + statusCode +
+        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " "
+                + CidaasConstants.ERROR_MESSAGE + errorMessage + CidaasConstants.STATUS_CODE + statusCode +
                 "ErrorResponse From Server:" + errorResponse;
         LogFile.getShared(context).addFailureLog(loggerMessage);
         Timber.d(loggerMessage);
 
-
         return WebAuthError.shared;
-
 
     }
 
-
-    public WebAuthError loginFailureException(int errorCode, String errorMessage, int statusCode, Object error, String methodName) {
+    public WebAuthError loginFailureException(int errorCode, String errorMessage, int statusCode, Object error,
+            String methodName) {
 
         WebAuthError.shared.setErrorCode(errorCode);
         WebAuthError.shared.setStatusCode(statusCode);
@@ -276,18 +275,16 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
 
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-
-        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " " + CidaasConstants.ERROR_MESSAGE + errorMessage + CidaasConstants.STATUS_CODE + statusCode;
+        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " "
+                + CidaasConstants.ERROR_MESSAGE + errorMessage + CidaasConstants.STATUS_CODE + statusCode;
         LogFile.getShared(context).addFailureLog(loggerMessage);
         Timber.d(loggerMessage);
 
-
         return WebAuthError.shared;
-
 
     }
 
-    //FCM TOKEN FAILURE
+    // FCM TOKEN FAILURE
     public WebAuthError FCMTokenFailure(String methodName) {
 
         WebAuthError.shared.setErrorCode(WebAuthErrorCode.UPDATE_FCM_TOKEN);
@@ -300,14 +297,13 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         errorEntity.setError(context.getString(R.string.UPDATE_FCM_TOKEN_FAILURE));
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " " + "Error Message - FCM TOKEN FAILURE " + " Empty response" + CidaasConstants.STATUS_CODE + statusCode;
+        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " "
+                + "Error Message - FCM TOKEN FAILURE " + " Empty response" + CidaasConstants.STATUS_CODE + statusCode;
         LogFile.getShared(context).addFailureLog(loggerMessage);
         Timber.d(loggerMessage);
 
-
         return WebAuthError.shared;
     }
-
 
     public WebAuthError emptyResponseException(int errorCode, int statusCode, String methodName) {
 
@@ -321,15 +317,14 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         errorEntity.setError("Empty response");
 
         WebAuthError.shared.setErrorEntity(errorEntity);
-        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " " + CidaasConstants.ERROR_MESSAGE + " Empty response" + CidaasConstants.STATUS_CODE + statusCode;
+        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " "
+                + CidaasConstants.ERROR_MESSAGE + " Empty response" + CidaasConstants.STATUS_CODE + statusCode;
         LogFile.getShared(context).addFailureLog(loggerMessage);
         Timber.d(loggerMessage);
-
 
         return WebAuthError.shared;
 
     }
-
 
     public WebAuthError loginWithBrowserFailureException(int errorCode, String errorMessage, String methodName) {
 
@@ -344,10 +339,10 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
 
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " " + CidaasConstants.ERROR_MESSAGE + errorMessage + CidaasConstants.STATUS_CODE + statusCode;
+        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " "
+                + CidaasConstants.ERROR_MESSAGE + errorMessage + CidaasConstants.STATUS_CODE + statusCode;
         LogFile.getShared(context).addFailureLog(loggerMessage);
         Timber.d(loggerMessage);
-
 
         return WebAuthError.shared;
 
@@ -366,17 +361,17 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
 
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " " + CidaasConstants.ERROR_MESSAGE + errorMessage;
+        String loggerMessage = methodName + " :- " + CidaasConstants.ERROR_CODE + errorCode + " "
+                + CidaasConstants.ERROR_MESSAGE + errorMessage;
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
         Timber.d(loggerMessage);
 
         return WebAuthError.shared;
 
-
     }
 
-    //Location History Failure Exception
+    // Location History Failure Exception
     @Override
     public WebAuthError locationHistoryException(String methodName) {
 
@@ -394,7 +389,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //LoginUrl MissingException
+    // LoginUrl MissingException
     @Override
     public WebAuthError loginURLMissingException(String methodName) {
 
@@ -412,7 +407,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //RedirectUrl Missing Exception
+    // RedirectUrl Missing Exception
     @Override
     public WebAuthError redirectURLMissingException(String methodName) {
 
@@ -429,7 +424,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //Usercancelled Exception
+    // Usercancelled Exception
     @Override
     public WebAuthError userCancelledException(String methodName) {
 
@@ -447,7 +442,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //CodenotFoundException
+    // CodenotFoundException
     @Override
     public WebAuthError codeNotFoundException(String methodName) {
 
@@ -465,7 +460,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //EmptyCallbackException
+    // EmptyCallbackException
     @Override
     public WebAuthError emptyCallbackException(String methodName) {
 
@@ -483,7 +478,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //NouserFoundException
+    // NouserFoundException
     @Override
     public WebAuthError noUserFoundException(String methodName) {
 
@@ -501,7 +496,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //Device Failed to Verify
+    // Device Failed to Verify
     public WebAuthError deviceVerificationFailureException(String methodName) {
 
         WebAuthError.shared.setErrorCode(WebAuthErrorCode.DEVICE_VERIFICATION_FAILURE);
@@ -513,7 +508,8 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         errorEntity.setStatus(HttpStatusCode.EXPECTATION_FAILED);
         errorEntity.setError(context.getString(R.string.DEVICE_VERIFICATION_FAILURE));
 
-        String loggerMessage = "Device Verification Failure Exception:-" + methodName + CidaasConstants.ERROR_CODE + WebAuthError.shared.errorCode
+        String loggerMessage = "Device Verification Failure Exception:-" + methodName + CidaasConstants.ERROR_CODE
+                + WebAuthError.shared.errorCode
                 + CidaasConstants.ERROR_MESSAGE + errorEntity.getError();
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
@@ -532,7 +528,8 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         errorEntity.setStatus(HttpStatusCode.EXPECTATION_FAILED);
         errorEntity.setError(context.getString(R.string.INVALID_PROPERTIES));
 
-        String loggerMessage = "Device Verification Failure Exception:-" + methodName + CidaasConstants.ERROR_CODE + WebAuthError.shared.errorCode
+        String loggerMessage = "Device Verification Failure Exception:-" + methodName + CidaasConstants.ERROR_CODE
+                + WebAuthError.shared.errorCode
                 + CidaasConstants.ERROR_MESSAGE + errorEntity.getError();
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
@@ -540,7 +537,7 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
         return WebAuthError.shared;
     }
 
-    //Custom Exception
+    // Custom Exception
     public WebAuthError customException(int errorCode, String errorMessage, String methodName) {
 
         WebAuthError.shared.setErrorCode(errorCode);
@@ -554,13 +551,14 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
 
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-        String loggerMessage = "CustomException:-" + methodName + CidaasConstants.ERROR_CODE + errorCode + " " + "Error Message:- " + errorMessage;
+        String loggerMessage = "CustomException:-" + methodName + CidaasConstants.ERROR_CODE + errorCode + " "
+                + "Error Message:- " + errorMessage;
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
         return WebAuthError.shared;
     }
 
-    //Custom Exception
+    // Custom Exception
     public WebAuthError fingerPrintException(String errorMessage, String methodName) {
 
         WebAuthError.shared.setErrorCode(WebAuthErrorCode.FINGERPRINT_AUTHENTICATION_FAILED);
@@ -574,14 +572,14 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
 
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-        String loggerMessage = "Finger print Exception:-" + methodName + CidaasConstants.ERROR_CODE + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE + errorMessage;
+        String loggerMessage = "Finger print Exception:-" + methodName + CidaasConstants.ERROR_CODE
+                + WebAuthError.shared.errorCode + CidaasConstants.ERROR_MESSAGE + errorMessage;
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
         return WebAuthError.shared;
     }
 
-
-    //Custom Exception
+    // Custom Exception
     public WebAuthError fingerPrintError(int ErrorCode, String errorMessage, String methodName) {
 
         WebAuthError.shared.setErrorCode(ErrorCode);
@@ -595,56 +593,14 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
 
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-        String loggerMessage = "Finger print Error:-" + methodName + CidaasConstants.ERROR_CODE + ErrorCode + " " + "Error Message:- " + errorMessage;
+        String loggerMessage = "Finger print Error:-" + methodName + CidaasConstants.ERROR_CODE + ErrorCode + " "
+                + "Error Message:- " + errorMessage;
         LogFile.getShared(context).addFailureLog(loggerMessage);
 
         return WebAuthError.shared;
     }
 
-    //Facebook oncancel Exception
-    public WebAuthError facebookOnCancelException() {
-
-        WebAuthError.shared.setErrorCode(WebAuthErrorCode.ON_CANCEL_FACEBOOK);
-        WebAuthError.shared.setStatusCode(HttpStatusCode.EXPECTATION_FAILED);
-        WebAuthError.shared.setErrorMessage(context.getString(R.string.USER_CANCELLED_LOGIN));
-
-        errorEntity = new ErrorEntity();
-        errorEntity.setCode(WebAuthErrorCode.ON_CANCEL_FACEBOOK);
-        errorEntity.setStatus(HttpStatusCode.EXPECTATION_FAILED);
-        errorEntity.setError(context.getString(R.string.USER_CANCELLED_LOGIN));
-
-        WebAuthError.shared.setErrorEntity(errorEntity);
-
-        String loggerMessage = "Facebook OnCancel Exception :- ErrorCode :- " + errorCode + CidaasConstants.ERROR_MESSAGE + WebAuthError.shared.ErrorMessage;
-        LogFile.getShared(context).addFailureLog(loggerMessage);
-
-        return WebAuthError.shared;
-    }
-
-
-    //Google Error Exception
-    public WebAuthError googleError(String errorMessage) {
-
-        WebAuthError.shared.setErrorCode(WebAuthErrorCode.GOOGLE_ERROR);
-        WebAuthError.shared.setStatusCode(HttpStatusCode.EXPECTATION_FAILED);
-        WebAuthError.shared.setErrorMessage(context.getString(R.string.GOOGLE_SIGNIN_ERROR) + errorMessage);
-
-        errorEntity = new ErrorEntity();
-        errorEntity.setCode(WebAuthErrorCode.GOOGLE_ERROR);
-        errorEntity.setStatus(HttpStatusCode.EXPECTATION_FAILED);
-        errorEntity.setError(context.getString(R.string.GOOGLE_SIGNIN_ERROR));
-
-        WebAuthError.shared.setErrorEntity(errorEntity);
-
-
-        String loggerMessage = "Google Signin error:- ErrorCode :- " + errorCode + CidaasConstants.ERROR_MESSAGE + WebAuthError.shared.ErrorMessage;
-        LogFile.getShared(context).addFailureLog(loggerMessage);
-
-        return WebAuthError.shared;
-    }
-
-
-    //unauthorized Access
+    // unauthorized Access
     public WebAuthError unAuthorizedAccess(int errorCode, String errorMessage, String methodName) {
         WebAuthError.shared.setErrorCode(errorCode);
         WebAuthError.shared.setStatusCode(HttpStatusCode.UNAUTHORIZED);
@@ -657,11 +613,10 @@ public class WebAuthError extends Error implements IOAuthExcepiton {
 
         WebAuthError.shared.setErrorEntity(errorEntity);
 
-
-        String loggerMessage = methodName + " :- " + " ErrorCode : " + errorCode + " " + "Error Response From Json" + errorMessage + " Empty response" + CidaasConstants.STATUS_CODE + statusCode;
+        String loggerMessage = methodName + " :- " + " ErrorCode : " + errorCode + " " + "Error Response From Json"
+                + errorMessage + " Empty response" + CidaasConstants.STATUS_CODE + statusCode;
         LogFile.getShared(context).addFailureLog(loggerMessage);
         Timber.d(loggerMessage);
-
 
         return WebAuthError.shared;
     }

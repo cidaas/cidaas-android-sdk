@@ -8,18 +8,7 @@ import java.io.Serializable;
 public class LoginCredentialsResponseErrorEntity implements Serializable {
     private boolean success;
     private int status;
-    private String consentUrl;
     private LoginCredentialsErrorDataEntity error;
-
-
-    public String getConsentUrl() {
-        return consentUrl;
-    }
-
-    public void setConsentUrl(String consentUrl) {
-        this.consentUrl = consentUrl;
-    }
-
 
     public LoginCredentialsErrorDataEntity getError() {
         return error;
@@ -28,7 +17,6 @@ public class LoginCredentialsResponseErrorEntity implements Serializable {
     public void setError(LoginCredentialsErrorDataEntity error) {
         this.error = error;
     }
-
 
     public boolean isSuccess() {
         return success;
@@ -45,6 +33,5 @@ public class LoginCredentialsResponseErrorEntity implements Serializable {
     public void setStatus(int status) {
         this.status = status;
     }
-
 
 }
