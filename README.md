@@ -1,209 +1,518 @@
-![Logo](./logo.jpg)
+![Logo](logo.jpg)
 
-## About cidaas
+## About cidaas:
+[cidaas](https://www.cidaas.com)
+ is a fast and secure Cloud Identity & Access Management solution that standardises what’s important and simplifies what’s complex.
 
-[cidaas](https://www.cidaas.com) is a fast and secure Cloud Identity & Access Management solution that standardises what’s important and simplifies what’s complex.
-
-## Feature set includes
-
-- Single Sign On (SSO) based on OAuth 2.0, OpenID Connect, SAML 2.0
-- Multi-Factor Authentication with many methods, including TOTP and FIDO2
-- Passwordless Authentication
-- Social Login and Enterprise Identity Providers (SAML, AD, and more)
-- Security for Machine-to-Machine (M2M) and IoT
+## Feature set includes:
+* Single Sign On (SSO) based on OAuth 2.0, OpenID Connect, SAML 2.0 
+* Multi-Factor-Authentication with more than 14 authentication methods, including TOTP and FIDO2 
+* Passwordless Authentication 
+* Social Login (e.g. Facebook, Google, LinkedIn and more) as well as Enterprise Identity Provider (e.g. SAML or AD) 
+* Security in Machine-to-Machine (M2M) and IoT
 
 # Cidaas Android SDK
 
-[![Platform](https://img.shields.io/badge/Platforms-android-4E4E4E.svg?colorA=28a745)](#get-started)
+[![Build Status](https://travis-ci.org/Cidaas/de.cidaas-android-sdk.svg?branch=development)](https://travis-ci.org/Cidaas/de.cidaas-android-sdk)
+[![codecov.io](https://codecov.io/gh/Cidaas/de.cidaas-android-sdk/branch/master/graph/badge.svg)](https://codecov.io/gh/Cidaas/de.cidaas-android-sdk/branch/master)
+[![jitpack](https://jitpack.io/v/Cidaas/de.cidaas-android-sdk.svg)](https://jitpack.io/#Cidaas/de.cidaas-android-sdk)
+[![Platform](https://img.shields.io/badge/Platforms-android-4E4E4E.svg?colorA=28a745)](#installation)
 
-## Table of contents
 
-- [Requirements](#requirements)
-- [Get started](#get-started)
-  - [1. Requirements](#1-requirements)
-  - [2. Add the SDK (Gradle)](#2-add-the-sdk-gradle)
-  - [3. Android manifest](#3-android-manifest)
-  - [4. Register the app in the cidaas admin dashboard](#4-register-the-app-in-the-cidaas-admin-dashboard)
-  - [5. App configuration (`cidaas.xml`)](#5-app-configuration-cidaasxml)
-  - [6. Initialise the SDK](#6-initialise-the-sdk)
-  - [7. Sign in with the browser](#7-sign-in-with-the-browser)
-  - [8. Sign out (logout)](#8-sign-out-logout)
-  - [9. Handle the redirect back to your app](#9-handle-the-redirect-back-to-your-app)
-  - [10. Run the app](#10-run-the-app)
+The steps here will guide you through setting up and managing authentication and authorization in your apps using the cidaas android SDK.
 
----
+## Note:
+This SDK was renamed from ```cidaas -v2-sdk-android``` to ```cidaas-android-sdk```. To migrate from the older version <2.1.0, please refer to the [Migration guide](/Migration.md)
+
+## Table of Contents
+
+<!--ts-->
+* [Requirements](#requirements)
+* [Installation](#installation)
+* [Getting started](#getting-started)
+* [Migrating to Cidaas V3](#migrating-to-cidaas-v3)
+* [Getting Client Id and urls](#getting-client-id-and-urls)
+* [Initialisation](#initialisation)
+* [Usage](#usage)
+    <!--ts-->
+    * [Native Browser Login](#native-browser-login)
+        <!--ts-->
+        * [Classic Login](#classic-login)
+        * [Social Login](#social-login)
+        <!--te-->
+    *  [Embedded Browser Login](#embedded-browser-login)
+    * [Logout](#logout)
+    * [Native UI Integration](/PureNative.md)
+    * [Passwordless and MFA](/PasswordlessAndMFA.md)
+    <!--te-->
 
 ## Requirements
 
-- **minSdkVersion 23** (Android 6.0)
-- **AndroidX** (this library targets AndroidX; migrate your app if needed: Android Studio **Refactor → Migrate to AndroidX**)
+    minSdkVersion 21
 
----
+### Steps to integrate the native android SDK:
 
-## Get started
+### Installation
 
-### 1. Requirements
 
-Use Android Studio with a Phone and Tablet project (Empty Activity is fine). **Kotlin** or **Java** are both supported.
+The cidaas SDK is available through jitpack.io.  
+Please ensure that you are using the latest version by [checking here](https://jitpack.io/#Cidaas/cidaas-android-sdk)
 
-### 2. Add the SDK (Gradle)
+Add the following Gradle configuration to your Android project:
 
-Add JitPack to the project `settings.gradle` / `build.gradle` repositories (if not already present):
-
-```gradle
-dependencyResolutionManagement {
+```java        
+allprojects {
     repositories {
-        // ...
-        maven { url 'https://jitpack.io' }
-    }
+        ...
+		maven { url 'https://jitpack.io' }
+	}
 }
-```
-
-In the app module `build.gradle`, add the cidaas artifact (core SDK):
-
-```gradle
+```		
+ Add the dependency to app module
+ ```java
 dependencies {
-    implementation 'com.github.Cidaas:cidaas-android-sdk:cidaas:3.2.16'
+ implementation 'com.github.Cidaas:cidaas-android-sdk:3.0.0'
 }
-```
+ ```
+This will add all the subproject of cidaas SDK, if you only need a specific subproject for your use case, just add it's name before the version. E.g.:
 
-Pick the [latest tag on JitPack](https://jitpack.io/#Cidaas/cidaas-android-sdk) if you want a newer version than the example above.
+Android Gradle plugin 3.4.0 and higher, R8 is the default compiler. If you have R8 activated (minifyEnabled:true in your app build.gradle file) for your App, please update consumer-rules.pro in respective SDK modules to use SDK features.
 
-Sync Gradle (**File → Sync Project with Gradle Files**).
 
-### 3. Android manifest
+ ```java
+dependencies {
+    implementation 'com.github.Cidaas:cidaas-android-sdk:cidaasnative:3.0.0'
+}
+ ```
 
-Add network permission:
+This will then add only the features available under cidaasnative.
 
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-```
+For now we need to implement only cidaas core Functions
 
-For login (and optional post-logout redirects), you will use **redirect URIs** that must match what you configure in the admin dashboard (see step 4). For the activity that receives the redirect, use **`android:launchMode="singleTop"`** and resume the SDK from `onNewIntent` (see step 9).
+So please Add
 
-### 4. Register the app in the cidaas admin dashboard
+ ```java
+dependencies {
+    implementation 'com.github.Cidaas:cidaas-android-sdk:cidaas:3.0.0'
+}
+ ```
 
-Configure an Android application in the **cidaas admin portal** so the values below match your Android package and redirect flow.
+> ##### Note:- This Library is developed in AndroidX so AndroidX migration is necessary
 
-| What you need         | Where it comes from (admin)                                                                                                       |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Base URL / tenant** | Instance or tenant **domain URL** (HTTPS base for your cidaas deployment). Used as `DomainURL` in the SDK.                        |
-| **Client ID**         | Application **Client ID** after creating the app.                                                                                 |
-| **Redirect URL**      | **Allowed redirect URI** for your Android app (custom scheme or HTTPS App Link). Must match the intent-filter / manifest you use. |
+To migrate your project into Androidx in android studio goto
 
-**Checklist:**
+Refactor-> Migrate to AndroidX
 
-1. Open the **cidaas admin dashboard** and go to **Apps**.
-2. **Create** an application with the correct **type** for a native Android client.
-3. Copy **Client ID** and note the **domain / issuer base URL**.
-4. Register your **redirect URI** exactly as the app will receive it (scheme + host + path if any), e.g. `packagename://login-callback` or your **HTTPS App Link** URL including `applicationId` path if you follow hosted-link patterns.
-5. Enable the **login methods** and **scopes** your flow needs (OIDC / OAuth settings in the same app).
 
-If redirect URIs do not match, the browser will not return control to your app or token exchange will fail.
+## Getting started
+ 
+Create an asset folder by right clicking the app module. Go to new -> folder -> Assets folder and click the finish button
 
-### 5. App configuration (`cidaas.xml`)
+Create an xml file named **cidaas.xml** inside the asset folder and fill all the inputs for the key value pairs. The inputs are below mentioned.
 
-The SDK loads **`assets/cidaas.xml`** (file name must be exactly `cidaas.xml`).
+> ##### Note:- The File name must be cidaas.xml 
 
-1. In Android Studio: **app → New → Folder → Assets folder**.
-2. Create **`cidaas.xml`** under `src/main/assets/`.
+A sample XML file would look like this :
 
-Minimal example:
-
-```xml
+``` 
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="DomainURL" type="string">https://your-tenant.cidaas.com</item>
-    <item name="ClientId" type="string">YOUR_CLIENT_ID</item>
-    <item name="RedirectURL" type="string">packagename://login-callback</item>
-</resources>
+	<item name="DomainURL" type="string">DomainURL</item>
+	<item name="ClientId" type="string">ClientId</item>
+	<item name="RedirectURL">RedirectURL</item>
+</resources> 
+
 ```
 
-- **`DomainURL`**: HTTPS base URL of your cidaas instance (no trailing slash issues are normally tolerated; follow your tenant’s format).
-- **`ClientId`**: From the dashboard.
-- **`RedirectURL`**: Same value you allowed for the app in the dashboard.
+## Migrating to Cidaas V3
 
-### 6. Initialise the SDK
+Cidaas V3 has response handling adjustment on some of cidaas service call. To migrate to cidaas V3, you need to do the following:
 
-Use **one** shared instance per application process (singleton). The constructor loads properties from **`cidaas.xml`** via `CidaasHelper`.
+* ensure that you use at least cidaas version: 3.97.0. You can find out the cidaas version from cidaas service portal, and ask our customer service if it need to be updated.
+* ensure that you use at least cidaas-android-sdk version: 3.1.26
+* add CidaasVersion  to **cidaas.xml**
 
-```kotlin
-val cidaas = Cidaas.getInstance(applicationContext)
+A sample XML file would look like this :
+
+``` 
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="DomainURL" type="string">DomainURL</item>
+    <item name="ClientId" type="string">ClientId</item>
+    <item name="RedirectURL">RedirectURL</item>
+    <item name="CidaasVersion">3</item>
+</resources> 
+
 ```
 
-Initialise as early as reasonable (e.g. `Application.onCreate` or your root `Activity`), using the **same** `Context` you use for the rest of the app.
+Without Providing CidaasVersion, your application will use response handling of Cidaas V2 by default.
 
-### 7. Sign in with the browser
+### Getting client Id and urls
 
-```kotlin
-import de.cidaas.sdk.android.helper.enums.EventResult
-import de.cidaas.sdk.android.helper.extension.WebAuthError
-import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity
+You can get this by creating your app in the app settings section of the cidaas admin portal. Once you have selected the right scope and application type, and have filled in all of the mandatory fields, you can use the generated client id and re-direct URLs.
 
-cidaas.webAuth(this)
-    .signIn(object : EventResult<AccessTokenEntity> {
-        override fun success(result: AccessTokenEntity) { /* ... */ }
-        override fun failure(error: WebAuthError) { /* ... */ }
-    })
+
+#### Initialisation
+
+The first step of integrating the cidaas sdk is the initialisation process:
+```java
+
+Cidaas cidaas = Cidaas.getInstance(yourActivityContext);
+
+    or
+
+Cidaas cidaas =new Cidaas(yourActivityContext);
+
 ```
 
-### 8. Sign out (logout)
+### Usage
 
-End the user’s **hosted** session in the browser (Chrome Custom Tab), Use the **`sub`** (subject) from the user’s ID token or userinfo after login.
+> ##### Note:- If you are going to use the native browser login, you must use the getInstance() method to create a new instance of the cidaas SDK
 
-```kotlin
-import de.cidaas.sdk.android.helper.enums.EventResult
-import de.cidaas.sdk.android.helper.extension.WebAuthError
 
-cidaas.webAuth(this).signOut(sub, object : EventResult<Boolean> {
-    override fun success(result: Boolean) {
-        // Clear local tokens / navigate to logged-out UI
-    }
-
-    override fun failure(error: WebAuthError) { /* ... */ }
-})
-```
-
-Optional **post-logout redirect** (must be allowed for your app in the **cidaas admin dashboard**, like an allowed logout URL):
-
-```kotlin
-cidaas.webAuth(this).signOut(
-    sub,
-    "packagename://logout-complete", // post_logout_redirect_uri, or null to skip
-    object : EventResult<Boolean> {
-        override fun success(result: Boolean) { /* ... */ }
-        override fun failure(error: WebAuthError) { /* ... */ }
-    },
-)
-```
-
-After a successful logout, clear any **locally stored** access or refresh tokens in your app.
-
-### 9. Handle the redirect back to your app
-
-Use a **deep link** or **Android App Links** so the browser can return to your activity. The redirect URL must match **cidaas admin** and **`RedirectURL`** in `cidaas.xml`.
+#### Native Browser Login 
+#### Classic Login
+You can login using your native browser and redirect back to the App once you have successfully logged in. To login with your native browser call ****loginWithBrowser()****.
 
 ```java
-@Override
-protected void onNewIntent(Intent intent) {
-    super.onNewIntent(intent);
-    String data = intent.getDataString();
-    if (data != null) {
-        cidaas.handleToken(data);
+cidaas.loginWithBrowser(yourActivityContext, "NullableColorParameterInColorCode", new EventResult<AccessTokenEntity>() {
+     @Override
+     public void success(AccessTokenEntity result) {
+    	//Your Success Code
+     }
+
+     @Override
+     public void failure(WebAuthError error) {
+		//Your Failure Code
+     }
+});
+```
+Add a deep link or app link (#add-custom-scheme)
+
+You can get the url for the login by calling getLoginURL() and load your favorite browser like this:
+
+```java
+Cidaas.getInstance(yourContext).getLoginURL(new EventResult<String>() {
+    @Override
+    public void success(String result) {
+        //Your Success code
+    }
+
+    @Override
+    public void failure(WebAuthError error) {
+        //Your Failure code
+    }
+});
+```
+
+#### Social Login
+You can also perform social login using your native browser and redirect back to the app once the login was successful. To perform a social login call ****loginWithSocial()****.
+
+```java
+cidaas.loginWithSocial(yourActivityContext, "requestID", your_Social_Provider, "Nullable_Color_Parameter_In_Color_Code", new EventResult<AccessTokenEntity>() {
+    @Override
+    public void success(AccessTokenEntity result) {
+        //Your Success Code
+    }
+
+    @Override
+    public void failure(WebAuthError error) {
+		//Your Failure Code
+    }
+ });
+```
+where social provider may be either "facebook", "google", "linkedin" or any other providers which are configured for your app via the cidaas admin dashboard.
+
+To get the url for the social login and load it in your favorite browser you can call
+
+```java
+Cidaas.getInstance(yourContext).getSocialLoginURL(yourRequestid,your_social_provider,new EventResult<String>() {
+    @Override
+    public void success(String result) {
+       //Your Success Code
+    }
+
+    @Override
+    public void failure(WebAuthError error) {
+       	//Your Failure Code
+    }
+});
+
+```
+where the social provider may be either "facebook", "google", "linkedin" or any other providers
+
+#### Register in Browser
+
+To register with the browser, you can call the following method
+
+```java
+Cidaas.getInstance(yourContext).RegisterWithBrowser(youraAtivityContext, "Nullable_Color_Parameter_In_Color_Code", new EventResult<AccessTokenEntity>() {
+    @Override
+    public void success(AccessTokenEntity result) {
+         //Your Success Code
+    }
+
+    @Override
+    public void failure(WebAuthError error) {
+    	//Your Failure Code
+    }
+});
+```        
+
+To get the url for the registration and load it in your favorite browser you can call
+
+```java
+Cidaas.getInstance(yourContext).getRegistrationURL(new EventResult<String>() {
+    @Override
+    public void success(String result) {
+         //Your Success Code
+    }
+
+    @Override
+    public void failure(WebAuthError error) {
+          //Your Failure Code
+    }
+});
+
+```
+#### Get Request Id
+
+To get request id, You can call following method 
+
+```java
+    CidaasNative.getInstance(yourContext).getRequestId(new EventResult<AuthRequestResponseEntity>() {
+    @Override
+    public void success(AuthRequestResponseEntity result) {
+        //Your Success Code
+    }
+
+    @Override
+    public void failure(WebAuthError error) {
+        //Your Failure Code
+    }
+});
+
+```
+
+#### Logout
+
+To use logout, You can call following functions 
+
+```java
+    CidaasNative.getInstance(this).logout("AccessToken", new EventResult<Boolean>() {
+            @Override
+            public void success(Boolean result) {
+                 //Your Success Code
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                //Your Failure Code
+            }
+        });
+```
+
+#### Add a custom scheme
+
+Use [customScheme](https://developer.android.com/training/app-links/deep-linking) or [App Link](https://developer.android.com/studio/write/app-link-indexing) to return the control back from the browser to the app.
+
+    Note: Don't forget to add the custom scheme url in your App's redirect url section
+
+
+
+If you use a deep link or custom scheme, After adding the intent-filter in the manifest file, add  **android:launchMode="singleTop"** in the activity you redirected. For example if you redirect your link from browser to mainactivity
+
+```java
+ <activity android:name=".MainActivity" android:launchMode="singleTop">
+ ```
+ and resume the SDK from your activity
+```java
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        String token = intent.getDataString();
+        if (token != null) {
+            cidaas.handleToken(token);
+            
+        } else {
+           //your else part
+        }
+    }
+
+}
+```
+
+If you use app links, configure your Domain setup and resume the SDK from your activity
+
+
+```java
+  @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        String token = intent.getDataString();
+        if (token != null) {
+            cidaas.handleToken(token);
+            
+        } else {
+           //your else part
+        }
     }
 }
 ```
 
-Declare the intent filter on the activity that receives the callback; set **`android:launchMode="singleTop"`** on that activity.
+If you are using app links , you can able to open an app by click the link associated with domain URL
 
-### 10. Run the app
 
-From the project root:
+#### Common Methods
+##### Getting AccessToken
 
-```bash
-./gradlew :app:installDebug
+You can get the access token for the current user using the following call
+
+```Java
+cidaas.getAccessToken(yourSub, new EventResult<AccessTokenEntity>() {
+ @Override
+ public void success(AccessTokenEntity result) {
+      //Your Success Code
+  }
+
+  @Override
+  public void failure(WebAuthError error) {
+       //Your Failure Code
+   }
+  }); 
 ```
 
-Or use **Run** in Android Studio. You should see the custom tab open, complete login at cidaas, and return to the app with tokens handled in your success callback.
+By default the access token is renewed when you call the getAccessTokenMethod, if you want to renew the token manually you need to call the following method
 
----
+```Java
+cidaas.getAccessTokenFromRefreshToken(refreshToken, new EventResult<AccessTokenEntity>() {
+   @Override
+   public void success(AccessTokenEntity result) {
+      // Your Success Code                
+   }
+
+   @Override
+   public void failure(WebAuthError error) {
+      // Your Failure Code
+    }
+  });
+        
+```
+
+##### Enable PKCE flow
+
+  By default the PKCE flow is enabled. If you want to disable the PKCE flow, you can call the following method
+  
+  ```Java
+Cidaas.getInstance(yourContext).setENABLE_PKCE(false);
+```
+> ##### Note:- If you disable the PKCE flow, you must use add the 'ClientSecret' variable in your cidaas.xml:
+```
+<item name="ClientId" type="string">ClientId</item>
+```
+
+To know whether the PKCE is enabled or not, use the following method
+ ```Java
+ Cidaas.getInstance(yourContext).isENABLE_PKCE();
+ ```
+it will return a boolean value which is true if PKCE is enabled and false if it is disabled.
+
+##### Enable Log
+
+  By default the logger is disabled. If you want to enable the logger, you can call the following method
+  
+  ```Java
+  Cidaas.getInstance(yourContext).enableLog();
+        
+```
+To disable the Log
+
+  ```Java
+Cidaas.getInstance(yourContext).disableLog();
+        
+```
+
+To know whether the Log is enabled or not, use the following method
+ ```Java
+Cidaas.getInstance(yourContext).isLogEnable();
+ ```
+It will return a boolean value, which is true if the logger is enabled for the SDK and false if it is disabled.
+
+##### User information
+
+```Java
+Cidaas.getInstance(yourContext).getUserInfo("yourSub", new EventResult<UserinfoEntity>() {
+ @Override
+   public void success(UserinfoEntity result) {
+      //Your Success Code
+     }
+
+ @Override
+  public void failure(WebAuthError error) {
+      //Your Failure code
+     }
+});
+```        
+
+
+### Embedded Browser Login
+
+You can use the embedded browser to login with cidaas. For this do the following steps:
+1. You have to add '< uses-permission  android:name="android.permission.ACCESS_NETWORK_STATE"/>' in your manifest file.
+2. Create an instance of the CidaasSDKLayout using the activity context.
+
+
+```Java
+  CidaasSDKLayout cidaasSDKLayout = CidaasSDKLayout.getInstance(this);
+  
+     or
+  
+  CidaasSDKLayout cidaasSDKLayout = new CidaasSDKLayout(this);
+
+```
+3.Call ****loginWithEmbeddedBrowser()**** .
+
+4.Pass the relative layout as argument
+
+```Java
+ RelativeLayout relativeLayout=findViewById(R.id.relative_layout_for_webView);
+ 
+ cidaasSDKLayout.loginWithEmbeddedBrowser(relativeLayout, new EventResult<AccessTokenEntity>() {
+ @Override
+ public void success(AccessTokenEntity result) {
+      //Your Success Code
+  }
+
+  @Override
+  public void failure(WebAuthError error) {
+       //Your Failure Code
+   }
+  }); 
+```
+
+##### Get Access Token From social
+If your app has received an access token from google or facebook, then you can use following method to get the access token of cidaas.
+
+
+```Java
+SocialAccessTokenEntity socialAccessTokenEntity = new SocialAccessTokenEntity();
+socialAccessTokenEntity.setToken(yourtoken);
+socialAccessTokenEntity.setDomainURL(yourDomainURL);
+socialAccessTokenEntity.setProvider(yourprovider);
+socialAccessTokenEntity.setViewType(yourviewType);
+
+Cidaas.getInstance(yourActivityContext).getAccessTokenBySocial(socialAccessTokenEntity, new EventResult<AccessTokenEntity>() {
+    @Override
+    public void success(AccessTokenEntity result) {
+        //Your Success Code
+    }
+
+    @Override
+    public void failure(WebAuthError error) {
+       //Your Failure code
+    }
+ });
+
+```
+here yourviewType is "login" and provider is "google" or "facebook" 
