@@ -20,11 +20,13 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * cidaas.verifications().enrolment().fingerprint(activity, sub, callback);
  * cidaas.verifications().enrolment().push(activity, sub, dialogTitle, dialogMessage, R.style.MyPushDialog, callback);
  * cidaas.verifications().enrolment().pattern(activity, sub, dialogTitle, dialogMessage, R.style.MyPatternDialog, callback);
+ * cidaas.verifications().enrolment().face(activity, sub, dialogTitle, dialogMessage, R.style.MyFaceDialog, callback);
  * }</pre>
  *
  * <p>For {@code fetch}, on success the callback receives
  * {@code de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity}.
- * For {@code enrolment().fingerprint}, {@code enrolment().push}, or {@code enrolment().pattern}, on success the callback receives
+ * For {@code enrolment().fingerprint}, {@code enrolment().push}, {@code enrolment().pattern}, or {@code enrolment().face},
+ * on success the callback receives
  * {@code de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse}.</p>
  */
 public final class Verifications {

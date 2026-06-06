@@ -167,6 +167,54 @@ public final class VerificationEnrolment {
         pattern(activity, sub, dialogTitle, dialogMessage, patternCodePrefix, 0, callback);
     }
 
+    /**
+     * Face enrollment: after scan, opens a full-screen wizard (up to three camera captures). The flow continues
+     * while the API indicates more images are needed and completes on the first fully successful response.
+     * Requires runtime {@code CAMERA} permission and this module's
+     * {@code FileProvider} (authority is the app {@code applicationId} suffixed with {@code .cidaasverification.fileprovider}).
+     *
+     * <p>On success, {@code callback.success(...)} receives
+     * {@code de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse}.</p>
+     *
+     * @param faceAttempt sent as {@code face_attempt} on enroll (typically {@code 0}; use the overload with both
+     *                     {@code faceAttempt} and {@code dialogThemeResId} when you need a non-zero value)
+     * @param dialogThemeResId optional dialog theme ({@code 0} = default from activity)
+     */
+    public void face(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            int faceAttempt,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<?> callback) {
+        if (sub == null || sub.isEmpty()) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Sub must not be null or empty", "VerificationEnrolment.face"));
+            return;
+        }
+        invokeEnrolFace(activity, sub, dialogTitle, dialogMessage, faceAttempt, dialogThemeResId, callback);
+    }
+
+    public void face(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @NonNull EventResult<?> callback) {
+        face(activity, sub, dialogTitle, dialogMessage, 0, 0, callback);
+    }
+
+    public void face(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<?> callback) {
+        face(activity, sub, dialogTitle, dialogMessage, 0, dialogThemeResId, callback);
+    }
+
     private void invokeEnrolFingerprint(
             @NonNull FragmentActivity activity,
             @NonNull String sub,
@@ -252,6 +300,38 @@ public final class VerificationEnrolment {
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw new IllegalStateException("verifications().enrolment().pattern delegation failed.", cause);
+        }
+    }
+
+    private void invokeEnrolFace(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            int faceAttempt,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<?> callback) {
+        try {
+            Class<?> clazz = Class.forName(CIDAAS_VERIFICATION);
+            Object inst = clazz.getMethod("getInstance", Context.class).invoke(null, context);
+            Method m = clazz.getMethod(
+                    "enrolFaceWithCameraDialog",
+                    FragmentActivity.class,
+                    String.class,
+                    String.class,
+                    String.class,
+                    int.class,
+                    int.class,
+                    EventResult.class);
+            m.invoke(inst, activity, sub, dialogTitle, dialogMessage, faceAttempt, dialogThemeResId, callback);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(
+                    "cidaasverification is required for verifications().enrolment().face(...). Add "
+                            + "project(':cidaasverification') (or your published cidaasverification artifact) to the consuming module.",
+                    e);
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException("verifications().enrolment().face delegation failed.", cause);
         }
     }
 }

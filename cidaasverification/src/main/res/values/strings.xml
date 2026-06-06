@@ -3,4 +3,14 @@
     <string name="cidaasverification_pattern_clear">Clear</string>
     <string name="cidaasverification_pattern_confirm">Confirm</string>
     <string name="cidaasverification_pattern_too_short">Connect at least 4 dots.</string>
+    <string name="cidaasverification_face_camera_denied">Camera permission is required to enroll face verification.</string>
+    <string name="cidaasverification_face_capture_failed">Could not capture a photo. Please try again.</string>
+    <string name="cidaasverification_face_capture_skipped">No photo was captured.</string>
+    <string name="cidaasverification_face_wizard_step_format">Step %1$d of %2$d</string>
+    <string name="cidaasverification_face_wizard_capture">Capture</string>
+    <string name="cidaasverification_face_wizard_need_more">Please take another photo.</string>
+    <string name="cidaasverification_face_wizard_max_steps">More images are required than this wizard allows. Try again or contact support.</string>
+    <string name="cidaasverification_face_wizard_unknown_response">Could not use this photo. Try again.</string>
+    <string name="cidaasverification_face_wizard_camera_bind_error">Could not start the camera.</string>
+    <string name="cidaasverification_face_wizard_camera_not_ready">Camera is not ready yet.</string>
 </resources>

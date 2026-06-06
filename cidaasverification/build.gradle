@@ -78,6 +78,13 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
     implementation 'com.google.code.gson:gson:2.6.2'
+
+    // 1.4.2+ ships libimage_processing_util_jni.so with 16 KB ELF alignment (Play / Android 15+ requirement).
+    def camerax_version = "1.6.1"
+    implementation "androidx.camera:camera-core:$camerax_version"
+    implementation "androidx.camera:camera-camera2:$camerax_version"
+    implementation "androidx.camera:camera-lifecycle:$camerax_version"
+    implementation "androidx.camera:camera-view:$camerax_version"
 }
 
 // Because the components are created only during the afterEvaluate phase, you must

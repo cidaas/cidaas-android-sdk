@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".ui.face.FaceEnrollmentWizardActivity">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/cidaasverification_face_wizard_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:titleTextColor="?android:attr/textColorPrimary" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/cidaasverification_face_wizard_camera_panel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:id="@+id/cidaasverification_face_wizard_step"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_horizontal"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?android:attr/textColorPrimary"
+                tools:text="Step 1 of 3" />
+
+            <LinearLayout
+                android:id="@+id/cidaasverification_face_wizard_dots"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <View
+                    android:id="@+id/cidaasverification_face_wizard_dot0"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_margin="6dp"
+                    android:background="@drawable/cidaasverification_face_wizard_dot" />
+
+                <View
+                    android:id="@+id/cidaasverification_face_wizard_dot1"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_margin="6dp"
+                    android:background="@drawable/cidaasverification_face_wizard_dot" />
+
+                <View
+                    android:id="@+id/cidaasverification_face_wizard_dot2"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_margin="6dp"
+                    android:background="@drawable/cidaasverification_face_wizard_dot" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/cidaasverification_face_wizard_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:paddingBottom="8dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?android:attr/textColorSecondary"
+                android:visibility="gone"
+                tools:text="Instructions from your app"
+                tools:visibility="visible" />
+
+            <androidx.camera.view.PreviewView
+                android:id="@+id/cidaasverification_face_wizard_preview"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:minHeight="200dp" />
+
+            <ProgressBar
+                android:id="@+id/cidaasverification_face_wizard_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cidaasverification_face_wizard_capture"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="52dp"
+                android:text="@string/cidaasverification_face_wizard_capture"
+                android:textAllCaps="false"
+                app:cornerRadius="14dp" />
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>
