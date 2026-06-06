@@ -14,6 +14,7 @@ import de.cidaas.sdk.android.helper.extension.WebAuthError;
 
 /**
  * Verification MFA enrollment from {@link Verifications#enrolment()}.
+ * Includes fingerprint, push, pattern, face, OTP ({@link #otp()}), and passkey / FIDO2 ({@link #passkey(FragmentActivity, String, EventResult)}).
  */
 public final class VerificationEnrolment {
 
@@ -36,6 +37,25 @@ public final class VerificationEnrolment {
     @NonNull
     public VerificationEnrolmentOtp otp() {
         return new VerificationEnrolmentOtp(context);
+    }
+
+    /**
+     * Passkey (FIDO2) enrollment: setup initiation (no scan) → Credential Manager with {@code fido2_entity.server_challenge}
+     * → enroll with WebAuthn registration JSON. Requires {@code cidaasverification} and a {@link FragmentActivity}.
+     *
+     * <p>On success, {@code callback.success(...)} receives
+     * {@code de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse}.</p>
+     */
+    public void passkey(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull EventResult<?> callback) {
+        if (sub == null || sub.isEmpty()) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Sub must not be null or empty", "VerificationEnrolment.passkey"));
+            return;
+        }
+        invokeEnrolPasskey(activity, sub, callback);
     }
 
     /**
@@ -245,6 +265,30 @@ public final class VerificationEnrolment {
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw new IllegalStateException("verifications().enrolment().fingerprint delegation failed.", cause);
+        }
+    }
+
+    private void invokeEnrolPasskey(
+            @NonNull FragmentActivity activity,
+            @NonNull String sub,
+            @NonNull EventResult<?> callback) {
+        try {
+            Class<?> clazz = Class.forName(CIDAAS_VERIFICATION);
+            Object inst = clazz.getMethod("getInstance", Context.class).invoke(null, context);
+            Method m = clazz.getMethod(
+                    "enrolPasskeyWithCredentialManager",
+                    FragmentActivity.class,
+                    String.class,
+                    EventResult.class);
+            m.invoke(inst, activity, sub, callback);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(
+                    "cidaasverification is required for verifications().enrolment().passkey(...). Add "
+                            + "project(':cidaasverification') (or your published cidaasverification artifact) to the consuming module.",
+                    e);
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException("verifications().enrolment().passkey delegation failed.", cause);
         }
     }
 

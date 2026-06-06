@@ -52,6 +52,7 @@ import de.cidaas.sdk.android.cidaasverification.domain.controller.authentication
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.configuration.ConfigurationController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FaceEnrollmentController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FingerprintAttestationEnrollmentController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.PasskeyEnrollmentController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.PatternEnrollmentController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.PushEnrollmentController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.EnrollController;
@@ -301,6 +302,16 @@ public class CidaasVerification {
     public void enrolFingerprintWithAttestation(@NonNull FragmentActivity activity, @NonNull String sub,
             @NonNull EventResult<EnrollResponse> callback) {
         FingerprintAttestationEnrollmentController.getShared(context).enrollWithBiometricAttestation(activity, sub, callback);
+    }
+
+    /**
+     * Passkey (FIDO2) MFA enrollment: setup initiation only (no scan) → {@code fido2_entity.server_challenge} via
+     * Credential Manager → enroll with WebAuthn {@code registrationResponseJson} as {@code attestation}.
+     * Prefer {@code cidaas.verifications().enrolment().passkey(activity, sub, callback)} from the main SDK module.
+     */
+    public void enrolPasskeyWithCredentialManager(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull EventResult<EnrollResponse> callback) {
+        PasskeyEnrollmentController.getShared(context).enrollWithPasskey(activity, sub, callback);
     }
 
     /**

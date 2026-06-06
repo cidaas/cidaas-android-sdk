@@ -79,6 +79,10 @@ dependencies {
 
     implementation 'com.google.code.gson:gson:2.6.2'
 
+    // Passkey (FIDO2) enrollment via Credential Manager
+    implementation 'androidx.credentials:credentials:1.2.2'
+    implementation 'androidx.credentials:credentials-play-services-auth:1.2.2'
+
     // 1.4.2+ ships libimage_processing_util_jni.so with 16 KB ELF alignment (Play / Android 15+ requirement).
     def camerax_version = "1.6.1"
     implementation "androidx.camera:camera-core:$camerax_version"

@@ -17,6 +17,8 @@ public class SetupResponseData implements Serializable {
     private String push_selected_number = "";
     private String totp_secret = "";
 
+    private Fido2Entity fido2_entity;
+
     BackupCodeData backup_codes;
 
     public BackupCodeData getBackup_codes() {
@@ -73,5 +75,13 @@ public class SetupResponseData implements Serializable {
 
     public void setTotp_secret(String totp_secret) {
         this.totp_secret = totp_secret;
+    }
+
+    public Fido2Entity getFido2_entity() {
+        return fido2_entity;
+    }
+
+    public void setFido2_entity(Fido2Entity fido2_entity) {
+        this.fido2_entity = fido2_entity;
     }
 }

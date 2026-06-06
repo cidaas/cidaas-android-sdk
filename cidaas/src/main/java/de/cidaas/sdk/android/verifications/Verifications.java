@@ -23,11 +23,13 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * cidaas.verifications().enrolment().face(activity, sub, dialogTitle, dialogMessage, R.style.MyFaceDialog, callback);
  * cidaas.verifications().enrolment().otp().initiate(sub, VerificationEnrolmentOtp.AcceptMethod.SMS, initiateCb);
  * cidaas.verifications().enrolment().otp().verify(otp, sub, exchangeId, VerificationEnrolmentOtp.AcceptMethod.SMS, verifyCb);
+ * cidaas.verifications().enrolment().passkey(activity, sub, passkeyCb);
  * }</pre>
  *
  * <p>For {@code fetch}, on success the callback receives
  * {@code de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity}.
- * For {@code enrolment().fingerprint}, {@code enrolment().push}, {@code enrolment().pattern}, or {@code enrolment().face},
+ * For {@code enrolment().fingerprint}, {@code enrolment().push}, {@code enrolment().pattern}, {@code enrolment().face},
+ * or {@code enrolment().passkey(...)},
  * on success the callback receives
  * {@code de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse}.
  * For {@code enrolment().otp().initiate}, on success the callback receives

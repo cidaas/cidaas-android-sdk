@@ -8,6 +8,10 @@ import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 
+import androidx.annotation.Nullable;
+
+import de.cidaas.sdk.android.controller.AccessTokenController;
+import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 import de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollEntity;
 import de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse;
 import de.cidaas.sdk.android.cidaasverification.data.service.helper.VerificationURLHelper;
@@ -93,6 +97,16 @@ public class EnrollController {
                     }
                     break;
                 }
+                case AuthenticationType.FIDO: {
+                    if (enrollEntity.getAttestation() != null && !enrollEntity.getAttestation().isEmpty()) {
+                        addProperties(enrollEntity, enrollResult);
+                    } else {
+                        enrollResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "attestation (WebAuthn registration JSON) must not be empty for FIDO2 / passkey enroll",
+                                VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
+                    }
+                    break;
+                }
                 case AuthenticationType.FACE: {
 
                     RequestBody requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), enrollEntity.getFileToSend());
@@ -170,8 +184,23 @@ public class EnrollController {
                     enrollEntity.setPush_id(deviceInfoEntity.getPushNotificationId());
                     enrollEntity.setClient_id(clientId);
 
-                    //call enroll call
-                    callEnroll(baseurl, enrollEntity, enrollResult);
+                    final String sub = enrollEntity.getSub();
+                    if (sub != null && !sub.trim().isEmpty()) {
+                        AccessTokenController.getShared(context).getAccessToken(sub, new EventResult<AccessTokenEntity>() {
+                            @Override
+                            public void success(AccessTokenEntity accessTokenresult) {
+                                String token = accessTokenresult.getAccess_token();
+                                callEnroll(baseurl, enrollEntity, token, enrollResult);
+                            }
+
+                            @Override
+                            public void failure(WebAuthError error) {
+                                enrollResult.failure(error);
+                            }
+                        });
+                    } else {
+                        callEnroll(baseurl, enrollEntity, null, enrollResult);
+                    }
                 }
 
                 @Override
@@ -230,13 +259,17 @@ public class EnrollController {
     }
 
     //-------------------------------------------Call enroll Service-----------------------------------------------------------
-    private void callEnroll(String baseurl, final EnrollEntity enrollEntity, final EventResult<EnrollResponse> enrollResult) {
+    private void callEnroll(
+            String baseurl,
+            final EnrollEntity enrollEntity,
+            @Nullable String accessToken,
+            final EventResult<EnrollResponse> enrollResult) {
         String methodName = "EnrollController:-enroll()";
         try {
             String enrollUrl = VerificationURLHelper.getShared().getEnrollURL(baseurl, enrollEntity.getVerificationType());
 
-            //headers Generation
-            Map<String, String> headers = Headers.getShared(context).getHeaders(null, false, URLHelper.contentTypeJson);
+            //headers Generation — match setup: send access_token when enrolling for a known sub (e.g. passkey, email OTP)
+            Map<String, String> headers = Headers.getShared(context).getHeaders(accessToken, false, URLHelper.contentTypeJson);
 
             //Enroll Service call
             EnrollService.getShared(context).callEnrollService(enrollUrl, headers, enrollEntity, enrollResult);
