@@ -2,9 +2,11 @@ package de.cidaas.sdk.android.cidaasnative.domain.service.DeviceConfiguredVerifi
 
 import android.content.Context;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import de.cidaas.sdk.android.cidaasnative.R;
+import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListDataEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.service.CidaasNativeService;
@@ -84,8 +86,20 @@ public class DeviceConfiguredVerificationsListService {
                         public void onResponse(Call<DeviceConfiguredVerificationsListResponseEntity> call,
                                 Response<DeviceConfiguredVerificationsListResponseEntity> response) {
                             if (response.isSuccessful()) {
-                                if (response.code() == 200) {
+                                int code = response.code();
+                                if (code == 200) {
                                     callback.success(response.body());
+                                } else if (code == 204) {
+                                    // No JSON body: synthesize an empty list so callers match the 200 path.
+                                    DeviceConfiguredVerificationsListResponseEntity entity =
+                                            new DeviceConfiguredVerificationsListResponseEntity();
+                                    entity.setSuccess(true);
+                                    entity.setStatus(204);
+                                    DeviceConfiguredVerificationsListDataEntity data =
+                                            new DeviceConfiguredVerificationsListDataEntity();
+                                    data.setConfigured_list(new ArrayList<>());
+                                    entity.setData(data);
+                                    callback.success(entity);
                                 } else {
                                     callback.failure(WebAuthError.getShared(context).emptyResponseException(
                                             WebAuthErrorCode.DEVICE_CONFIGURED_VERIFICATIONS_LIST_FAILURE,

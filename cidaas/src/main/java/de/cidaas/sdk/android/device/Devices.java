@@ -4,6 +4,7 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 import de.cidaas.sdk.android.Cidaas;
@@ -15,6 +16,7 @@ import de.cidaas.sdk.android.helper.extension.WebAuthError;
  *
  * <pre>{@code
  * cidaas.devices().verifications().fetch(sub, callback);
+ * cidaas.devices().verifications().remove(sub, verificationType, callback);
  * }</pre>
  *
  * <p>On success, the callback receives
@@ -24,6 +26,12 @@ public final class Devices {
 
     private static final String NATIVE_CIDAAS_NATIVE =
             "de.cidaas.sdk.android.cidaasnative.view.CidaasNative";
+
+    private static final String CIDAAS_VERIFICATION =
+            "de.cidaas.sdk.android.cidaasverification.view.CidaasVerification";
+
+    private static final String DELETE_ENTITY =
+            "de.cidaas.sdk.android.cidaasverification.data.entity.delete.DeleteEntity";
 
     private final Cidaas cidaas;
 
@@ -61,6 +69,58 @@ public final class Devices {
                 return;
             }
             invokeGetDeviceConfiguredVerificationsList(sub, callback);
+        }
+
+        /**
+         * Deletes one configured verification method for the current device: fills device id, push id, and client id
+         * then calls the verification delete endpoint (same contract as {@code CidaasVerification#delete} /
+         * {@code DeleteController#deleteVerification}). Requires {@code cidaasverification} on the classpath.
+         *
+         * <p>On success, {@code callback.success(...)} receives
+         * {@code de.cidaas.sdk.android.cidaasverification.data.entity.delete.DeleteResponse}.</p>
+         *
+         * @param verificationType server verification type (for example values aligned with
+         *                         {@linkplain de.cidaas.sdk.android.helper.AuthenticationType AuthenticationType})
+         */
+        public void remove(@NonNull String sub, @NonNull String verificationType,
+                @NonNull EventResult<?> callback) {
+            if (sub == null || sub.isEmpty()) {
+                callback.failure(WebAuthError.getShared(cidaas.context).propertyMissingException(
+                        "Sub must not be null or empty", "Devices.verifications().remove"));
+                return;
+            }
+            if (verificationType == null || verificationType.isEmpty()) {
+                callback.failure(WebAuthError.getShared(cidaas.context).propertyMissingException(
+                        "Verification type must not be null or empty", "Devices.verifications().remove"));
+                return;
+            }
+            invokeDeleteVerification(sub, verificationType, callback);
+        }
+
+        private void invokeDeleteVerification(@NonNull String sub, @NonNull String verificationType,
+                @NonNull EventResult<?> callback) {
+            Context context = cidaas.context;
+            try {
+                Class<?> deleteEntityClass = Class.forName(DELETE_ENTITY);
+                Constructor<?> deleteEntityCtor = deleteEntityClass.getConstructor(String.class, String.class);
+                Object deleteEntity = deleteEntityCtor.newInstance(sub, verificationType);
+
+                Class<?> verificationClazz = Class.forName(CIDAAS_VERIFICATION);
+                Object verificationInstance =
+                        verificationClazz.getMethod("getInstance", Context.class).invoke(null, context);
+                Method deleteMethod =
+                        verificationClazz.getMethod("delete", deleteEntityClass, EventResult.class);
+                deleteMethod.invoke(verificationInstance, deleteEntity, callback);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException(
+                        "cidaasverification is required for devices().verifications().remove(...). Add "
+                                + "project(':cidaasverification') (or your published cidaasverification artifact) "
+                                + "to the consuming module.",
+                        e);
+            } catch (Exception e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                throw new IllegalStateException("devices().verifications().remove delegation failed.", cause);
+            }
         }
 
         private void invokeGetDeviceConfiguredVerificationsList(@NonNull String sub,

@@ -242,6 +242,7 @@ public class Cidaas {
     /**
      * Device-scoped verification (configured methods on this device). Example:
      * {@code cidaas.devices().verifications().fetch(sub, callback);}
+     * {@code cidaas.devices().verifications().remove(sub, verificationType, callback);}
      */
     @NonNull
     public Devices devices() {
