@@ -18,11 +18,12 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * <pre>{@code
  * cidaas.verifications().fetch(sub, callback);
  * cidaas.verifications().enrolment().fingerprint(activity, sub, callback);
+ * cidaas.verifications().enrolment().push(activity, sub, dialogTitle, dialogMessage, R.style.MyPushDialog, callback);
  * }</pre>
  *
  * <p>For {@code fetch}, on success the callback receives
  * {@code de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity}.
- * For fingerprint enrollment, on success the callback receives
+ * For {@code enrolment().fingerprint} or {@code enrolment().push}, on success the callback receives
  * {@code de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse}.</p>
  */
 public final class Verifications {
@@ -40,7 +41,7 @@ public final class Verifications {
     }
 
     /**
-     * Fingerprint and other verification MFA enrollment (delegates to {@code cidaasverification} at runtime).
+     * Verification MFA enrollment (fingerprint, push, …); delegates to {@code cidaasverification} at runtime.
      */
     @NonNull
     public VerificationEnrolment enrolment() {

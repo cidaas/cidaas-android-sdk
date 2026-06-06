@@ -3,6 +3,8 @@ package de.cidaas.sdk.android.cidaasverification.view;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StyleRes;
 import androidx.fragment.app.FragmentActivity;
 
 import java.util.Dictionary;
@@ -49,6 +51,7 @@ import de.cidaas.sdk.android.cidaasverification.domain.controller.authentication
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushreject.PushRejectController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.configuration.ConfigurationController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FingerprintAttestationEnrollmentController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.PushEnrollmentController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.EnrollController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.scanned.ScannedController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.delete.DeleteController;
@@ -265,6 +268,34 @@ public class CidaasVerification {
     public void enrolFingerprintWithAttestation(@NonNull FragmentActivity activity, @NonNull String sub,
             @NonNull EventResult<EnrollResponse> callback) {
         FingerprintAttestationEnrollmentController.getShared(context).enrollWithBiometricAttestation(activity, sub, callback);
+    }
+
+    /**
+     * Smart push MFA enrollment: initiate → scan → dialog (custom title/message) → enroll with
+     * {@code pass_code} from setup {@code push_selected_number}. Prefer
+     * {@code cidaas.verifications().enrolment().push(...)} from the main SDK module.
+     *
+     * @param acceptButtonText optional label for the confirm button; when null or blank, {@code "Accept"} is used
+     */
+    public void enrolPushWithAcceptDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @NonNull String dialogMessage, @Nullable String acceptButtonText,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolPushWithAcceptDialog(activity, sub, dialogTitle, dialogMessage, acceptButtonText, 0, callback);
+    }
+
+    /**
+     * Same as {@link #enrolPushWithAcceptDialog(FragmentActivity, String, String, String, String, EventResult)} with an
+     * optional {@link androidx.appcompat.app.AlertDialog} theme (e.g. Material3 overlay) so the dialog matches your app.
+     *
+     * @param dialogThemeResId {@code 0} for the default; otherwise a style resource such as
+     *                         {@code com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog}
+     */
+    public void enrolPushWithAcceptDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @NonNull String dialogMessage, @Nullable String acceptButtonText,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<EnrollResponse> callback) {
+        PushEnrollmentController.getShared(context).enrollWithAcceptDialog(
+                activity, sub, dialogTitle, dialogMessage, acceptButtonText, dialogThemeResId, callback);
     }
 
     //-------------------------------------------------------SCANNED CALL COMMON--------------------------------------------------------------
