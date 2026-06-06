@@ -16,6 +16,8 @@ public class AuthenticationType {
     public static final String EMAIL = "EMAIL";
     public static final String SMS = "SMS";
     public static final String IVR = "IVR";
+    /** OTP delivery over in-app / web chat channel (setup URL segment {@code chat}). */
+    public static final String CHAT = "CHAT";
     public static final String BACKUPCODE = "BACKUPCODE";
 
     private AuthenticationType() {

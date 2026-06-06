@@ -30,6 +30,15 @@ public final class VerificationEnrolment {
     }
 
     /**
+     * OTP enrollment for SMS, email, IVR, or chat: {@link VerificationEnrolmentOtp#initiate} then
+     * {@link VerificationEnrolmentOtp#verify}.
+     */
+    @NonNull
+    public VerificationEnrolmentOtp otp() {
+        return new VerificationEnrolmentOtp(context);
+    }
+
+    /**
      * Fingerprint (TOUCHID) enrollment: {@code /verification-srv/v2/setup/initiate/touchid/} →
      * {@code .../setup/scan/touchid/} → biometric Keystore proof JWT as {@code attestation} on
      * {@code .../setup/enroll/touchid/}. Requires {@code cidaasverification} and a {@link FragmentActivity} for the

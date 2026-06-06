@@ -21,13 +21,18 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * cidaas.verifications().enrolment().push(activity, sub, dialogTitle, dialogMessage, R.style.MyPushDialog, callback);
  * cidaas.verifications().enrolment().pattern(activity, sub, dialogTitle, dialogMessage, R.style.MyPatternDialog, callback);
  * cidaas.verifications().enrolment().face(activity, sub, dialogTitle, dialogMessage, R.style.MyFaceDialog, callback);
+ * cidaas.verifications().enrolment().otp().initiate(sub, VerificationEnrolmentOtp.AcceptMethod.SMS, initiateCb);
+ * cidaas.verifications().enrolment().otp().verify(otp, sub, exchangeId, VerificationEnrolmentOtp.AcceptMethod.SMS, verifyCb);
  * }</pre>
  *
  * <p>For {@code fetch}, on success the callback receives
  * {@code de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity}.
  * For {@code enrolment().fingerprint}, {@code enrolment().push}, {@code enrolment().pattern}, or {@code enrolment().face},
  * on success the callback receives
- * {@code de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse}.</p>
+ * {@code de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse}.
+ * For {@code enrolment().otp().initiate}, on success the callback receives
+ * {@code de.cidaas.sdk.android.cidaasverification.data.entity.setup.SetupResponse};
+ * for {@code enrolment().otp().verify}, {@code EnrollResponse}.</p>
  */
 public final class Verifications {
 

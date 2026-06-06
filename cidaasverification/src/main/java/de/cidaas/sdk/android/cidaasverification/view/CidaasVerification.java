@@ -197,6 +197,37 @@ public class CidaasVerification {
         ConfigurationController.getShared(context).setup(setupEntity, setupResponseResult);
     }
 
+    /**
+     * OTP enrollment step 1: POST {@code /verification-actions-srv/setup/&lt;channel&gt;/initiation} for
+     * {@link AuthenticationType#SMS}, {@link AuthenticationType#EMAIL}, {@link AuthenticationType#IVR}, or
+     * {@link AuthenticationType#CHAT} — sends the OTP.
+     */
+    public void enrollOtpInitiate(
+            @NonNull String sub,
+            @NonNull String verificationType,
+            @NonNull EventResult<SetupResponse> setupResponseResult) {
+        SetupEntity setupEntity = new SetupEntity(sub, verificationType);
+        ConfigurationController.getShared(context).setup(setupEntity, setupResponseResult);
+    }
+
+    /**
+     * OTP enrollment step 2: POST {@code /verification-actions-srv/setup/&lt;channel&gt;/verification} with
+     * {@code pass_code} set to the user-entered OTP.
+     */
+    public void enrollOtpVerify(
+            @NonNull String verificationCode,
+            @NonNull String sub,
+            @NonNull String exchange_id,
+            @NonNull String verificationType,
+            @NonNull EventResult<EnrollResponse> enrollResponseResult) {
+        EnrollEntity enrollEntity = new EnrollEntity();
+        enrollEntity.setExchange_id(exchange_id);
+        enrollEntity.setSub(sub);
+        enrollEntity.setVerificationType(verificationType);
+        enrollEntity.setPass_code(verificationCode);
+        enroll(enrollEntity, enrollResponseResult);
+    }
+
     //BackupCode
     public void setupBackupCode(String sub, EventResult<SetupResponse> setupResponseResult) {
         SetupEntity setupEntity = new SetupEntity(sub, AuthenticationType.BACKUPCODE);
