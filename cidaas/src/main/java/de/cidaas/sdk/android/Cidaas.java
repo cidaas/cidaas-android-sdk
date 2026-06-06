@@ -15,6 +15,7 @@ import java.util.Map;
 
 import de.cidaas.sdk.android.browser.WebAuth;
 import de.cidaas.sdk.android.device.Device;
+import de.cidaas.sdk.android.device.Devices;
 import de.cidaas.sdk.android.users.Users;
 import de.cidaas.sdk.android.verifications.Verifications;
 import de.cidaas.sdk.android.controller.AccessTokenController;
@@ -234,6 +235,15 @@ public class Cidaas {
     @NonNull
     public Device device() {
         return new Device(this);
+    }
+
+    /**
+     * Device-scoped verification (configured methods on this device). Example:
+     * {@code cidaas.devices().verifications().fetch(sub, callback);}
+     */
+    @NonNull
+    public Devices devices() {
+        return new Devices(this);
     }
 
     /**

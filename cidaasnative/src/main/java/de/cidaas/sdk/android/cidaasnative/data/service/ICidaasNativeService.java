@@ -27,6 +27,8 @@ import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepasswo
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetNewPasswordResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetPasswordEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.tenantinfo.TenantInfoEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListRequestEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.userconfiguredverification.UserConfiguredVerificationsListResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity;
 import de.cidaas.sdk.android.entities.LoginCredentialsResponseEntity;
@@ -112,6 +114,10 @@ public interface ICidaasNativeService {
     @GET
     Call<UserConfiguredVerificationsListResponseEntity> getUserConfiguredVerificationsList(@Url String url,
             @HeaderMap Map<String, String> headers);
+
+    @POST
+    Call<DeviceConfiguredVerificationsListResponseEntity> postDeviceConfiguredVerificationsList(@Url String url,
+            @HeaderMap Map<String, String> headers, @Body DeviceConfiguredVerificationsListRequestEntity body);
 
 
     //Login with Credentials
