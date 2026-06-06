@@ -3,6 +3,9 @@ package de.cidaas.sdk.android.cidaasverification.view;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StyleRes;
+import androidx.fragment.app.FragmentActivity;
 
 import java.util.Dictionary;
 
@@ -47,6 +50,11 @@ import de.cidaas.sdk.android.cidaasverification.domain.controller.authentication
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushallow.PushAllowController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushreject.PushRejectController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.configuration.ConfigurationController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FaceEnrollmentController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FingerprintAttestationEnrollmentController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.PasskeyEnrollmentController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.PatternEnrollmentController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.PushEnrollmentController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.EnrollController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.scanned.ScannedController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.delete.DeleteController;
@@ -190,6 +198,37 @@ public class CidaasVerification {
         ConfigurationController.getShared(context).setup(setupEntity, setupResponseResult);
     }
 
+    /**
+     * OTP enrollment step 1: POST {@code /verification-actions-srv/setup/&lt;channel&gt;/initiation} for
+     * {@link AuthenticationType#SMS}, {@link AuthenticationType#EMAIL}, {@link AuthenticationType#IVR}, or
+     * {@link AuthenticationType#CHAT} — sends the OTP.
+     */
+    public void enrollOtpInitiate(
+            @NonNull String sub,
+            @NonNull String verificationType,
+            @NonNull EventResult<SetupResponse> setupResponseResult) {
+        SetupEntity setupEntity = new SetupEntity(sub, verificationType);
+        ConfigurationController.getShared(context).setup(setupEntity, setupResponseResult);
+    }
+
+    /**
+     * OTP enrollment step 2: POST {@code /verification-actions-srv/setup/&lt;channel&gt;/verification} with
+     * {@code pass_code} set to the user-entered OTP.
+     */
+    public void enrollOtpVerify(
+            @NonNull String verificationCode,
+            @NonNull String sub,
+            @NonNull String exchange_id,
+            @NonNull String verificationType,
+            @NonNull EventResult<EnrollResponse> enrollResponseResult) {
+        EnrollEntity enrollEntity = new EnrollEntity();
+        enrollEntity.setExchange_id(exchange_id);
+        enrollEntity.setSub(sub);
+        enrollEntity.setVerificationType(verificationType);
+        enrollEntity.setPass_code(verificationCode);
+        enroll(enrollEntity, enrollResponseResult);
+    }
+
     //BackupCode
     public void setupBackupCode(String sub, EventResult<SetupResponse> setupResponseResult) {
         SetupEntity setupEntity = new SetupEntity(sub, AuthenticationType.BACKUPCODE);
@@ -253,6 +292,116 @@ public class CidaasVerification {
 
     public void configureFingerprint(final ConfigurationRequest configurationRequest, final EventResult<EnrollResponse> enrollResponseResult) {
         configure(configurationRequest, AuthenticationType.FINGERPRINT, enrollResponseResult);
+    }
+
+    /**
+     * Fingerprint MFA enrollment using verification v2 setup APIs: initiate → scan → Keystore biometric proof JWT
+     * in {@code attestation} on enroll. Prefer {@code cidaas.verifications().enrolment().fingerprint(activity, sub, callback)}
+     * from the main SDK module.
+     */
+    public void enrolFingerprintWithAttestation(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull EventResult<EnrollResponse> callback) {
+        FingerprintAttestationEnrollmentController.getShared(context).enrollWithBiometricAttestation(activity, sub, callback);
+    }
+
+    /**
+     * Passkey (FIDO2) MFA enrollment: setup initiation only (no scan) → {@code fido2_entity.server_challenge} via
+     * Credential Manager → enroll with WebAuthn {@code registrationResponseJson} as {@code attestation}.
+     * Prefer {@code cidaas.verifications().enrolment().passkey(activity, sub, callback)} from the main SDK module.
+     */
+    public void enrolPasskeyWithCredentialManager(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull EventResult<EnrollResponse> callback) {
+        PasskeyEnrollmentController.getShared(context).enrollWithPasskey(activity, sub, callback);
+    }
+
+    /**
+     * Smart push MFA enrollment: initiate → scan → dialog (custom title/message) → enroll with
+     * {@code pass_code} from setup {@code push_selected_number}. Prefer
+     * {@code cidaas.verifications().enrolment().push(...)} from the main SDK module.
+     *
+     * @param acceptButtonText optional label for the confirm button; when null or blank, {@code "Accept"} is used
+     */
+    public void enrolPushWithAcceptDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @NonNull String dialogMessage, @Nullable String acceptButtonText,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolPushWithAcceptDialog(activity, sub, dialogTitle, dialogMessage, acceptButtonText, 0, callback);
+    }
+
+    /**
+     * Same as {@link #enrolPushWithAcceptDialog(FragmentActivity, String, String, String, String, EventResult)} with an
+     * optional {@link androidx.appcompat.app.AlertDialog} theme (e.g. Material3 overlay) so the dialog matches your app.
+     *
+     * @param dialogThemeResId {@code 0} for the default; otherwise a style resource such as
+     *                         {@code com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog}
+     */
+    public void enrolPushWithAcceptDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @NonNull String dialogMessage, @Nullable String acceptButtonText,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<EnrollResponse> callback) {
+        PushEnrollmentController.getShared(context).enrollWithAcceptDialog(
+                activity, sub, dialogTitle, dialogMessage, acceptButtonText, dialogThemeResId, callback);
+    }
+
+    /**
+     * Pattern MFA enrollment: initiate → scan → modal with 9-dot pattern UI → enroll with {@code pass_code} as
+     * SHA-256 lowercase hex (UTF-8) of the pattern string (default prefix {@code RED}, e.g. hash of {@code RED[1,2,3,4]}).
+     * Prefer {@code cidaas.verifications().enrolment().pattern(...)} from the main SDK module.
+     *
+     * @param patternCodePrefix optional prefix before hashing (default {@code RED})
+     */
+    public void enrolPatternWithLockDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolPatternWithLockDialog(activity, sub, dialogTitle, dialogMessage, null, 0, callback);
+    }
+
+    public void enrolPatternWithLockDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage, @StyleRes int dialogThemeResId,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolPatternWithLockDialog(activity, sub, dialogTitle, dialogMessage, null, dialogThemeResId, callback);
+    }
+
+    public void enrolPatternWithLockDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage, @Nullable String patternCodePrefix,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolPatternWithLockDialog(activity, sub, dialogTitle, dialogMessage, patternCodePrefix, 0, callback);
+    }
+
+    public void enrolPatternWithLockDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage, @Nullable String patternCodePrefix,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<EnrollResponse> callback) {
+        PatternEnrollmentController.getShared(context).enrollWithPatternLockDialog(
+                activity, sub, dialogTitle, dialogMessage, patternCodePrefix, dialogThemeResId, callback);
+    }
+
+    /**
+     * Face MFA enrollment: initiate → scan → full-screen camera wizard (up to three captures) → enroll with
+     * multipart {@code photo}. Prefer {@code cidaas.verifications().enrolment().face(...)} from the main SDK module.
+     *
+     * <p>Requires {@code CAMERA} permission at runtime. The host app merges {@code FileProvider} with authority
+     * {@code your.application.id.cidaasverification.fileprovider} from this module.</p>
+     *
+     * @param faceAttempt sent as {@code face_attempt} on enroll (typically {@code 0})
+     */
+    public void enrolFaceWithCameraDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolFaceWithCameraDialog(activity, sub, dialogTitle, dialogMessage, 0, 0, callback);
+    }
+
+    public void enrolFaceWithCameraDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage, @StyleRes int dialogThemeResId,
+            @NonNull EventResult<EnrollResponse> callback) {
+        enrolFaceWithCameraDialog(activity, sub, dialogTitle, dialogMessage, 0, dialogThemeResId, callback);
+    }
+
+    public void enrolFaceWithCameraDialog(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull String dialogTitle, @Nullable String dialogMessage, int faceAttempt,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<EnrollResponse> callback) {
+        FaceEnrollmentController.getShared(context).enrollWithCameraCapture(
+                activity, sub, dialogTitle, dialogMessage, faceAttempt, dialogThemeResId, callback);
     }
 
     //-------------------------------------------------------SCANNED CALL COMMON--------------------------------------------------------------

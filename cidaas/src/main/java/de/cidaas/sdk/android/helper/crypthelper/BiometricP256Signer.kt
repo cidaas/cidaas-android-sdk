@@ -26,17 +26,20 @@ import kotlinx.coroutines.launch
 
 /**
  * EC P-256 in Android Keystore with biometric auth per signature for device-registration proofs.
+ *
+ * @param keyAlias keystore entry alias; use a dedicated alias for flows that must not share the device-registration key.
  */
-class BiometricP256Signer(private val context: Context) {
-
-    private val alias = "cidaas.device.biometric.ecdsa"
+class BiometricP256Signer @JvmOverloads constructor(
+    private val context: Context,
+    private val keyAlias: String = "cidaas.device.biometric.ecdsa",
+) {
 
     fun ensureKey() {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        if (ks.containsAlias(alias)) return
+        if (ks.containsAlias(keyAlias)) return
 
         val spec = KeyGenParameterSpec.Builder(
-            alias,
+            keyAlias,
             KeyProperties.PURPOSE_SIGN,
         )
             .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
@@ -53,7 +56,7 @@ class BiometricP256Signer(private val context: Context) {
     fun jwkThumbprintSha256(): String {
         ensureKey()
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        val pub = (ks.getCertificate(alias).publicKey as ECPublicKey)
+        val pub = (ks.getCertificate(keyAlias).publicKey as ECPublicKey)
         val w = pub.w
         val xStr = coord32ToB64Url(w.affineX)
         val yStr = coord32ToB64Url(w.affineY)
@@ -82,7 +85,7 @@ class BiometricP256Signer(private val context: Context) {
     suspend fun proofJwt(activity: FragmentActivity, httpMethod: String, requestUrlString: String): String {
         ensureKey()
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        val entry = ks.getEntry(alias, null) as KeyStore.PrivateKeyEntry
+        val entry = ks.getEntry(keyAlias, null) as KeyStore.PrivateKeyEntry
         val pub = entry.certificate.publicKey as ECPublicKey
         val w = pub.w
         val xStr = coord32ToB64Url(w.affineX)
@@ -123,7 +126,7 @@ class BiometricP256Signer(private val context: Context) {
             val executor = ContextCompat.getMainExecutor(context)
             val cryptoObject = try {
                 val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-                val priv = ks.getKey(alias, null) as java.security.PrivateKey
+                val priv = ks.getKey(keyAlias, null) as java.security.PrivateKey
                 val sig = Signature.getInstance("NONEwithECDSA")
                 sig.initSign(priv)
                 BiometricPrompt.CryptoObject(sig)
@@ -226,6 +229,9 @@ class BiometricP256Signer(private val context: Context) {
             .trimEnd('=')
 
     companion object {
+        /** Keystore alias for MFA fingerprint enrollment proofs (separate from device registration). */
+        const val VERIFICATION_FINGERPRINT_KEY_ALIAS = "cidaas.verification.fingerprint.ecdsa"
+
         @JvmStatic
         fun decodeChallengeB64(challengeB64: String): ByteArray {
             val t = challengeB64.trim()

@@ -27,4 +27,9 @@ public final class NativeConstants {
     public static final String EXCEPTION_RESET_PASSWORD_NEW = "Exception :ResetPasswordService :resetNewPassword()";
     public static final String METHOD_VERIFY_ACCOUNT_VERFICATION = "AccountVerificationService :verifyAccountVerification()";
     public static final String METHOD_VERIFY_ACCOUNT_VERFICATION_REGISTRATION_SERVICE = "RegistrationService :verifyAccountVerification()";
+    public static final String METHOD_VERIFICATION_CONFIGS = "VerificationConfigsService :getVerificationConfigs()";
+    public static final String METHOD_USER_CONFIGURED_VERIFICATIONS_LIST =
+            "UserConfiguredVerificationsListService :getUserConfiguredVerificationsList()";
+    public static final String METHOD_DEVICE_CONFIGURED_VERIFICATIONS_LIST =
+            "DeviceConfiguredVerificationsListService :postDeviceConfiguredVerificationsList()";
 }

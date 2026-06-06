@@ -2,6 +2,8 @@ package de.cidaas.sdk.android.cidaasverification.data.entity.enroll;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.File;
 import java.io.Serializable;
@@ -20,6 +22,10 @@ public class EnrollEntity implements Serializable {
     private String verificationType = "";
     private String sub = "";
 
+    /** Echo of setup initiation {@code status_id} when required by the verification API (e.g. FIDO2 passkey enroll). */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private String status_id = "";
+
 
     //For face and voice
     private File fileToSend;
@@ -28,6 +34,19 @@ public class EnrollEntity implements Serializable {
     //For Fingerprint
     @JsonIgnore
     private FingerPrintEntity fingerPrintEntity;
+
+    /** Biometric proof JWT for fingerprint enrollment (e.g. {@code biometric+jwt} from Keystore EC P-256). */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private String attestation = "";
+
+    /** Optional; echoed from setup initiation for FIDO2 / passkey enroll. */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private String authenticator_client_id = "";
+
+    /** Optional; echoed from {@link de.cidaas.sdk.android.cidaasverification.data.entity.setup.Fido2Entity#getFidoRequestId()}. */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonProperty("fidoRequestId")
+    private String fidoRequestId = "";
 
     //EmptyConstructors
     public EnrollEntity() {
@@ -98,6 +117,14 @@ public class EnrollEntity implements Serializable {
         this.sub = sub;
     }
 
+    public String getStatus_id() {
+        return status_id;
+    }
+
+    public void setStatus_id(String status_id) {
+        this.status_id = status_id != null ? status_id : "";
+    }
+
     public String getExchange_id() {
         return exchange_id;
     }
@@ -136,5 +163,29 @@ public class EnrollEntity implements Serializable {
 
     public void setPass_code(String pass_code) {
         this.pass_code = pass_code;
+    }
+
+    public String getAttestation() {
+        return attestation;
+    }
+
+    public void setAttestation(String attestation) {
+        this.attestation = attestation != null ? attestation : "";
+    }
+
+    public String getAuthenticator_client_id() {
+        return authenticator_client_id;
+    }
+
+    public void setAuthenticator_client_id(String authenticator_client_id) {
+        this.authenticator_client_id = authenticator_client_id != null ? authenticator_client_id : "";
+    }
+
+    public String getFidoRequestId() {
+        return fidoRequestId;
+    }
+
+    public void setFidoRequestId(String fidoRequestId) {
+        this.fidoRequestId = fidoRequestId != null ? fidoRequestId : "";
     }
 }

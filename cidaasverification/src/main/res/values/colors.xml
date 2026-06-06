@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cidaasverification_pattern_dot">#BDBDBD</color>
+    <color name="cidaasverification_pattern_active">#2196F3</color>
+    <color name="cidaasverification_pattern_path">#2196F3</color>
+    <color name="cidaasverification_pattern_inner">#FFFFFFFF</color>
+    <color name="cidaasverification_push_modal_stroke">#14000000</color>
+    <color name="cidaasverification_push_modal_accent">#1976D2</color>
+    <color name="cidaasverification_push_modal_surface">#FFFAFAFA</color>
+    <color name="cidaasverification_push_modal_divider">#1E000000</color>
+</resources>
+
+
+

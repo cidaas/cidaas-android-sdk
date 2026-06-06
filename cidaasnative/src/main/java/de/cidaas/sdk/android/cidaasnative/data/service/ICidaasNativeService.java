@@ -3,8 +3,6 @@ package de.cidaas.sdk.android.cidaasnative.data.service;
 import java.util.Map;
 
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.AccountVerificationListResponseEntity;
-import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationRequestEntity;
-import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.VerifyAccountRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.VerifyAccountResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.authrequest.AuthRequestResponseEntity;
@@ -28,9 +26,11 @@ import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepasswo
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepassword.ChangePasswordResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetNewPasswordResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetPasswordEntity;
-import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetpasswordvalidatecode.ResetPasswordValidateCodeRequestEntity;
-import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetpasswordvalidatecode.ResetPasswordValidateCodeResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.tenantinfo.TenantInfoEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListRequestEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListResponseEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.userconfiguredverification.UserConfiguredVerificationsListResponseEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity;
 import de.cidaas.sdk.android.entities.LoginCredentialsResponseEntity;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -82,18 +82,12 @@ public interface ICidaasNativeService {
     @POST
     Call<ResetPasswordResponseEntity> initiateresetPassword(@Url String url, @HeaderMap Map<String, String> headers, @Body ResetPasswordRequestEntity resetPasswordRequestEntity);
 
-    //Reset Password validate code
-    @POST
-    Call<ResetPasswordValidateCodeResponseEntity> resetPasswordValidateCode(@Url String url, @HeaderMap Map<String, String> headers,
-                                                                            @Body ResetPasswordValidateCodeRequestEntity resetPasswordValidateCodeRequestEntity);
-
-    //Reset New Password
     @POST
     Call<ResetNewPasswordResponseEntity> ResetNewPassword(@Url String url, @HeaderMap Map<String, String> headers,
                                                           @Body ResetPasswordEntity resetPasswordEntity);
 
     //Change Password
-    @POST
+    @PUT
     Call<ChangePasswordResponseEntity> changePassword(@Url String url, @HeaderMap Map<String, String> headers,
                                                       @Body ChangePasswordRequestEntity changePasswordRequestEntity);
 
@@ -108,15 +102,22 @@ public interface ICidaasNativeService {
 
 
     @POST
-    Call<InitiateAccountVerificationResponseEntity> initiateAccountVerification(@Url String url, @HeaderMap Map<String, String> headers,
-                                                                                @Body InitiateAccountVerificationRequestEntity initiateAccountVerificationRequestEntity);
-
-    @POST
     Call<VerifyAccountResponseEntity> verifyAccountVerification(@Url String url, @HeaderMap Map<String, String> headers,
                                                                 @Body VerifyAccountRequestEntity verifyAccountRequestEntity);
 
     @GET
     Call<AccountVerificationListResponseEntity> getAccountVerificationList(@Url String url, @HeaderMap Map<String, String> headers);
+
+    @GET
+    Call<VerificationConfigsResponseEntity> getVerificationConfigs(@Url String url, @HeaderMap Map<String, String> headers);
+
+    @GET
+    Call<UserConfiguredVerificationsListResponseEntity> getUserConfiguredVerificationsList(@Url String url,
+            @HeaderMap Map<String, String> headers);
+
+    @POST
+    Call<DeviceConfiguredVerificationsListResponseEntity> postDeviceConfiguredVerificationsList(@Url String url,
+            @HeaderMap Map<String, String> headers, @Body DeviceConfiguredVerificationsListRequestEntity body);
 
 
     //Login with Credentials

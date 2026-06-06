@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="cidaasverification_push_modal_horizontal_margin">20dp</dimen>
+    <dimen name="cidaasverification_push_modal_max_width">420dp</dimen>
+    <dimen name="cidaasverification_push_modal_icon_size">72dp</dimen>
+</resources>

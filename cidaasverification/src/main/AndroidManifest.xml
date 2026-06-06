@@ -2,18 +2,45 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="de.cidaas.sdk.android.cidaasverification">
 
-<application>
-    <activity
-        android:name="androidx.test.core.app.InstrumentationActivityInvoker$BootstrapActivity" tools:replace="android:exported"
-        android:exported="false" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
-    <activity
-        android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyActivity" tools:replace="android:exported"
-        android:exported="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
 
-    <activity
-        android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyFloatingActivity" tools:replace="android:exported"
-        android:exported="false" />
-</application>
+    <application>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.cidaasverification.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/cidaasverification_file_paths" />
+        </provider>
+
+        <activity
+            android:name="de.cidaas.sdk.android.cidaasverification.ui.face.FaceEnrollmentWizardActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar" />
+
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$BootstrapActivity"
+            tools:replace="android:exported"
+            android:exported="false" />
+
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyActivity"
+            tools:replace="android:exported"
+            android:exported="false" />
+
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyFloatingActivity"
+            tools:replace="android:exported"
+            android:exported="false" />
+    </application>
 </manifest>
-

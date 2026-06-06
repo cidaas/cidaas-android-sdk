@@ -9,6 +9,9 @@ import androidx.annotation.Nullable;
 import java.util.Dictionary;
 import java.util.HashMap;
 
+import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListResponseEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.userconfiguredverification.UserConfiguredVerificationsListResponseEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.AccountVerificationListResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.InitiateAccountVerificationResponseEntity;
@@ -36,6 +39,7 @@ import de.cidaas.sdk.android.cidaasnative.data.entity.tenantinfo.TenantInfoEntit
 import de.cidaas.sdk.android.cidaasnative.domain.controller.accountverification.AccountVerificationController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.changepassword.ChangePasswordController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.client.ClientController;
+import de.cidaas.sdk.android.cidaasnative.domain.controller.deviceconfiguredverifications.DeviceConfiguredVerificationsListController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.deduplication.DeduplicationController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.login.NativeLoginController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.progressiveregistration.ProgressiveRegistrationController;
@@ -43,6 +47,8 @@ import de.cidaas.sdk.android.cidaasnative.domain.controller.registration.Registr
 import de.cidaas.sdk.android.cidaasnative.domain.controller.requestid.RequestIdController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.resetpassword.ResetPasswordController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.tenant.TenantController;
+import de.cidaas.sdk.android.cidaasnative.domain.controller.userconfiguredverifications.UserConfiguredVerificationsListController;
+import de.cidaas.sdk.android.cidaasnative.domain.controller.verificationconfigs.VerificationConfigsController;
 import de.cidaas.sdk.android.cidaasnative.util.NativeConstants;
 import de.cidaas.sdk.android.entities.LoginCredentialsResponseEntity;
 import de.cidaas.sdk.android.helper.enums.EventResult;
@@ -358,6 +364,37 @@ public class CidaasNative {
     public void getAccountVerificationList(@NonNull final String sub,
             final EventResult<AccountVerificationListResponseEntity> result) {
         AccountVerificationController.getShared(context).getAccountVerificationList(sub, result);
+    }
+
+    /**
+     * Lists tenant verification method configurations (GET {@code verification-actions-srv/config}). Pass the user's
+     * access token; it is sent in request headers (same as other authenticated native calls).
+     */
+    public void getVerificationConfigs(@NonNull final String accessToken,
+            final EventResult<VerificationConfigsResponseEntity> result) {
+        VerificationConfigsController.getShared(context).getVerificationConfigs(accessToken, result);
+    }
+
+    /**
+     * Lists verification methods the user has configured (GET {@code verification-actions-srv/setup/users}). Requires
+     * access token in headers.
+     */
+    public void getUserConfiguredVerificationsList(@NonNull final String accessToken,
+            final EventResult<UserConfiguredVerificationsListResponseEntity> result) {
+        UserConfiguredVerificationsListController.getShared(context).getUserConfiguredVerificationsList(accessToken,
+                result);
+    }
+
+    /**
+     * Lists verification methods configured on this device (POST
+     * {@code verification-srv/v2/setup/device/configured/list}). Uses stored {@linkplain
+     * de.cidaas.sdk.android.entities.DeviceInfoEntity device info} and {@code sub} in the request body; headers match
+     * the existing verification v2 configured-list flow (no access token header).
+     */
+    public void getDeviceConfiguredVerificationsList(@NonNull final String sub,
+            final EventResult<DeviceConfiguredVerificationsListResponseEntity> result) {
+        DeviceConfiguredVerificationsListController.getShared(context).getDeviceConfiguredVerificationsList(sub,
+                result);
     }
 
     // ----------------------------------DEDEUPLICATION------------------------------------------------------------------------------------------------------

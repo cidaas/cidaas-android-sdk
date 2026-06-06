@@ -309,12 +309,11 @@ public class DBHelper {
             editor.putString(FCMTOKEN_INFO, fcmToken);
             editor.commit();
 
-            //Add fcm token
             DeviceInfoEntity deviceInfoEntity = getDeviceInfo();
-            deviceInfoEntity.setPushNotificationId(fcmToken);
-
-            //add it in db
-            addDeviceInfo(deviceInfoEntity);
+            if (deviceInfoEntity != null) {
+                deviceInfoEntity.setPushNotificationId(fcmToken);
+                addDeviceInfo(deviceInfoEntity);
+            }
         } catch (Exception e) {
             result = false;
         }
