@@ -224,6 +224,7 @@ public class Cidaas {
      * Tenant verification methods configuration (GET
      * {@code verification-actions-srv/config}). Example:
      * {@code cidaas.verifications().fetch(sub, callback);}
+     * {@code cidaas.verifications().enrolment().fingerprint(activity, sub, callback);}
      */
     @NonNull
     public Verifications verifications() {

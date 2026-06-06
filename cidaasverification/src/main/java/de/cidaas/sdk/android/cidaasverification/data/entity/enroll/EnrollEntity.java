@@ -2,6 +2,7 @@ package de.cidaas.sdk.android.cidaasverification.data.entity.enroll;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.File;
 import java.io.Serializable;
@@ -28,6 +29,10 @@ public class EnrollEntity implements Serializable {
     //For Fingerprint
     @JsonIgnore
     private FingerPrintEntity fingerPrintEntity;
+
+    /** Biometric proof JWT for fingerprint enrollment (e.g. {@code biometric+jwt} from Keystore EC P-256). */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private String attestation = "";
 
     //EmptyConstructors
     public EnrollEntity() {
@@ -136,5 +141,13 @@ public class EnrollEntity implements Serializable {
 
     public void setPass_code(String pass_code) {
         this.pass_code = pass_code;
+    }
+
+    public String getAttestation() {
+        return attestation;
+    }
+
+    public void setAttestation(String attestation) {
+        this.attestation = attestation != null ? attestation : "";
     }
 }

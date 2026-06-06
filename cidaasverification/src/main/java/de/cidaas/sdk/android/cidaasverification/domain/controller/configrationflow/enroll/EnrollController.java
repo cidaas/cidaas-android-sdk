@@ -86,8 +86,11 @@ public class EnrollController {
             switch (enrollEntity.getVerificationType()) {
 
                 case AuthenticationType.FINGERPRINT: {
-                    //FingerPrint
-                    callFingerPrintAuthentication(enrollEntity, enrollResult);
+                    if (enrollEntity.getAttestation() != null && !enrollEntity.getAttestation().isEmpty()) {
+                        addProperties(enrollEntity, enrollResult);
+                    } else {
+                        callFingerPrintAuthentication(enrollEntity, enrollResult);
+                    }
                     break;
                 }
                 case AuthenticationType.FACE: {

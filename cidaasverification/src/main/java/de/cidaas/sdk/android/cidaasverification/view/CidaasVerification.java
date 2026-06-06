@@ -3,6 +3,7 @@ package de.cidaas.sdk.android.cidaasverification.view;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 
 import java.util.Dictionary;
 
@@ -47,6 +48,7 @@ import de.cidaas.sdk.android.cidaasverification.domain.controller.authentication
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushallow.PushAllowController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushreject.PushRejectController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.configuration.ConfigurationController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FingerprintAttestationEnrollmentController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.EnrollController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.scanned.ScannedController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.delete.DeleteController;
@@ -253,6 +255,16 @@ public class CidaasVerification {
 
     public void configureFingerprint(final ConfigurationRequest configurationRequest, final EventResult<EnrollResponse> enrollResponseResult) {
         configure(configurationRequest, AuthenticationType.FINGERPRINT, enrollResponseResult);
+    }
+
+    /**
+     * Fingerprint MFA enrollment using verification v2 setup APIs: initiate → scan → Keystore biometric proof JWT
+     * in {@code attestation} on enroll. Prefer {@code cidaas.verifications().enrolment().fingerprint(activity, sub, callback)}
+     * from the main SDK module.
+     */
+    public void enrolFingerprintWithAttestation(@NonNull FragmentActivity activity, @NonNull String sub,
+            @NonNull EventResult<EnrollResponse> callback) {
+        FingerprintAttestationEnrollmentController.getShared(context).enrollWithBiometricAttestation(activity, sub, callback);
     }
 
     //-------------------------------------------------------SCANNED CALL COMMON--------------------------------------------------------------
