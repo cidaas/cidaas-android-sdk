@@ -46,6 +46,7 @@ import de.cidaas.sdk.android.cidaasverification.data.entity.setup.SetupResponse;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticatehistory.AuthenticatedHistoryController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.authenticate.AuthenticateController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.initiate.InitiateController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.FaceLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.FingerprintLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PatternLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PushLoginController;
@@ -1024,6 +1025,195 @@ public class CidaasVerification {
                                 @Override
                                 public void success(AuthenticateResponse result) {
                                     loginPushContinueLogin(loginRequest, result, callback);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    callback.failure(error);
+                                }
+                            });
+                } catch (Exception e) {
+                    callback.failure(WebAuthError.getShared(context).methodException(
+                            methodName,
+                            WebAuthErrorCode.PASSWORDLESS_LOGIN_FAILURE,
+                            e.getMessage()));
+                }
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                callback.failure(error);
+            }
+        });
+    }
+
+    /**
+     * Face login step 1: v2 authenticate initiate for {@code face}
+     * ({@code /verification-srv/v2/authenticate/initiate/face}).
+     */
+    public void loginFaceInitiate(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<InitiateResponse> callback) {
+        loginOtpInitiate(loginRequest, AuthenticationType.FACE, callback);
+    }
+
+    /**
+     * Face login step 2: {@code push_acknowledge/face} → {@code allow/face}, then one camera capture (same UI as
+     * enrollment, single step) → {@code authenticate/face}. {@code initiateExchangeId} is the exchange from
+     * {@link #loginFaceInitiate(LoginRequest, EventResult)}.
+     */
+    public void loginFaceVerifyWithCameraWizard(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String initiateExchangeId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        String title = loginRequest.getFaceLoginDialogTitle();
+        if (title == null || title.trim().isEmpty()) {
+            title = context.getString(R.string.cidaasverification_face_login_dialog_title);
+        }
+        String message = loginRequest.getFaceLoginDialogMessage();
+        if (message == null || message.trim().isEmpty()) {
+            message = context.getString(R.string.cidaasverification_face_login_dialog_message);
+        }
+        loginFaceVerifyWithCameraWizard(
+                activity,
+                loginRequest,
+                initiateExchangeId,
+                title,
+                message,
+                loginRequest.getFaceLoginDialogThemeResId(),
+                loginRequest.getFaceLoginInitialFaceAttempt(),
+                callback);
+    }
+
+    public void loginFaceVerifyWithCameraWizard(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String initiateExchangeId,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        loginFaceVerifyWithCameraWizard(
+                activity,
+                loginRequest,
+                initiateExchangeId,
+                dialogTitle,
+                dialogMessage,
+                loginRequest.getFaceLoginDialogThemeResId(),
+                loginRequest.getFaceLoginInitialFaceAttempt(),
+                callback);
+    }
+
+    public void loginFaceVerifyWithCameraWizard(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String initiateExchangeId,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        loginFaceVerifyWithCameraWizard(
+                activity,
+                loginRequest,
+                initiateExchangeId,
+                dialogTitle,
+                dialogMessage,
+                dialogThemeResId,
+                loginRequest.getFaceLoginInitialFaceAttempt(),
+                callback);
+    }
+
+    /**
+     * @param initialFaceAttempt {@code face_attempt} sent with the captured photo (often {@code 0})
+     */
+    public void loginFaceVerifyWithCameraWizard(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String initiateExchangeId,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @StyleRes int dialogThemeResId,
+            int initialFaceAttempt,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        FaceLoginController.getShared(context).verifyWithSingleFaceCaptureAfterPush(
+                activity,
+                initiateExchangeId,
+                dialogTitle,
+                dialogMessage,
+                dialogThemeResId,
+                initialFaceAttempt,
+                callback);
+    }
+
+    /**
+     * Face login step 3: POST {@code /login-srv/verification/login} and exchange code for tokens.
+     * Prefer {@code cidaas.verifications().login().face(loginRequest, callback)} from the main SDK module.
+     */
+    public void loginFaceContinueLogin(
+            @NonNull LoginRequest loginRequest,
+            @NonNull AuthenticateResponse authenticateResponse,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        loginOtpContinueLogin(loginRequest, AuthenticationType.FACE, authenticateResponse, callback);
+    }
+
+    /**
+     * One-shot face login: initiate → push acknowledge / allow → single camera capture → login continue to tokens.
+     * Set {@link LoginRequest#setFaceLoginHostActivity} when {@code Cidaas} was not created with a
+     * {@link FragmentActivity}. Optional dialog copy: {@link LoginRequest#setFaceLoginDialogTitle},
+     * {@link LoginRequest#setFaceLoginDialogMessage}, {@link LoginRequest#setFaceLoginDialogThemeResId},
+     * {@link LoginRequest#setFaceLoginInitialFaceAttempt}.
+     */
+    public void loginFaceOneShot(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        final String methodName = "CidaasVerification.loginFaceOneShot()";
+        FragmentActivity activity = loginRequest.getFaceLoginHostActivity();
+        if (activity == null && context instanceof FragmentActivity) {
+            activity = (FragmentActivity) context;
+        }
+        if (activity == null) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Face login requires a FragmentActivity: call loginRequest.setFaceLoginHostActivity(activity), "
+                            + "or initialize Cidaas with a FragmentActivity context.",
+                    methodName));
+            return;
+        }
+        final FragmentActivity hostActivity = activity;
+        loginFaceInitiate(loginRequest, new EventResult<InitiateResponse>() {
+            @Override
+            public void success(InitiateResponse initiateResponse) {
+                try {
+                    if (initiateResponse == null || initiateResponse.getData() == null
+                            || initiateResponse.getData().getExchange_id() == null) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "Initiate response missing data or exchange_id", methodName));
+                        return;
+                    }
+                    String exchangeId = initiateResponse.getData().getExchange_id().getExchange_id();
+                    if (exchangeId == null || exchangeId.isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "exchange_id missing from initiate response", methodName));
+                        return;
+                    }
+                    String title = loginRequest.getFaceLoginDialogTitle();
+                    if (title == null || title.trim().isEmpty()) {
+                        title = context.getString(R.string.cidaasverification_face_login_dialog_title);
+                    }
+                    String message = loginRequest.getFaceLoginDialogMessage();
+                    if (message == null || message.trim().isEmpty()) {
+                        message = context.getString(R.string.cidaasverification_face_login_dialog_message);
+                    }
+                    FaceLoginController.getShared(context).verifyWithSingleFaceCaptureAfterPush(
+                            hostActivity,
+                            exchangeId,
+                            title,
+                            message,
+                            loginRequest.getFaceLoginDialogThemeResId(),
+                            loginRequest.getFaceLoginInitialFaceAttempt(),
+                            new EventResult<AuthenticateResponse>() {
+                                @Override
+                                public void success(AuthenticateResponse result) {
+                                    loginFaceContinueLogin(loginRequest, result, callback);
                                 }
 
                                 @Override

@@ -36,8 +36,12 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.cidaas.sdk.android.cidaasverification.R;
+import de.cidaas.sdk.android.cidaasverification.data.entity.authenticate.AuthenticateEntity;
+import de.cidaas.sdk.android.cidaasverification.data.entity.authenticate.AuthenticateResponse;
 import de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollEntity;
 import de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.FaceLoginResultBridge;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PasswordlessLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.EnrollController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FaceEnrollInterpreter;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FaceEnrollmentResultBridge;
@@ -48,8 +52,8 @@ import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 
 /**
- * Full-screen face enrollment: up to three capture steps; continues while the API reports more images are needed;
- * completes on first success when the backend is satisfied.
+ * Full-screen face capture: <strong>enrollment</strong> runs up to three steps while the API asks for more images;
+ * <strong>login</strong> uses a single capture then {@code authenticate/face}.
  */
 public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
 
@@ -59,9 +63,18 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
     public static final String EXTRA_THEME = "cidaasverification_face_wizard_theme";
     public static final String EXTRA_INITIAL_FACE_ATTEMPT = "cidaasverification_face_wizard_initial_attempt";
     public static final String EXTRA_LOG_PREFIX = "cidaasverification_face_wizard_log_prefix";
+    /** {@link #MODE_ENROLL} (default) or {@link #MODE_LOGIN_SINGLE}. */
+    public static final String EXTRA_MODE = "cidaasverification_face_wizard_mode";
 
-    private static final int MAX_CAPTURE_STEPS = 3;
+    public static final int MODE_ENROLL = 0;
+    /** One capture → authenticate only (after push acknowledge / allow outside this activity). */
+    public static final int MODE_LOGIN_SINGLE = 1;
+
     private static final int REQ_CAMERA_PERMISSION = 44021;
+
+    private int mode = MODE_ENROLL;
+    private boolean loginMode;
+    private int maxCaptureSteps = 3;
 
     private String currentExchangeId;
     private int initialFaceAttempt;
@@ -97,6 +110,33 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
             @NonNull String logPrefixForCancel) {
         FaceEnrollmentResultBridge.setPending(callback);
         Intent i = new Intent(activity, FaceEnrollmentWizardActivity.class);
+        i.putExtra(EXTRA_MODE, MODE_ENROLL);
+        i.putExtra(EXTRA_EXCHANGE_ID, exchangeId);
+        i.putExtra(EXTRA_TITLE, title);
+        i.putExtra(EXTRA_MESSAGE, message);
+        i.putExtra(EXTRA_THEME, themeResId);
+        i.putExtra(EXTRA_INITIAL_FACE_ATTEMPT, initialFaceAttempt);
+        i.putExtra(EXTRA_LOG_PREFIX, logPrefixForCancel);
+        activity.startActivity(i);
+    }
+
+    /**
+     * Face login: single capture with the same camera UI as enrollment (no multi-step enroll loop).
+     *
+     * @param exchangeId exchange id after {@code push_acknowledge/face} and {@code allow/face} (authenticate exchange)
+     */
+    public static void startForLogin(
+            @NonNull FragmentActivity activity,
+            @NonNull String exchangeId,
+            @NonNull String title,
+            @NonNull String message,
+            int themeResId,
+            int initialFaceAttempt,
+            @NonNull EventResult<AuthenticateResponse> callback,
+            @NonNull String logPrefixForCancel) {
+        FaceLoginResultBridge.setPending(callback);
+        Intent i = new Intent(activity, FaceEnrollmentWizardActivity.class);
+        i.putExtra(EXTRA_MODE, MODE_LOGIN_SINGLE);
         i.putExtra(EXTRA_EXCHANGE_ID, exchangeId);
         i.putExtra(EXTRA_TITLE, title);
         i.putExtra(EXTRA_MESSAGE, message);
@@ -115,10 +155,19 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         Intent intent = getIntent();
+        mode = intent.getIntExtra(EXTRA_MODE, MODE_ENROLL);
+        loginMode = (mode == MODE_LOGIN_SINGLE);
+        maxCaptureSteps = loginMode ? 1 : 3;
+
         currentExchangeId = intent.getStringExtra(EXTRA_EXCHANGE_ID);
         if (currentExchangeId == null || currentExchangeId.isEmpty()) {
-            finishWithFailure(WebAuthError.getShared(getApplicationContext()).propertyMissingException(
-                    "exchange_id missing", VerificationConstants.ERROR_LOGGING_PREFIX + "FaceEnrollmentWizardActivity"));
+            WebAuthError err = WebAuthError.getShared(getApplicationContext()).propertyMissingException(
+                    "exchange_id missing", VerificationConstants.ERROR_LOGGING_PREFIX + "FaceEnrollmentWizardActivity");
+            if (loginMode) {
+                finishWithLoginFailure(err);
+            } else {
+                finishWithFailure(err);
+            }
             return;
         }
         initialFaceAttempt = intent.getIntExtra(EXTRA_INITIAL_FACE_ATTEMPT, 0);
@@ -134,6 +183,9 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             currentExchangeId = savedInstanceState.getString("saved_exchange", currentExchangeId);
             currentStepIndex = savedInstanceState.getInt("saved_step", 0);
+            mode = savedInstanceState.getInt("saved_mode", mode);
+            loginMode = (mode == MODE_LOGIN_SINGLE);
+            maxCaptureSteps = loginMode ? 1 : 3;
         } else {
             currentStepIndex = 0;
         }
@@ -149,6 +201,11 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
         stepDots[0] = findViewById(R.id.cidaasverification_face_wizard_dot0);
         stepDots[1] = findViewById(R.id.cidaasverification_face_wizard_dot1);
         stepDots[2] = findViewById(R.id.cidaasverification_face_wizard_dot2);
+
+        View dotsRow = findViewById(R.id.cidaasverification_face_wizard_dots);
+        if (loginMode && dotsRow != null) {
+            dotsRow.setVisibility(View.GONE);
+        }
 
         toolbar.setTitle(intent.getStringExtra(EXTRA_TITLE));
         toolbar.setNavigationOnClickListener(v -> handleNavigateUp());
@@ -178,6 +235,7 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putString("saved_exchange", currentExchangeId);
         outState.putInt("saved_step", currentStepIndex);
+        outState.putInt("saved_mode", mode);
     }
 
     @Override
@@ -191,12 +249,22 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (!terminalOutcome.get()) {
-            EventResult<EnrollResponse> cb = FaceEnrollmentResultBridge.consumePending();
-            if (cb != null) {
-                cb.failure(WebAuthError.getShared(getApplicationContext()).customException(
-                        WebAuthErrorCode.USER_CANCELLED_LOGIN,
-                        "Face enrollment cancelled",
-                        VerificationConstants.ERROR_LOGGING_PREFIX + logPrefix));
+            if (loginMode) {
+                EventResult<AuthenticateResponse> cbLogin = FaceLoginResultBridge.consumePending();
+                if (cbLogin != null) {
+                    cbLogin.failure(WebAuthError.getShared(getApplicationContext()).customException(
+                            WebAuthErrorCode.USER_CANCELLED_LOGIN,
+                            "Face login cancelled",
+                            VerificationConstants.ERROR_LOGGING_PREFIX + logPrefix));
+                }
+            } else {
+                EventResult<EnrollResponse> cb = FaceEnrollmentResultBridge.consumePending();
+                if (cb != null) {
+                    cb.failure(WebAuthError.getShared(getApplicationContext()).customException(
+                            WebAuthErrorCode.USER_CANCELLED_LOGIN,
+                            "Face enrollment cancelled",
+                            VerificationConstants.ERROR_LOGGING_PREFIX + logPrefix));
+                }
             }
         }
         super.onDestroy();
@@ -207,12 +275,22 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
             finish();
             return;
         }
-        EventResult<EnrollResponse> cb = FaceEnrollmentResultBridge.consumePending();
-        if (cb != null) {
-            cb.failure(WebAuthError.getShared(getApplicationContext()).customException(
-                    WebAuthErrorCode.USER_CANCELLED_LOGIN,
-                    "Face enrollment cancelled",
-                    VerificationConstants.ERROR_LOGGING_PREFIX + logPrefix));
+        if (loginMode) {
+            EventResult<AuthenticateResponse> cbLogin = FaceLoginResultBridge.consumePending();
+            if (cbLogin != null) {
+                cbLogin.failure(WebAuthError.getShared(getApplicationContext()).customException(
+                        WebAuthErrorCode.USER_CANCELLED_LOGIN,
+                        "Face login cancelled",
+                        VerificationConstants.ERROR_LOGGING_PREFIX + logPrefix));
+            }
+        } else {
+            EventResult<EnrollResponse> cb = FaceEnrollmentResultBridge.consumePending();
+            if (cb != null) {
+                cb.failure(WebAuthError.getShared(getApplicationContext()).customException(
+                        WebAuthErrorCode.USER_CANCELLED_LOGIN,
+                        "Face enrollment cancelled",
+                        VerificationConstants.ERROR_LOGGING_PREFIX + logPrefix));
+            }
         }
         finish();
     }
@@ -233,10 +311,15 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
                 bindCameraUseCases(null);
             } else {
                 Toast.makeText(this, R.string.cidaasverification_face_camera_denied, Toast.LENGTH_LONG).show();
-                finishWithFailure(WebAuthError.getShared(getApplicationContext()).customException(
-                        WebAuthErrorCode.ENROLL_VERIFICATION_FAILURE,
+                WebAuthError err = WebAuthError.getShared(getApplicationContext()).customException(
+                        loginMode ? WebAuthErrorCode.PASSWORDLESS_LOGIN_FAILURE : WebAuthErrorCode.ENROLL_VERIFICATION_FAILURE,
                         "Camera permission denied",
-                        VerificationConstants.ERROR_LOGGING_PREFIX + logPrefix));
+                        VerificationConstants.ERROR_LOGGING_PREFIX + logPrefix);
+                if (loginMode) {
+                    finishWithLoginFailure(err);
+                } else {
+                    finishWithFailure(err);
+                }
             }
         }
     }
@@ -310,7 +393,11 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
             public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
                 runOnUiThread(() -> {
                     pauseCameraForUpload();
-                    submitEnrollmentFile(out);
+                    if (loginMode) {
+                        submitAuthenticationFile(out);
+                    } else {
+                        submitEnrollmentFile(out);
+                    }
                 });
             }
 
@@ -346,7 +433,7 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
                     return;
                 }
                 if (FaceEnrollInterpreter.shouldContinueFaceWizard(enrollResponse)) {
-                    if (currentStepIndex < MAX_CAPTURE_STEPS - 1) {
+                    if (currentStepIndex < maxCaptureSteps - 1) {
                         currentStepIndex++;
                         updateStepUi();
                         String hint = FaceEnrollInterpreter.userVisibleHint(enrollResponse);
@@ -394,12 +481,50 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
         });
     }
 
+    private void submitAuthenticationFile(@NonNull File file) {
+        int faceAttempt = initialFaceAttempt + currentStepIndex;
+        AuthenticateEntity entity =
+                new AuthenticateEntity(currentExchangeId, AuthenticationType.FACE, file, faceAttempt);
+        PasswordlessLoginController.getShared(getApplicationContext()).authenticateVerificationOnly(
+                entity,
+                new EventResult<AuthenticateResponse>() {
+                    @Override
+                    public void success(AuthenticateResponse authenticateResponse) {
+                        enrolling.set(false);
+                        progressBar.setVisibility(View.GONE);
+                        captureButton.setEnabled(false);
+                        completeLoginSuccessAndFinish(authenticateResponse);
+                    }
+
+                    @Override
+                    public void failure(WebAuthError error) {
+                        enrolling.set(false);
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(FaceEnrollmentWizardActivity.this, R.string.cidaasverification_face_wizard_unknown_response,
+                                Toast.LENGTH_LONG).show();
+                        bindCameraUseCases(() -> captureButton.setEnabled(true));
+                    }
+                });
+    }
+
     private void completeWithSuccessAndFinish(@NonNull EnrollResponse body) {
         if (!terminalOutcome.compareAndSet(false, true)) {
             finish();
             return;
         }
         EventResult<EnrollResponse> cb = FaceEnrollmentResultBridge.consumePending();
+        if (cb != null) {
+            cb.success(body);
+        }
+        finish();
+    }
+
+    private void completeLoginSuccessAndFinish(@NonNull AuthenticateResponse body) {
+        if (!terminalOutcome.compareAndSet(false, true)) {
+            finish();
+            return;
+        }
+        EventResult<AuthenticateResponse> cb = FaceLoginResultBridge.consumePending();
         if (cb != null) {
             cb.success(body);
         }
@@ -418,9 +543,25 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
         finish();
     }
 
+    private void finishWithLoginFailure(@NonNull WebAuthError error) {
+        if (!terminalOutcome.compareAndSet(false, true)) {
+            finish();
+            return;
+        }
+        EventResult<AuthenticateResponse> cb = FaceLoginResultBridge.consumePending();
+        if (cb != null) {
+            cb.failure(error);
+        }
+        finish();
+    }
+
     private void updateStepUi() {
-        stepLabel.setText(String.format(Locale.US, getString(R.string.cidaasverification_face_wizard_step_format),
-                currentStepIndex + 1, MAX_CAPTURE_STEPS));
+        if (loginMode) {
+            stepLabel.setText(getString(R.string.cidaasverification_face_login_step_title));
+        } else {
+            stepLabel.setText(String.format(Locale.US, getString(R.string.cidaasverification_face_wizard_step_format),
+                    currentStepIndex + 1, maxCaptureSteps));
+        }
         int primary = MaterialColors.getColor(
                 this,
                 com.google.android.material.R.attr.colorPrimary,

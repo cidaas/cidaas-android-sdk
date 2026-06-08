@@ -6,6 +6,9 @@
     <string name="cidaasverification_pattern_login_title">Draw your pattern</string>
     <string name="cidaasverification_push_login_title">Confirm sign-in</string>
     <string name="cidaasverification_push_login_message">Tap Accept to approve this sign-in on this device.</string>
+    <string name="cidaasverification_face_login_step_title">Verify your face</string>
+    <string name="cidaasverification_face_login_dialog_title">Face verification</string>
+    <string name="cidaasverification_face_login_dialog_message">Take one photo to sign in. Use good lighting and look at the camera.</string>
     <string name="cidaasverification_face_camera_denied">Camera permission is required to enroll face verification.</string>
     <string name="cidaasverification_face_capture_failed">Could not capture a photo. Please try again.</string>
     <string name="cidaasverification_face_capture_skipped">No photo was captured.</string>
