@@ -58,11 +58,11 @@ public class InitiateController {
         try {
             if (initiateEntity.getVerificationType() != null && !initiateEntity.getVerificationType().equals("")) {
                 if (initiateEntity.getRequest_id() != null && !initiateEntity.getRequest_id().equals("") &&
-                        initiateEntity.getSub() != null && !initiateEntity.getSub().equals("") &&
+                        initiateEntity.getIdentifier() != null && !initiateEntity.getIdentifier().equals("") &&
                         initiateEntity.getUsage_type() != null && !initiateEntity.getUsage_type().equals("")) {
                     addProperties(initiateEntity, initiateResult);
                 } else {
-                    initiateResult.failure(WebAuthError.getShared(context).propertyMissingException("requestId or sub or UsageType must not be null",
+                    initiateResult.failure(WebAuthError.getShared(context).propertyMissingException("requestId, identifier, or UsageType must not be null",
                             VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
                     return;
                 }

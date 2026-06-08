@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.io.Serializable;
 
+/**
+ * Response from {@code POST /verification-srv/v2/authenticate/initiate/{method}}.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InitiateResponse implements Serializable {
 

@@ -23,6 +23,9 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * cidaas.verifications().enrolment().face(activity, sub, dialogTitle, dialogMessage, R.style.MyFaceDialog, callback);
  * cidaas.verifications().enrolment().otp().initiate(sub, VerificationEnrolmentOtp.AcceptMethod.SMS, initiateCb);
  * cidaas.verifications().enrolment().otp().verify(otp, sub, exchangeId, VerificationEnrolmentOtp.AcceptMethod.SMS, verifyCb);
+ * cidaas.verifications().login().otp().initiate(loginRequest, VerificationLoginOtp.AcceptMethod.SMS, initiateCb);
+ * cidaas.verifications().login().otp().verify(otp, loginRequest, exchangeId, VerificationLoginOtp.AcceptMethod.SMS, verifyCb);
+ * cidaas.verifications().login().otp().continueLogin(loginRequest, authenticateResponse, VerificationLoginOtp.AcceptMethod.SMS, continueCb);
  * cidaas.verifications().enrolment().passkey(activity, sub, passkeyCb);
  * }</pre>
  *
@@ -34,7 +37,10 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * {@code de.cidaas.sdk.android.cidaasverification.data.entity.enroll.EnrollResponse}.
  * For {@code enrolment().otp().initiate}, on success the callback receives
  * {@code de.cidaas.sdk.android.cidaasverification.data.entity.setup.SetupResponse};
- * for {@code enrolment().otp().verify}, {@code EnrollResponse}.</p>
+ * for {@code enrolment().otp().verify}, {@code EnrollResponse}.
+ * For {@code login().otp().initiate}, {@code InitiateResponse}; for {@code login().otp().verify},
+ * {@code AuthenticateResponse}; for {@code login().otp().continueLogin}, {@code LoginCredentialsResponseEntity}
+ * (tokens in {@code getData()}).</p>
  */
 public final class Verifications {
 
@@ -56,6 +62,14 @@ public final class Verifications {
     @NonNull
     public VerificationEnrolment enrolment() {
         return new VerificationEnrolment(context);
+    }
+
+    /**
+     * Login-time verification (OTP, …); delegates to {@code cidaasverification} at runtime.
+     */
+    @NonNull
+    public VerificationLogin login() {
+        return new VerificationLogin(context);
     }
 
     /**

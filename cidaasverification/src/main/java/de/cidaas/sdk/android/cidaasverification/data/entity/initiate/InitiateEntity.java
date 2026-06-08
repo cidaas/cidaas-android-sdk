@@ -1,31 +1,38 @@
 package de.cidaas.sdk.android.cidaasverification.data.entity.initiate;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InitiateEntity implements Serializable {
 
-    private String sub = "";
+    /**
+     * Login / user identifier (e.g. email). Serialized as {@code identifier}; {@code sub} is accepted when
+     * deserializing for backward compatibility.
+     */
+    @JsonProperty("identifier")
+    @JsonAlias("sub")
+    private String identifier = "";
     private String request_id = "";
     private String usage_type = "";
     private String device_id = "";
     private String push_id = "";
     private String verificationType = "";
 
-    //For Pattern
-
-    public InitiateEntity(String sub, String request_id, String usage_type, String verificationType) {
-        this.sub = sub;
+    public InitiateEntity(String identifier, String request_id, String usage_type, String verificationType) {
+        this.identifier = identifier;
         this.request_id = request_id;
         this.usage_type = usage_type;
         this.verificationType = verificationType;
     }
 
-
-    public InitiateEntity(String sub, String request_id, String usage_type, String verificationType, String device_id, String push_id) {
-        this.sub = sub;
+    public InitiateEntity(String identifier, String request_id, String usage_type, String verificationType,
+            String device_id, String push_id) {
+        this.identifier = identifier;
         this.request_id = request_id;
         this.verificationType = verificationType;
         this.usage_type = usage_type;
@@ -41,12 +48,30 @@ public class InitiateEntity implements Serializable {
         this.verificationType = verificationType;
     }
 
-    public String getSub() {
-        return sub;
+    public String getIdentifier() {
+        return identifier;
     }
 
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
+    /**
+     * @deprecated Use {@link #getIdentifier()}.
+     */
+    @Deprecated
+    @JsonIgnore
+    public String getSub() {
+        return identifier;
+    }
+
+    /**
+     * @deprecated Use {@link #setIdentifier(String)}.
+     */
+    @Deprecated
+    @JsonIgnore
     public void setSub(String sub) {
-        this.sub = sub;
+        this.identifier = sub;
     }
 
     public String getRequest_id() {

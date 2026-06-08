@@ -46,6 +46,9 @@ public class VerificationURLHelper {
     // Login Continue call Passwordless
     private String passwordlessContinueUrl = "/login-srv/verification/sdk/login/";
 
+    /** Resume login after v2 authenticate (OTP login); POST body same shape as passwordless continue. */
+    private String verificationLoginUrl = "/login-srv/verification/login";
+
     // Login Continue call MFA
     private String mfaContinueCallUrl = "/login-srv/precheck/continue/sdk/";
 
@@ -119,6 +122,10 @@ public class VerificationURLHelper {
 
     public String getPasswordlessContinueUrl(String baseurl) {
         return baseurl + passwordlessContinueUrl;
+    }
+
+    public String getVerificationLoginUrl(String baseurl) {
+        return baseurl + verificationLoginUrl;
     }
 
     public String getMfaContinueCallUrl(String baseurl, String trackId) {

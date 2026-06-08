@@ -41,9 +41,9 @@ import de.cidaas.sdk.android.cidaasverification.data.entity.updatefcmtoken.Updat
 import de.cidaas.sdk.android.cidaasverification.data.entity.updatefcmtoken.UpdateFCMTokenResponseEntity;
 import de.cidaas.sdk.android.cidaasverification.data.entity.userlist.ConfiguredMFAListEntity;
 import de.cidaas.sdk.android.cidaasverification.data.entity.verificationcontinue.VerificationContinue;
-import de.cidaas.sdk.android.cidaasverification.data.entity.verificationcontinue.VerificationContinueResponseEntity;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -137,9 +137,9 @@ public interface ICidaasSDK_V2_Services {
     @POST
     Call<UpdateFCMTokenResponseEntity> updateFCMToken(@Url String url, @HeaderMap Map<String, String> headers, @Body UpdateFCMTokenEntity updateFCMTokenEntity);
 
-    //Resume Login
+    //Resume Login (body may be JSON, 302 Location, or plain text e.g. "Found. Redirecting to ...?code=...")
     @POST
-    Call<VerificationContinueResponseEntity> verificationContinue(@Url String url, @HeaderMap Map<String, String> headers, @Body VerificationContinue verificationContinueEntity);
+    Call<ResponseBody> verificationContinue(@Url String url, @HeaderMap Map<String, String> headers, @Body VerificationContinue verificationContinueEntity);
 
     @POST
     Call<DeviceListResponse> getDevicesList(@Url String url, @HeaderMap Map<String, String> headers, @Body DevicesListEntity authenticatedHistoryEntity);

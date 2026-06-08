@@ -226,6 +226,9 @@ public class Cidaas {
      * {@code verification-actions-srv/config}). Example:
      * {@code cidaas.verifications().fetch(sub, callback);}
      * {@code cidaas.verifications().enrolment().fingerprint(activity, sub, callback);}
+     * {@code cidaas.verifications().login().otp().initiate(loginRequest, VerificationLoginOtp.AcceptMethod.SMS, cb);}
+     * {@code cidaas.verifications().login().otp().verify(otp, loginRequest, exchangeId, VerificationLoginOtp.AcceptMethod.SMS, cb);}
+     * {@code cidaas.verifications().login().otp().continueLogin(loginRequest, authenticateResponse, VerificationLoginOtp.AcceptMethod.SMS, cb);}
      * {@code cidaas.verifications().enrolment().push(activity, sub, dialogTitle, dialogMessage, R.style.MyPushDialog, callback);}
      * {@code cidaas.verifications().enrolment().pattern(activity, sub, dialogTitle, dialogMessage, R.style.MyPatternDialog, callback);}
      */
