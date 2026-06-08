@@ -203,6 +203,71 @@ public class LoginRequest implements Serializable {
         this.pushLoginDialogThemeResId = pushLoginDialogThemeResId;
     }
 
+    /**
+     * Host for face login camera wizard when using {@code cidaas.verifications().login().face(loginRequest, callback)}.
+     * Not serialized. When null, the SDK uses the {@code Cidaas} context if it is a {@link FragmentActivity}.
+     */
+    @JsonIgnore
+    private transient FragmentActivity faceLoginHostActivity;
+
+    @JsonIgnore
+    private transient String faceLoginDialogTitle;
+
+    @JsonIgnore
+    private transient String faceLoginDialogMessage;
+
+    @JsonIgnore
+    private transient int faceLoginDialogThemeResId;
+
+    /**
+     * {@code face_attempt} sent with the login photo; not serialized. Default {@code 0}.
+     */
+    @JsonIgnore
+    private transient int faceLoginInitialFaceAttempt;
+
+    @Nullable
+    public FragmentActivity getFaceLoginHostActivity() {
+        return faceLoginHostActivity;
+    }
+
+    public void setFaceLoginHostActivity(@Nullable FragmentActivity faceLoginHostActivity) {
+        this.faceLoginHostActivity = faceLoginHostActivity;
+    }
+
+    @Nullable
+    public String getFaceLoginDialogTitle() {
+        return faceLoginDialogTitle;
+    }
+
+    public void setFaceLoginDialogTitle(@Nullable String faceLoginDialogTitle) {
+        this.faceLoginDialogTitle = faceLoginDialogTitle;
+    }
+
+    @Nullable
+    public String getFaceLoginDialogMessage() {
+        return faceLoginDialogMessage;
+    }
+
+    public void setFaceLoginDialogMessage(@Nullable String faceLoginDialogMessage) {
+        this.faceLoginDialogMessage = faceLoginDialogMessage;
+    }
+
+    public int getFaceLoginDialogThemeResId() {
+        return faceLoginDialogThemeResId;
+    }
+
+    public void setFaceLoginDialogThemeResId(int faceLoginDialogThemeResId) {
+        this.faceLoginDialogThemeResId = faceLoginDialogThemeResId;
+    }
+
+    public int getFaceLoginInitialFaceAttempt() {
+        return faceLoginInitialFaceAttempt;
+    }
+
+    public void setFaceLoginInitialFaceAttempt(int faceLoginInitialFaceAttempt) {
+        this.faceLoginInitialFaceAttempt = faceLoginInitialFaceAttempt;
+    }
+
     public String getRequestId() {
         return requestId;
     }

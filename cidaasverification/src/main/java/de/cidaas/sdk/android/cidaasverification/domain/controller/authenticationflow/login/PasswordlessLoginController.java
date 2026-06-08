@@ -118,10 +118,29 @@ public class PasswordlessLoginController {
 
             switch (verificationType) {
                 case AuthenticationType.FACE:
-                    authenticateEntity = new AuthenticateEntity(
-                            initiateResult.getData().getExchange_id().getExchange_id(), verificationType,
-                            loginRequest.getFileToSend(), loginRequest.getAttempt());
-                    break;
+                    if (loginRequest.getFileToSend() == null) {
+                        loginCredentialsResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "fileToSend must not be null for face verification", methodName));
+                        return;
+                    }
+                    final String faceInitExchange = initiateResult.getData().getExchange_id().getExchange_id();
+                    AuthenticatePushAcknowledgeAllowHelper.run(context, verificationType, faceInitExchange,
+                            new EventResult<String>() {
+                                @Override
+                                public void success(String finalExchangeId) {
+                                    AuthenticateEntity authenticateEntity = new AuthenticateEntity(
+                                            finalExchangeId, verificationType, loginRequest.getFileToSend(),
+                                            loginRequest.getAttempt());
+                                    authenticateVerification(authenticateEntity, verificationType, requestId, loginRequest,
+                                            loginCredentialsResult);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    loginCredentialsResult.failure(error);
+                                }
+                            });
+                    return;
 
                 case AuthenticationType.VOICE:
                     authenticateEntity = new AuthenticateEntity(

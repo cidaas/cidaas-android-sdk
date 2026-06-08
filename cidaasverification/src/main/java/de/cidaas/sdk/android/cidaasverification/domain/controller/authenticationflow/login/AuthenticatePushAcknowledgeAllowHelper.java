@@ -25,7 +25,8 @@ public final class AuthenticatePushAcknowledgeAllowHelper {
     }
 
     /**
-     * @param verificationType e.g. {@link de.cidaas.sdk.android.helper.AuthenticationType#PATTERN} or {@code TOUCHID}
+     * @param verificationType e.g. {@link de.cidaas.sdk.android.helper.AuthenticationType#PATTERN},
+     *        {@code TOUCHID}, {@link de.cidaas.sdk.android.helper.AuthenticationType#SMARTPUSH}, or {@code FACE}
      */
     public static void run(
             @NonNull Context context,

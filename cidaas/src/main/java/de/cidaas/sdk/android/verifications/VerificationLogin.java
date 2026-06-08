@@ -84,12 +84,36 @@ public final class VerificationLogin {
     }
 
     /**
+     * Face login in one call: initiate → push acknowledge / allow → one camera capture → login continue to tokens.
+     * Enrollment uses up to three captures; login uses a single capture with the same camera screen.
+     * When {@code Cidaas} was not created with a {@code androidx.fragment.app.FragmentActivity}, call
+     * {@code ((LoginRequest) loginRequest).setFaceLoginHostActivity(activity)} first.
+     */
+    public void face(@NonNull Object loginRequest, @NonNull EventResult<?> callback) {
+        if (loginRequest == null) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "loginRequest must not be null", "VerificationLogin.face"));
+            return;
+        }
+        invokeLoginFaceOneShot(loginRequest, callback);
+    }
+
+    /**
      * @deprecated Use {@link #push(Object, EventResult)} for the one-shot flow to tokens.
      */
     @Deprecated
     @NonNull
     public VerificationLoginPush push() {
         return new VerificationLoginPush(context);
+    }
+
+    /**
+     * @deprecated Use {@link #face(Object, EventResult)} for the one-shot flow to tokens.
+     */
+    @Deprecated
+    @NonNull
+    public VerificationLoginFace face() {
+        return new VerificationLoginFace(context);
     }
 
     /**
@@ -170,6 +194,27 @@ public final class VerificationLogin {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw new IllegalStateException(
                     "verifications().login().push(loginRequest, callback) delegation failed.", cause);
+        }
+    }
+
+    private void invokeLoginFaceOneShot(@NonNull Object loginRequest, @NonNull EventResult<?> callback) {
+        try {
+            Class<?> loginRequestClass =
+                    Class.forName(
+                            "de.cidaas.sdk.android.cidaasverification.data.entity.enduser.loginrequest.LoginRequest");
+            Class<?> clazz = Class.forName(CIDAAS_VERIFICATION);
+            Object inst = clazz.getMethod("getInstance", Context.class).invoke(null, context);
+            Method m = clazz.getMethod("loginFaceOneShot", loginRequestClass, EventResult.class);
+            m.invoke(inst, loginRequest, callback);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(
+                    "cidaasverification is required for verifications().login().face(loginRequest, callback). Add "
+                            + "project(':cidaasverification') (or your published cidaasverification artifact) to the consuming module.",
+                    e);
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException(
+                    "verifications().login().face(loginRequest, callback) delegation failed.", cause);
         }
     }
 }
