@@ -53,6 +53,9 @@ public class NativeURLHelper {
     String verificationConfigs = "/verification-actions-srv/config";
     String userConfiguredVerificationsList = "/verification-actions-srv/users/configurations";
     String deviceConfiguredVerificationsList = "/verification-actions-srv/setup/devices";
+
+    /** POST body: {@code request_id}, {@code identifier}, {@code push_id} (FCM), {@code client_id}. */
+    String publicConfiguredVerificationsList = "/verification-srv/v2/setup/public/configured/list";
     String accountVerificationList = "/users-srv/user/communication/status/";
 
     String validateDeviceURL = "/verification-srv/device/validate";
@@ -196,6 +199,10 @@ public class NativeURLHelper {
 
     public String getDeviceConfiguredVerificationsList() {
         return deviceConfiguredVerificationsList;
+    }
+
+    public String getPublicConfiguredVerificationsList() {
+        return publicConfiguredVerificationsList;
     }
 
     public String getAccountVerificationList(String sub) {

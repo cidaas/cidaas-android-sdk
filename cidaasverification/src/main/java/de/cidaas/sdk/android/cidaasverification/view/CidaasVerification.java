@@ -9,6 +9,7 @@ import androidx.fragment.app.FragmentActivity;
 
 import java.util.Dictionary;
 
+import de.cidaas.sdk.android.cidaasverification.R;
 import de.cidaas.sdk.android.cidaasverification.data.entity.authenticate.AuthenticateEntity;
 import de.cidaas.sdk.android.cidaasverification.data.entity.authenticate.AuthenticateResponse;
 import de.cidaas.sdk.android.cidaasverification.data.entity.authenticatedhistory.AuthenticatedHistoryEntity;
@@ -45,6 +46,9 @@ import de.cidaas.sdk.android.cidaasverification.data.entity.setup.SetupResponse;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticatehistory.AuthenticatedHistoryController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.authenticate.AuthenticateController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.initiate.InitiateController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.FingerprintLoginController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PatternLoginController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PushLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PasswordlessLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushacknowledge.PushAcknowledgeController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushallow.PushAllowController;
@@ -64,6 +68,8 @@ import de.cidaas.sdk.android.controller.LoginController;
 import de.cidaas.sdk.android.entities.LoginCredentialsResponseEntity;
 import de.cidaas.sdk.android.helper.AuthenticationType;
 import de.cidaas.sdk.android.helper.enums.EventResult;
+import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
+import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.helper.general.DBHelper;
 
@@ -506,7 +512,8 @@ public class CidaasVerification {
      * {@code sms},
      * {@code email}). Use {@code LoginRequest} with {@code identifier}, {@code requestId},
      * {@code usageType}; for MFA set
-     * {@code trackId}.
+     * {@code trackId}. Optional {@link LoginRequest#setMediumId(String)} is sent as {@code medium_id} on initiate
+     * (e.g. pattern login).
      */
     public void loginOtpInitiate(
             @NonNull LoginRequest loginRequest,
@@ -517,6 +524,10 @@ public class CidaasVerification {
                 loginRequest.getRequestId(),
                 loginRequest.getUsageType(),
                 verificationType);
+        String mediumId = loginRequest.getMediumId();
+        if (mediumId != null && !mediumId.isEmpty()) {
+            initiateEntity.setMedium_id(mediumId);
+        }
         InitiateController.getShared(context).initiateVerification(initiateEntity, callback);
     }
 
@@ -558,6 +569,481 @@ public class CidaasVerification {
             @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
         PasswordlessLoginController.getShared(context).loginOtpContinueAfterAuthenticate(
                 loginRequest.getRequestId(), loginRequest, verificationType, authenticateResponse, callback);
+    }
+
+    /**
+     * Pattern login step 1: same as OTP initiate with verification type {@code pattern}
+     * ({@code /verification-srv/v2/authenticate/initiate/pattern}). Optional {@link LoginRequest#setMediumId(String)}
+     * is sent as {@code medium_id} in the initiate body.
+     * Prefer {@code cidaas.verifications().login().pattern(loginRequest, callback)} from the main SDK module.
+     */
+    public void loginPatternInitiate(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<InitiateResponse> callback) {
+        loginOtpInitiate(loginRequest, AuthenticationType.PATTERN, callback);
+    }
+
+    /**
+     * Pattern login step 2 (no UI): {@code push_acknowledge/pattern} → {@code allow/pattern}, then v2
+     * {@code authenticate/pattern} with {@code passCodeSha256Hex} as {@code pass_code} (SHA-256 lowercase hex of
+     * {@code PREFIX[d1,d2,...]}, same as enrollment). {@code exchangeId} must be the id from
+     * {@link #loginPatternInitiate(LoginRequest, EventResult)}.
+     */
+    public void loginPatternVerifyPassCode(
+            @NonNull String passCodeSha256Hex,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        PatternLoginController.getShared(context).authenticatePassCodeAfterPushAcknowledgeAllow(
+                exchangeId, passCodeSha256Hex, callback);
+    }
+
+    /**
+     * Pattern login step 2: {@code push_acknowledge/pattern} → {@code allow/pattern}, then the same 9-dot modal as
+     * enrollment; on confirm POSTs {@code authenticate/pattern}.
+     */
+    public void loginPatternVerifyWithLockDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        loginPatternVerifyWithLockDialog(
+                activity, loginRequest, exchangeId, dialogTitle, dialogMessage, null, 0, callback);
+    }
+
+    public void loginPatternVerifyWithLockDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        loginPatternVerifyWithLockDialog(
+                activity, loginRequest, exchangeId, dialogTitle, dialogMessage, null, dialogThemeResId, callback);
+    }
+
+    public void loginPatternVerifyWithLockDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @Nullable String patternCodePrefix,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        loginPatternVerifyWithLockDialog(
+                activity, loginRequest, exchangeId, dialogTitle, dialogMessage, patternCodePrefix, 0, callback);
+    }
+
+    /**
+     * @param patternCodePrefix optional prefix before hashing (default {@code RED} in formatter when null)
+     */
+    public void loginPatternVerifyWithLockDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String dialogTitle,
+            @Nullable String dialogMessage,
+            @Nullable String patternCodePrefix,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        PatternLoginController.getShared(context).verifyWithPatternLockDialog(
+                activity, exchangeId, dialogTitle, dialogMessage, patternCodePrefix, dialogThemeResId, callback);
+    }
+
+    /**
+     * Pattern login step 3: POST {@code /login-srv/verification/login} and exchange code for tokens.
+     * Prefer {@code cidaas.verifications().login().pattern(loginRequest, callback)} from the main SDK module.
+     */
+    public void loginPatternContinueLogin(
+            @NonNull LoginRequest loginRequest,
+            @NonNull AuthenticateResponse authenticateResponse,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        loginOtpContinueLogin(loginRequest, AuthenticationType.PATTERN, authenticateResponse, callback);
+    }
+
+    /**
+     * Fingerprint login step 1: v2 authenticate initiate for {@code touchid}
+     * ({@code /verification-srv/v2/authenticate/initiate/touchid}).
+     */
+    public void loginFingerprintInitiate(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<InitiateResponse> callback) {
+        loginOtpInitiate(loginRequest, AuthenticationType.FINGERPRINT, callback);
+    }
+
+    /**
+     * Fingerprint login step 2: {@code push_acknowledge/touchid} → {@code allow/touchid}, then biometric proof JWT as
+     * {@code attestation} on {@code authenticate/touchid} (authenticate only).
+     */
+    public void loginFingerprintVerifyWithBiometricAttestation(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        FingerprintLoginController.getShared(context).authenticateWithBiometricAttestationAfterPush(
+                activity, exchangeId, callback);
+    }
+
+    /**
+     * Fingerprint login step 3: POST {@code /login-srv/verification/login} and exchange code for tokens.
+     */
+    public void loginFingerprintContinueLogin(
+            @NonNull LoginRequest loginRequest,
+            @NonNull AuthenticateResponse authenticateResponse,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        loginOtpContinueLogin(loginRequest, AuthenticationType.FINGERPRINT, authenticateResponse, callback);
+    }
+
+    /**
+     * One-shot fingerprint login: initiate → push acknowledge / allow → biometric attestation → login continue.
+     */
+    public void loginFingerprintOneShot(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        final String methodName = "CidaasVerification.loginFingerprintOneShot()";
+        FragmentActivity activity = loginRequest.getFingerprintLoginHostActivity();
+        if (activity == null && context instanceof FragmentActivity) {
+            activity = (FragmentActivity) context;
+        }
+        if (activity == null) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Fingerprint login requires a FragmentActivity: call loginRequest.setFingerprintLoginHostActivity(activity), "
+                            + "or initialize Cidaas with a FragmentActivity context.",
+                    methodName));
+            return;
+        }
+        final FragmentActivity hostActivity = activity;
+        loginFingerprintInitiate(loginRequest, new EventResult<InitiateResponse>() {
+            @Override
+            public void success(InitiateResponse initiateResponse) {
+                try {
+                    if (initiateResponse == null || initiateResponse.getData() == null
+                            || initiateResponse.getData().getExchange_id() == null) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "Initiate response missing data or exchange_id", methodName));
+                        return;
+                    }
+                    String exchangeId = initiateResponse.getData().getExchange_id().getExchange_id();
+                    if (exchangeId == null || exchangeId.isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "exchange_id missing from initiate response", methodName));
+                        return;
+                    }
+                    FingerprintLoginController.getShared(context).authenticateWithBiometricAttestationAfterPush(
+                            hostActivity,
+                            exchangeId,
+                            new EventResult<AuthenticateResponse>() {
+                                @Override
+                                public void success(AuthenticateResponse result) {
+                                    loginFingerprintContinueLogin(loginRequest, result, callback);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    callback.failure(error);
+                                }
+                            });
+                } catch (Exception e) {
+                    callback.failure(WebAuthError.getShared(context).methodException(
+                            methodName,
+                            WebAuthErrorCode.PASSWORDLESS_LOGIN_FAILURE,
+                            e.getMessage()));
+                }
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                callback.failure(error);
+            }
+        });
+    }
+
+    /**
+     * One-shot pattern login: initiate → same pattern lock modal as enrollment → verification login continue.
+     * On success, {@code callback} receives {@link LoginCredentialsResponseEntity} with
+     * {@link de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity} in {@code getData()}.
+     *
+     * <p>Provide a UI host via {@link LoginRequest#setPatternLoginHostActivity} when {@code Cidaas} was not created
+     * with a {@link FragmentActivity}. Optional: {@link LoginRequest#setPatternLoginDialogTitle},
+     * {@link LoginRequest#setPatternLoginDialogMessage}, {@link LoginRequest#setPatternLoginCodePrefix},
+     * {@link LoginRequest#setPatternLoginDialogThemeResId}.</p>
+     *
+     * <p>Prefer {@code cidaas.verifications().login().pattern(loginRequest, callback)} from the main SDK module.</p>
+     */
+    public void loginPatternOneShot(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        final String methodName = "CidaasVerification.loginPatternOneShot()";
+        FragmentActivity activity = loginRequest.getPatternLoginHostActivity();
+        if (activity == null && context instanceof FragmentActivity) {
+            activity = (FragmentActivity) context;
+        }
+        if (activity == null) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Pattern login requires a FragmentActivity: call loginRequest.setPatternLoginHostActivity(activity), "
+                            + "or initialize Cidaas with a FragmentActivity context.",
+                    methodName));
+            return;
+        }
+        final FragmentActivity hostActivity = activity;
+        loginPatternInitiate(loginRequest, new EventResult<InitiateResponse>() {
+            @Override
+            public void success(InitiateResponse initiateResponse) {
+                try {
+                    if (initiateResponse == null || initiateResponse.getData() == null
+                            || initiateResponse.getData().getExchange_id() == null) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "Initiate response missing data or exchange_id", methodName));
+                        return;
+                    }
+                    String exchangeId = initiateResponse.getData().getExchange_id().getExchange_id();
+                    if (exchangeId == null || exchangeId.isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "exchange_id missing from initiate response", methodName));
+                        return;
+                    }
+                    String title = loginRequest.getPatternLoginDialogTitle();
+                    if (title == null || title.trim().isEmpty()) {
+                        title = context.getString(R.string.cidaasverification_pattern_login_title);
+                    }
+                    PatternLoginController.getShared(context).verifyWithPatternLockDialog(
+                            hostActivity,
+                            exchangeId,
+                            title,
+                            loginRequest.getPatternLoginDialogMessage(),
+                            loginRequest.getPatternLoginCodePrefix(),
+                            loginRequest.getPatternLoginDialogThemeResId(),
+                            new EventResult<AuthenticateResponse>() {
+                                @Override
+                                public void success(AuthenticateResponse result) {
+                                    loginPatternContinueLogin(loginRequest, result, callback);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    callback.failure(error);
+                                }
+                            });
+                } catch (Exception e) {
+                    callback.failure(WebAuthError.getShared(context).methodException(
+                            methodName,
+                            WebAuthErrorCode.PASSWORDLESS_LOGIN_FAILURE,
+                            e.getMessage()));
+                }
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                callback.failure(error);
+            }
+        });
+    }
+
+    /**
+     * Push login step 1: v2 authenticate initiate for {@code push}
+     * ({@code /verification-srv/v2/authenticate/initiate/push}). Response data may include
+     * {@code push_selected_number} for use as {@code pass_code} on authenticate.
+     */
+    public void loginPushInitiate(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<InitiateResponse> callback) {
+        loginOtpInitiate(loginRequest, AuthenticationType.SMARTPUSH, callback);
+    }
+
+    /**
+     * Push login step 2: {@code push_acknowledge/push} → {@code allow/push}, then accept-only card modal; on accept
+     * POSTs {@code authenticate/push} with {@code passCode} (typically {@code push_selected_number} from initiate).
+     */
+    public void loginPushVerifyWithAcceptDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String passCode,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        String title = loginRequest.getPushLoginDialogTitle();
+        if (title == null || title.trim().isEmpty()) {
+            title = context.getString(R.string.cidaasverification_push_login_title);
+        }
+        String message = loginRequest.getPushLoginDialogMessage();
+        if (message == null || message.trim().isEmpty()) {
+            message = context.getString(R.string.cidaasverification_push_login_message);
+        }
+        loginPushVerifyWithAcceptDialog(
+                activity,
+                loginRequest,
+                exchangeId,
+                passCode,
+                title,
+                message,
+                loginRequest.getPushLoginAcceptButtonText(),
+                loginRequest.getPushLoginDialogThemeResId(),
+                callback);
+    }
+
+    public void loginPushVerifyWithAcceptDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String passCode,
+            @NonNull String dialogTitle,
+            @NonNull String dialogMessage,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        loginPushVerifyWithAcceptDialog(
+                activity,
+                loginRequest,
+                exchangeId,
+                passCode,
+                dialogTitle,
+                dialogMessage,
+                loginRequest.getPushLoginAcceptButtonText(),
+                loginRequest.getPushLoginDialogThemeResId(),
+                callback);
+    }
+
+    public void loginPushVerifyWithAcceptDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String passCode,
+            @NonNull String dialogTitle,
+            @NonNull String dialogMessage,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        loginPushVerifyWithAcceptDialog(
+                activity,
+                loginRequest,
+                exchangeId,
+                passCode,
+                dialogTitle,
+                dialogMessage,
+                loginRequest.getPushLoginAcceptButtonText(),
+                dialogThemeResId,
+                callback);
+    }
+
+    /**
+     * @param acceptButtonText when null or blank, {@code Accept} is used in the dialog
+     */
+    public void loginPushVerifyWithAcceptDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String passCode,
+            @NonNull String dialogTitle,
+            @NonNull String dialogMessage,
+            @Nullable String acceptButtonText,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        PushLoginController.getShared(context).verifyWithAcceptDialogAfterPush(
+                activity,
+                exchangeId,
+                passCode,
+                dialogTitle,
+                dialogMessage,
+                acceptButtonText,
+                dialogThemeResId,
+                callback);
+    }
+
+    /**
+     * Push login step 3: POST {@code /login-srv/verification/login} and exchange code for tokens.
+     * Prefer {@code cidaas.verifications().login().push(loginRequest, callback)} from the main SDK module.
+     */
+    public void loginPushContinueLogin(
+            @NonNull LoginRequest loginRequest,
+            @NonNull AuthenticateResponse authenticateResponse,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        loginOtpContinueLogin(loginRequest, AuthenticationType.SMARTPUSH, authenticateResponse, callback);
+    }
+
+    /**
+     * One-shot push login: initiate → push acknowledge / allow → accept-only modal → login continue to tokens.
+     * Uses {@link de.cidaas.sdk.android.cidaasverification.data.entity.initiate.InitiateResponseDataEntity#getPush_selected_number()}
+     * from the initiate response as {@code pass_code}; set {@link LoginRequest#setPushLoginHostActivity} when
+     * {@code Cidaas} was not created with a {@link FragmentActivity}.
+     */
+    public void loginPushOneShot(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        final String methodName = "CidaasVerification.loginPushOneShot()";
+        FragmentActivity activity = loginRequest.getPushLoginHostActivity();
+        if (activity == null && context instanceof FragmentActivity) {
+            activity = (FragmentActivity) context;
+        }
+        if (activity == null) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Push login requires a FragmentActivity: call loginRequest.setPushLoginHostActivity(activity), "
+                            + "or initialize Cidaas with a FragmentActivity context.",
+                    methodName));
+            return;
+        }
+        final FragmentActivity hostActivity = activity;
+        loginPushInitiate(loginRequest, new EventResult<InitiateResponse>() {
+            @Override
+            public void success(InitiateResponse initiateResponse) {
+                try {
+                    if (initiateResponse == null || initiateResponse.getData() == null
+                            || initiateResponse.getData().getExchange_id() == null) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "Initiate response missing data or exchange_id", methodName));
+                        return;
+                    }
+                    String exchangeId = initiateResponse.getData().getExchange_id().getExchange_id();
+                    if (exchangeId == null || exchangeId.isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "exchange_id missing from initiate response", methodName));
+                        return;
+                    }
+                    String pushNumber = initiateResponse.getData().getPush_selected_number();
+                    if (pushNumber == null || pushNumber.trim().isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "push_selected_number missing from initiate response (required for push login)",
+                                methodName));
+                        return;
+                    }
+                    String title = loginRequest.getPushLoginDialogTitle();
+                    if (title == null || title.trim().isEmpty()) {
+                        title = context.getString(R.string.cidaasverification_push_login_title);
+                    }
+                    String message = loginRequest.getPushLoginDialogMessage();
+                    if (message == null || message.trim().isEmpty()) {
+                        message = context.getString(R.string.cidaasverification_push_login_message);
+                    }
+                    PushLoginController.getShared(context).verifyWithAcceptDialogAfterPush(
+                            hostActivity,
+                            exchangeId,
+                            pushNumber.trim(),
+                            title,
+                            message,
+                            loginRequest.getPushLoginAcceptButtonText(),
+                            loginRequest.getPushLoginDialogThemeResId(),
+                            new EventResult<AuthenticateResponse>() {
+                                @Override
+                                public void success(AuthenticateResponse result) {
+                                    loginPushContinueLogin(loginRequest, result, callback);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    callback.failure(error);
+                                }
+                            });
+                } catch (Exception e) {
+                    callback.failure(WebAuthError.getShared(context).methodException(
+                            methodName,
+                            WebAuthErrorCode.PASSWORDLESS_LOGIN_FAILURE,
+                            e.getMessage()));
+                }
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                callback.failure(error);
+            }
+        });
     }
 
     // Onlu For Native ... Can we

@@ -1,6 +1,8 @@
 package de.cidaas.sdk.android.cidaasverification.data.entity.enduser.loginrequest;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -37,7 +39,168 @@ public class LoginRequest implements Serializable {
 
     private String requestId = "";
 
+    /**
+     * Optional medium id for verification initiate (e.g. pattern login); copied to the initiate API body as
+     * {@code medium_id}. Not serialized on this entity.
+     */
+    @JsonIgnore
+    private transient String mediumId = "";
+
+    /**
+     * Host for the pattern-login modal when using {@code cidaas.verifications().login().pattern(loginRequest, callback)}.
+     * Not serialized. When null, the SDK uses the {@code Context} passed to {@code Cidaas.getInstance(...)} if it is a
+     * {@link FragmentActivity}.
+     */
+    @JsonIgnore
+    private transient FragmentActivity patternLoginHostActivity;
+
+    /** Optional dialog title for pattern login; not serialized. When null or blank, a default string resource is used. */
+    @JsonIgnore
+    private transient String patternLoginDialogTitle;
+
+    /** Optional dialog message; not serialized. */
+    @JsonIgnore
+    private transient String patternLoginDialogMessage;
+
+    /**
+     * Optional prefix for pattern encoding before hashing (e.g. {@code RED}); not serialized.
+     * When null, {@link de.cidaas.sdk.android.cidaasverification.view.pattern.PatternPasscodeFormatter} uses {@code RED}.
+     */
+    @JsonIgnore
+    private transient String patternLoginCodePrefix;
+
+    /** Optional {@code AlertDialog} theme resource id; not serialized. {@code 0} means default. */
+    @JsonIgnore
+    private transient int patternLoginDialogThemeResId;
+
     public LoginRequest() {
+    }
+
+    @Nullable
+    public FragmentActivity getPatternLoginHostActivity() {
+        return patternLoginHostActivity;
+    }
+
+    public void setPatternLoginHostActivity(@Nullable FragmentActivity patternLoginHostActivity) {
+        this.patternLoginHostActivity = patternLoginHostActivity;
+    }
+
+    @Nullable
+    public String getPatternLoginDialogTitle() {
+        return patternLoginDialogTitle;
+    }
+
+    public void setPatternLoginDialogTitle(@Nullable String patternLoginDialogTitle) {
+        this.patternLoginDialogTitle = patternLoginDialogTitle;
+    }
+
+    @Nullable
+    public String getPatternLoginDialogMessage() {
+        return patternLoginDialogMessage;
+    }
+
+    public void setPatternLoginDialogMessage(@Nullable String patternLoginDialogMessage) {
+        this.patternLoginDialogMessage = patternLoginDialogMessage;
+    }
+
+    @Nullable
+    public String getPatternLoginCodePrefix() {
+        return patternLoginCodePrefix;
+    }
+
+    public void setPatternLoginCodePrefix(@Nullable String patternLoginCodePrefix) {
+        this.patternLoginCodePrefix = patternLoginCodePrefix;
+    }
+
+    public int getPatternLoginDialogThemeResId() {
+        return patternLoginDialogThemeResId;
+    }
+
+    public void setPatternLoginDialogThemeResId(int patternLoginDialogThemeResId) {
+        this.patternLoginDialogThemeResId = patternLoginDialogThemeResId;
+    }
+
+    /**
+     * Host for biometric proof when using {@code cidaas.verifications().login().fingerprint(loginRequest, callback)}.
+     * Not serialized. When null, the SDK uses the {@code Cidaas} context if it is a {@link FragmentActivity}.
+     */
+    @JsonIgnore
+    private transient FragmentActivity fingerprintLoginHostActivity;
+
+    @Nullable
+    public FragmentActivity getFingerprintLoginHostActivity() {
+        return fingerprintLoginHostActivity;
+    }
+
+    public void setFingerprintLoginHostActivity(@Nullable FragmentActivity fingerprintLoginHostActivity) {
+        this.fingerprintLoginHostActivity = fingerprintLoginHostActivity;
+    }
+
+    /**
+     * Host for the push-login accept modal when using {@code cidaas.verifications().login().push(loginRequest, callback)}.
+     * Not serialized. When null, the SDK uses the {@code Cidaas} context if it is a {@link FragmentActivity}.
+     */
+    @JsonIgnore
+    private transient FragmentActivity pushLoginHostActivity;
+
+    /** Optional dialog title for push login; not serialized. When null or blank, a default string resource is used. */
+    @JsonIgnore
+    private transient String pushLoginDialogTitle;
+
+    /** Optional dialog message; not serialized. When null or blank, a default string resource is used. */
+    @JsonIgnore
+    private transient String pushLoginDialogMessage;
+
+    /** Optional accept button label; not serialized. When null or blank, {@code Accept} is used. */
+    @JsonIgnore
+    private transient String pushLoginAcceptButtonText;
+
+    /** Optional {@code AlertDialog} theme resource id for push login; not serialized. {@code 0} means default. */
+    @JsonIgnore
+    private transient int pushLoginDialogThemeResId;
+
+    @Nullable
+    public FragmentActivity getPushLoginHostActivity() {
+        return pushLoginHostActivity;
+    }
+
+    public void setPushLoginHostActivity(@Nullable FragmentActivity pushLoginHostActivity) {
+        this.pushLoginHostActivity = pushLoginHostActivity;
+    }
+
+    @Nullable
+    public String getPushLoginDialogTitle() {
+        return pushLoginDialogTitle;
+    }
+
+    public void setPushLoginDialogTitle(@Nullable String pushLoginDialogTitle) {
+        this.pushLoginDialogTitle = pushLoginDialogTitle;
+    }
+
+    @Nullable
+    public String getPushLoginDialogMessage() {
+        return pushLoginDialogMessage;
+    }
+
+    public void setPushLoginDialogMessage(@Nullable String pushLoginDialogMessage) {
+        this.pushLoginDialogMessage = pushLoginDialogMessage;
+    }
+
+    @Nullable
+    public String getPushLoginAcceptButtonText() {
+        return pushLoginAcceptButtonText;
+    }
+
+    public void setPushLoginAcceptButtonText(@Nullable String pushLoginAcceptButtonText) {
+        this.pushLoginAcceptButtonText = pushLoginAcceptButtonText;
+    }
+
+    public int getPushLoginDialogThemeResId() {
+        return pushLoginDialogThemeResId;
+    }
+
+    public void setPushLoginDialogThemeResId(int pushLoginDialogThemeResId) {
+        this.pushLoginDialogThemeResId = pushLoginDialogThemeResId;
     }
 
     public String getRequestId() {
@@ -120,6 +283,18 @@ public class LoginRequest implements Serializable {
 
     public void setTrackId(String trackId) {
         this.trackId = trackId;
+    }
+
+    @Nullable
+    public String getMediumId() {
+        return mediumId;
+    }
+
+    /**
+     * Sets the medium id sent on authenticate initiate (e.g. pattern). Use the id from the configured-methods list.
+     */
+    public void setMediumId(@Nullable String mediumId) {
+        this.mediumId = mediumId;
     }
 
     // --- Static factories (passwordless / MFA login) — use identifier, not separate "sub" ---

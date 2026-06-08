@@ -2,6 +2,7 @@ package de.cidaas.sdk.android.cidaasverification.data.entity.authenticate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.File;
 import java.io.Serializable;
@@ -19,7 +20,11 @@ public class AuthenticateEntity implements Serializable {
     private String pass_code = "";
     private String verificationType = "";
 
-
+    /**
+     * Biometric proof JWT for touchid / fingerprint authenticate (same format as enrollment {@code attestation}).
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private String attestation = "";
 
     private String sub = "";
 
@@ -133,6 +138,14 @@ public class AuthenticateEntity implements Serializable {
 
     public void setPass_code(String pass_code) {
         this.pass_code = pass_code;
+    }
+
+    public String getAttestation() {
+        return attestation;
+    }
+
+    public void setAttestation(String attestation) {
+        this.attestation = attestation;
     }
 
     public int getFace_attempt() {
