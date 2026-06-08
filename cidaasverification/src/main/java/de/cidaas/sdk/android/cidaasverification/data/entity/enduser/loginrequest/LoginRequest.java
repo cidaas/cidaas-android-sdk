@@ -120,6 +120,22 @@ public class LoginRequest implements Serializable {
         this.patternLoginDialogThemeResId = patternLoginDialogThemeResId;
     }
 
+    /**
+     * Host for biometric proof when using {@code cidaas.verifications().login().fingerprint(loginRequest, callback)}.
+     * Not serialized. When null, the SDK uses the {@code Cidaas} context if it is a {@link FragmentActivity}.
+     */
+    @JsonIgnore
+    private transient FragmentActivity fingerprintLoginHostActivity;
+
+    @Nullable
+    public FragmentActivity getFingerprintLoginHostActivity() {
+        return fingerprintLoginHostActivity;
+    }
+
+    public void setFingerprintLoginHostActivity(@Nullable FragmentActivity fingerprintLoginHostActivity) {
+        this.fingerprintLoginHostActivity = fingerprintLoginHostActivity;
+    }
+
     public String getRequestId() {
         return requestId;
     }

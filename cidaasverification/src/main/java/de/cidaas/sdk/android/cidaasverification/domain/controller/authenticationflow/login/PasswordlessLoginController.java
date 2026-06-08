@@ -130,10 +130,28 @@ public class PasswordlessLoginController {
                     break;
 
                 case AuthenticationType.FINGERPRINT:
-                    authenticateEntity = new AuthenticateEntity(
-                            initiateResult.getData().getExchange_id().getExchange_id(), verificationType,
-                            loginRequest.getFingerPrintEntity());
-                    break;
+                    if (loginRequest.getFingerPrintEntity() == null) {
+                        loginCredentialsResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "fingerPrintEntity must not be null for fingerprint verification", methodName));
+                        return;
+                    }
+                    final String fpInitExchange = initiateResult.getData().getExchange_id().getExchange_id();
+                    AuthenticatePushAcknowledgeAllowHelper.run(context, verificationType, fpInitExchange,
+                            new EventResult<String>() {
+                                @Override
+                                public void success(String finalExchangeId) {
+                                    AuthenticateEntity authenticateEntity = new AuthenticateEntity(
+                                            finalExchangeId, verificationType, loginRequest.getFingerPrintEntity());
+                                    authenticateVerification(authenticateEntity, verificationType, requestId, loginRequest,
+                                            loginCredentialsResult);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    loginCredentialsResult.failure(error);
+                                }
+                            });
+                    return;
 
                 case AuthenticationType.SMARTPUSH:
                     authenticateEntity = new AuthenticateEntity(

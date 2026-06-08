@@ -90,8 +90,11 @@ public class AuthenticateController {
             switch (authenticateEntity.getVerificationType()) {
 
                 case AuthenticationType.FINGERPRINT: {
-                    //FingerPrint
-                    callFingerPrintAuthentication(authenticateEntity, authenticateResult);
+                    if (authenticateEntity.getAttestation() != null && !authenticateEntity.getAttestation().isEmpty()) {
+                        addProperties(authenticateEntity, authenticateResult);
+                    } else {
+                        callFingerPrintAuthentication(authenticateEntity, authenticateResult);
+                    }
                     break;
                 }
                 case AuthenticationType.FACE: {

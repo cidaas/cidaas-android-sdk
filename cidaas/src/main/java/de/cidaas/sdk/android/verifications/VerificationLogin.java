@@ -54,6 +54,30 @@ public final class VerificationLogin {
     }
 
     /**
+     * Fingerprint (touchid) login in one call: initiate → push acknowledge / allow → biometric {@code attestation} JWT
+     * → login continue to tokens.
+     * When {@code Cidaas} was not created with a {@code androidx.fragment.app.FragmentActivity}, call
+     * {@code ((LoginRequest) loginRequest).setFingerprintLoginHostActivity(activity)} first.
+     */
+    public void fingerprint(@NonNull Object loginRequest, @NonNull EventResult<?> callback) {
+        if (loginRequest == null) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "loginRequest must not be null", "VerificationLogin.fingerprint"));
+            return;
+        }
+        invokeLoginFingerprintOneShot(loginRequest, callback);
+    }
+
+    /**
+     * @deprecated Use {@link #fingerprint(Object, EventResult)} for the one-shot flow to tokens.
+     */
+    @Deprecated
+    @NonNull
+    public VerificationLoginFingerprint fingerprint() {
+        return new VerificationLoginFingerprint(context);
+    }
+
+    /**
      * @deprecated Use {@link #pattern(Object, EventResult)} — {@code cidaas.verifications().login().pattern(loginRequest, callback)}.
      * This no-arg overload exposes legacy multi-step control only.
      */
@@ -80,6 +104,27 @@ public final class VerificationLogin {
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw new IllegalStateException("verifications().login().pattern(loginRequest, callback) delegation failed.", cause);
+        }
+    }
+
+    private void invokeLoginFingerprintOneShot(@NonNull Object loginRequest, @NonNull EventResult<?> callback) {
+        try {
+            Class<?> loginRequestClass =
+                    Class.forName(
+                            "de.cidaas.sdk.android.cidaasverification.data.entity.enduser.loginrequest.LoginRequest");
+            Class<?> clazz = Class.forName(CIDAAS_VERIFICATION);
+            Object inst = clazz.getMethod("getInstance", Context.class).invoke(null, context);
+            Method m = clazz.getMethod("loginFingerprintOneShot", loginRequestClass, EventResult.class);
+            m.invoke(inst, loginRequest, callback);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(
+                    "cidaasverification is required for verifications().login().fingerprint(loginRequest, callback). Add "
+                            + "project(':cidaasverification') (or your published cidaasverification artifact) to the consuming module.",
+                    e);
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException(
+                    "verifications().login().fingerprint(loginRequest, callback) delegation failed.", cause);
         }
     }
 }

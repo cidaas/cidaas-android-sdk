@@ -46,6 +46,7 @@ import de.cidaas.sdk.android.cidaasverification.data.entity.setup.SetupResponse;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticatehistory.AuthenticatedHistoryController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.authenticate.AuthenticateController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.initiate.InitiateController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.FingerprintLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PatternLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PasswordlessLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushacknowledge.PushAcknowledgeController;
@@ -660,6 +661,103 @@ public class CidaasVerification {
             @NonNull AuthenticateResponse authenticateResponse,
             @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
         loginOtpContinueLogin(loginRequest, AuthenticationType.PATTERN, authenticateResponse, callback);
+    }
+
+    /**
+     * Fingerprint login step 1: v2 authenticate initiate for {@code touchid}
+     * ({@code /verification-srv/v2/authenticate/initiate/touchid}).
+     */
+    public void loginFingerprintInitiate(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<InitiateResponse> callback) {
+        loginOtpInitiate(loginRequest, AuthenticationType.FINGERPRINT, callback);
+    }
+
+    /**
+     * Fingerprint login step 2: {@code push_acknowledge/touchid} → {@code allow/touchid}, then biometric proof JWT as
+     * {@code attestation} on {@code authenticate/touchid} (authenticate only).
+     */
+    public void loginFingerprintVerifyWithBiometricAttestation(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        FingerprintLoginController.getShared(context).authenticateWithBiometricAttestationAfterPush(
+                activity, exchangeId, callback);
+    }
+
+    /**
+     * Fingerprint login step 3: POST {@code /login-srv/verification/login} and exchange code for tokens.
+     */
+    public void loginFingerprintContinueLogin(
+            @NonNull LoginRequest loginRequest,
+            @NonNull AuthenticateResponse authenticateResponse,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        loginOtpContinueLogin(loginRequest, AuthenticationType.FINGERPRINT, authenticateResponse, callback);
+    }
+
+    /**
+     * One-shot fingerprint login: initiate → push acknowledge / allow → biometric attestation → login continue.
+     */
+    public void loginFingerprintOneShot(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        final String methodName = "CidaasVerification.loginFingerprintOneShot()";
+        FragmentActivity activity = loginRequest.getFingerprintLoginHostActivity();
+        if (activity == null && context instanceof FragmentActivity) {
+            activity = (FragmentActivity) context;
+        }
+        if (activity == null) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Fingerprint login requires a FragmentActivity: call loginRequest.setFingerprintLoginHostActivity(activity), "
+                            + "or initialize Cidaas with a FragmentActivity context.",
+                    methodName));
+            return;
+        }
+        final FragmentActivity hostActivity = activity;
+        loginFingerprintInitiate(loginRequest, new EventResult<InitiateResponse>() {
+            @Override
+            public void success(InitiateResponse initiateResponse) {
+                try {
+                    if (initiateResponse == null || initiateResponse.getData() == null
+                            || initiateResponse.getData().getExchange_id() == null) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "Initiate response missing data or exchange_id", methodName));
+                        return;
+                    }
+                    String exchangeId = initiateResponse.getData().getExchange_id().getExchange_id();
+                    if (exchangeId == null || exchangeId.isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "exchange_id missing from initiate response", methodName));
+                        return;
+                    }
+                    FingerprintLoginController.getShared(context).authenticateWithBiometricAttestationAfterPush(
+                            hostActivity,
+                            exchangeId,
+                            new EventResult<AuthenticateResponse>() {
+                                @Override
+                                public void success(AuthenticateResponse result) {
+                                    loginFingerprintContinueLogin(loginRequest, result, callback);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    callback.failure(error);
+                                }
+                            });
+                } catch (Exception e) {
+                    callback.failure(WebAuthError.getShared(context).methodException(
+                            methodName,
+                            WebAuthErrorCode.PASSWORDLESS_LOGIN_FAILURE,
+                            e.getMessage()));
+                }
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                callback.failure(error);
+            }
+        });
     }
 
     /**

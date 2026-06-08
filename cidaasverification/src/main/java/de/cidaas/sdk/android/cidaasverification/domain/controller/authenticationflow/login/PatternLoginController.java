@@ -31,12 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import de.cidaas.sdk.android.cidaasverification.R;
 import de.cidaas.sdk.android.cidaasverification.data.entity.authenticate.AuthenticateEntity;
 import de.cidaas.sdk.android.cidaasverification.data.entity.authenticate.AuthenticateResponse;
-import de.cidaas.sdk.android.cidaasverification.data.entity.push.pushacknowledge.PushAcknowledgeEntity;
-import de.cidaas.sdk.android.cidaasverification.data.entity.push.pushacknowledge.PushAcknowledgeResponse;
-import de.cidaas.sdk.android.cidaasverification.data.entity.push.pushallow.PushAllowEntity;
-import de.cidaas.sdk.android.cidaasverification.data.entity.push.pushallow.PushAllowResponse;
-import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushacknowledge.PushAcknowledgeController;
-import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushallow.PushAllowController;
 import de.cidaas.sdk.android.cidaasverification.util.Sha256Hex;
 import de.cidaas.sdk.android.cidaasverification.util.VerificationConstants;
 import de.cidaas.sdk.android.cidaasverification.view.pattern.PatternLockView;
@@ -74,52 +68,8 @@ public final class PatternLoginController {
     public void runPushAcknowledgeAllowForPattern(
             @NonNull final String initiateExchangeId,
             @NonNull final EventResult<String> onFinalExchangeId) {
-        final String methodName = "PatternLoginController:runPushAcknowledgeAllowForPattern()";
-        final String vt = AuthenticationType.PATTERN;
-        if (initiateExchangeId.trim().isEmpty()) {
-            onFinalExchangeId.failure(WebAuthError.getShared(context).propertyMissingException(
-                    "exchangeId must not be null or empty", VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
-            return;
-        }
-        PushAcknowledgeEntity ackEntity = new PushAcknowledgeEntity(initiateExchangeId, vt);
-        PushAcknowledgeController.getShared(context).pushAcknowledgeVerification(ackEntity,
-                new EventResult<PushAcknowledgeResponse>() {
-                    @Override
-                    public void success(PushAcknowledgeResponse ackResponse) {
-                        String afterAck = exchangeIdAfterPushAcknowledge(ackResponse, initiateExchangeId);
-                        if (afterAck == null || afterAck.isEmpty()) {
-                            onFinalExchangeId.failure(WebAuthError.getShared(context).propertyMissingException(
-                                    "push_acknowledge/pattern response missing usable exchange_id",
-                                    VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
-                            return;
-                        }
-                        PushAllowEntity allowEntity = new PushAllowEntity(afterAck, vt);
-                        PushAllowController.getShared(context).pushAllowVerification(allowEntity,
-                                new EventResult<PushAllowResponse>() {
-                                    @Override
-                                    public void success(PushAllowResponse allowResponse) {
-                                        String afterAllow = exchangeIdAfterPushAllow(allowResponse, afterAck);
-                                        if (afterAllow == null || afterAllow.isEmpty()) {
-                                            onFinalExchangeId.failure(WebAuthError.getShared(context).propertyMissingException(
-                                                    "push_allow/pattern response missing usable exchange_id",
-                                                    VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
-                                            return;
-                                        }
-                                        onFinalExchangeId.success(afterAllow);
-                                    }
-
-                                    @Override
-                                    public void failure(WebAuthError error) {
-                                        onFinalExchangeId.failure(error);
-                                    }
-                                });
-                    }
-
-                    @Override
-                    public void failure(WebAuthError error) {
-                        onFinalExchangeId.failure(error);
-                    }
-                });
+        AuthenticatePushAcknowledgeAllowHelper.run(
+                context, AuthenticationType.PATTERN, initiateExchangeId, onFinalExchangeId);
     }
 
     /**
@@ -286,36 +236,6 @@ public final class PatternLoginController {
                 window.setAttributes(lp);
             }
         });
-    }
-
-    @Nullable
-    private static String exchangeIdAfterPushAcknowledge(
-            @Nullable PushAcknowledgeResponse response,
-            @NonNull String fallbackExchangeId) {
-        if (response == null || response.getData() == null || response.getData().getExchange_id() == null) {
-            return nonEmptyOrNull(fallbackExchangeId);
-        }
-        String id = response.getData().getExchange_id().getExchange_id();
-        return id != null && !id.isEmpty() ? id : nonEmptyOrNull(fallbackExchangeId);
-    }
-
-    @Nullable
-    private static String exchangeIdAfterPushAllow(
-            @Nullable PushAllowResponse response,
-            @NonNull String fallbackExchangeId) {
-        if (response == null || response.getData() == null || response.getData().getExchange_id() == null) {
-            return nonEmptyOrNull(fallbackExchangeId);
-        }
-        String id = response.getData().getExchange_id().getExchange_id();
-        return id != null && !id.isEmpty() ? id : nonEmptyOrNull(fallbackExchangeId);
-    }
-
-    @Nullable
-    private static String nonEmptyOrNull(@Nullable String s) {
-        if (s == null || s.isEmpty()) {
-            return null;
-        }
-        return s;
     }
 
     private static void applyPatternModalCardTheming(@NonNull FragmentActivity activity, @NonNull View content) {
