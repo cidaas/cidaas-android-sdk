@@ -232,6 +232,7 @@ public class Cidaas {
      * {@code cidaas.verifications().login().otp().continueLogin(loginRequest, authenticateResponse, VerificationLoginOtp.AcceptMethod.SMS, cb);}
      * {@code cidaas.verifications().login().pattern(loginRequest, cb);}
      * {@code cidaas.verifications().login().fingerprint(loginRequest, cb);}
+     * {@code cidaas.verifications().login().push(loginRequest, cb);}
      * {@code cidaas.verifications().enrolment().push(activity, sub, dialogTitle, dialogMessage, R.style.MyPushDialog, callback);}
      * {@code cidaas.verifications().enrolment().pattern(activity, sub, dialogTitle, dialogMessage, R.style.MyPatternDialog, callback);}
      */

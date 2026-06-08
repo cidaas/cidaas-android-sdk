@@ -48,6 +48,7 @@ import de.cidaas.sdk.android.cidaasverification.domain.controller.authentication
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.initiate.InitiateController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.FingerprintLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PatternLoginController;
+import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PushLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.login.PasswordlessLoginController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushacknowledge.PushAcknowledgeController;
 import de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.push.pushallow.PushAllowController;
@@ -819,6 +820,210 @@ public class CidaasVerification {
                                 @Override
                                 public void success(AuthenticateResponse result) {
                                     loginPatternContinueLogin(loginRequest, result, callback);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    callback.failure(error);
+                                }
+                            });
+                } catch (Exception e) {
+                    callback.failure(WebAuthError.getShared(context).methodException(
+                            methodName,
+                            WebAuthErrorCode.PASSWORDLESS_LOGIN_FAILURE,
+                            e.getMessage()));
+                }
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                callback.failure(error);
+            }
+        });
+    }
+
+    /**
+     * Push login step 1: v2 authenticate initiate for {@code push}
+     * ({@code /verification-srv/v2/authenticate/initiate/push}). Response data may include
+     * {@code push_selected_number} for use as {@code pass_code} on authenticate.
+     */
+    public void loginPushInitiate(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<InitiateResponse> callback) {
+        loginOtpInitiate(loginRequest, AuthenticationType.SMARTPUSH, callback);
+    }
+
+    /**
+     * Push login step 2: {@code push_acknowledge/push} → {@code allow/push}, then accept-only card modal; on accept
+     * POSTs {@code authenticate/push} with {@code passCode} (typically {@code push_selected_number} from initiate).
+     */
+    public void loginPushVerifyWithAcceptDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String passCode,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        String title = loginRequest.getPushLoginDialogTitle();
+        if (title == null || title.trim().isEmpty()) {
+            title = context.getString(R.string.cidaasverification_push_login_title);
+        }
+        String message = loginRequest.getPushLoginDialogMessage();
+        if (message == null || message.trim().isEmpty()) {
+            message = context.getString(R.string.cidaasverification_push_login_message);
+        }
+        loginPushVerifyWithAcceptDialog(
+                activity,
+                loginRequest,
+                exchangeId,
+                passCode,
+                title,
+                message,
+                loginRequest.getPushLoginAcceptButtonText(),
+                loginRequest.getPushLoginDialogThemeResId(),
+                callback);
+    }
+
+    public void loginPushVerifyWithAcceptDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String passCode,
+            @NonNull String dialogTitle,
+            @NonNull String dialogMessage,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        loginPushVerifyWithAcceptDialog(
+                activity,
+                loginRequest,
+                exchangeId,
+                passCode,
+                dialogTitle,
+                dialogMessage,
+                loginRequest.getPushLoginAcceptButtonText(),
+                loginRequest.getPushLoginDialogThemeResId(),
+                callback);
+    }
+
+    public void loginPushVerifyWithAcceptDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String passCode,
+            @NonNull String dialogTitle,
+            @NonNull String dialogMessage,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        loginPushVerifyWithAcceptDialog(
+                activity,
+                loginRequest,
+                exchangeId,
+                passCode,
+                dialogTitle,
+                dialogMessage,
+                loginRequest.getPushLoginAcceptButtonText(),
+                dialogThemeResId,
+                callback);
+    }
+
+    /**
+     * @param acceptButtonText when null or blank, {@code Accept} is used in the dialog
+     */
+    public void loginPushVerifyWithAcceptDialog(
+            @NonNull FragmentActivity activity,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull String passCode,
+            @NonNull String dialogTitle,
+            @NonNull String dialogMessage,
+            @Nullable String acceptButtonText,
+            @StyleRes int dialogThemeResId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        PushLoginController.getShared(context).verifyWithAcceptDialogAfterPush(
+                activity,
+                exchangeId,
+                passCode,
+                dialogTitle,
+                dialogMessage,
+                acceptButtonText,
+                dialogThemeResId,
+                callback);
+    }
+
+    /**
+     * Push login step 3: POST {@code /login-srv/verification/login} and exchange code for tokens.
+     * Prefer {@code cidaas.verifications().login().push(loginRequest, callback)} from the main SDK module.
+     */
+    public void loginPushContinueLogin(
+            @NonNull LoginRequest loginRequest,
+            @NonNull AuthenticateResponse authenticateResponse,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        loginOtpContinueLogin(loginRequest, AuthenticationType.SMARTPUSH, authenticateResponse, callback);
+    }
+
+    /**
+     * One-shot push login: initiate → push acknowledge / allow → accept-only modal → login continue to tokens.
+     * Uses {@link de.cidaas.sdk.android.cidaasverification.data.entity.initiate.InitiateResponseDataEntity#getPush_selected_number()}
+     * from the initiate response as {@code pass_code}; set {@link LoginRequest#setPushLoginHostActivity} when
+     * {@code Cidaas} was not created with a {@link FragmentActivity}.
+     */
+    public void loginPushOneShot(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<LoginCredentialsResponseEntity> callback) {
+        final String methodName = "CidaasVerification.loginPushOneShot()";
+        FragmentActivity activity = loginRequest.getPushLoginHostActivity();
+        if (activity == null && context instanceof FragmentActivity) {
+            activity = (FragmentActivity) context;
+        }
+        if (activity == null) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "Push login requires a FragmentActivity: call loginRequest.setPushLoginHostActivity(activity), "
+                            + "or initialize Cidaas with a FragmentActivity context.",
+                    methodName));
+            return;
+        }
+        final FragmentActivity hostActivity = activity;
+        loginPushInitiate(loginRequest, new EventResult<InitiateResponse>() {
+            @Override
+            public void success(InitiateResponse initiateResponse) {
+                try {
+                    if (initiateResponse == null || initiateResponse.getData() == null
+                            || initiateResponse.getData().getExchange_id() == null) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "Initiate response missing data or exchange_id", methodName));
+                        return;
+                    }
+                    String exchangeId = initiateResponse.getData().getExchange_id().getExchange_id();
+                    if (exchangeId == null || exchangeId.isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "exchange_id missing from initiate response", methodName));
+                        return;
+                    }
+                    String pushNumber = initiateResponse.getData().getPush_selected_number();
+                    if (pushNumber == null || pushNumber.trim().isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "push_selected_number missing from initiate response (required for push login)",
+                                methodName));
+                        return;
+                    }
+                    String title = loginRequest.getPushLoginDialogTitle();
+                    if (title == null || title.trim().isEmpty()) {
+                        title = context.getString(R.string.cidaasverification_push_login_title);
+                    }
+                    String message = loginRequest.getPushLoginDialogMessage();
+                    if (message == null || message.trim().isEmpty()) {
+                        message = context.getString(R.string.cidaasverification_push_login_message);
+                    }
+                    PushLoginController.getShared(context).verifyWithAcceptDialogAfterPush(
+                            hostActivity,
+                            exchangeId,
+                            pushNumber.trim(),
+                            title,
+                            message,
+                            loginRequest.getPushLoginAcceptButtonText(),
+                            loginRequest.getPushLoginDialogThemeResId(),
+                            new EventResult<AuthenticateResponse>() {
+                                @Override
+                                public void success(AuthenticateResponse result) {
+                                    loginPushContinueLogin(loginRequest, result, callback);
                                 }
 
                                 @Override

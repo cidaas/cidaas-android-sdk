@@ -4,6 +4,8 @@
     <string name="cidaasverification_pattern_confirm">Confirm</string>
     <string name="cidaasverification_pattern_too_short">Connect at least 4 dots.</string>
     <string name="cidaasverification_pattern_login_title">Draw your pattern</string>
+    <string name="cidaasverification_push_login_title">Confirm sign-in</string>
+    <string name="cidaasverification_push_login_message">Tap Accept to approve this sign-in on this device.</string>
     <string name="cidaasverification_face_camera_denied">Camera permission is required to enroll face verification.</string>
     <string name="cidaasverification_face_capture_failed">Could not capture a photo. Please try again.</string>
     <string name="cidaasverification_face_capture_skipped">No photo was captured.</string>

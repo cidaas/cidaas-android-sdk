@@ -136,6 +136,73 @@ public class LoginRequest implements Serializable {
         this.fingerprintLoginHostActivity = fingerprintLoginHostActivity;
     }
 
+    /**
+     * Host for the push-login accept modal when using {@code cidaas.verifications().login().push(loginRequest, callback)}.
+     * Not serialized. When null, the SDK uses the {@code Cidaas} context if it is a {@link FragmentActivity}.
+     */
+    @JsonIgnore
+    private transient FragmentActivity pushLoginHostActivity;
+
+    /** Optional dialog title for push login; not serialized. When null or blank, a default string resource is used. */
+    @JsonIgnore
+    private transient String pushLoginDialogTitle;
+
+    /** Optional dialog message; not serialized. When null or blank, a default string resource is used. */
+    @JsonIgnore
+    private transient String pushLoginDialogMessage;
+
+    /** Optional accept button label; not serialized. When null or blank, {@code Accept} is used. */
+    @JsonIgnore
+    private transient String pushLoginAcceptButtonText;
+
+    /** Optional {@code AlertDialog} theme resource id for push login; not serialized. {@code 0} means default. */
+    @JsonIgnore
+    private transient int pushLoginDialogThemeResId;
+
+    @Nullable
+    public FragmentActivity getPushLoginHostActivity() {
+        return pushLoginHostActivity;
+    }
+
+    public void setPushLoginHostActivity(@Nullable FragmentActivity pushLoginHostActivity) {
+        this.pushLoginHostActivity = pushLoginHostActivity;
+    }
+
+    @Nullable
+    public String getPushLoginDialogTitle() {
+        return pushLoginDialogTitle;
+    }
+
+    public void setPushLoginDialogTitle(@Nullable String pushLoginDialogTitle) {
+        this.pushLoginDialogTitle = pushLoginDialogTitle;
+    }
+
+    @Nullable
+    public String getPushLoginDialogMessage() {
+        return pushLoginDialogMessage;
+    }
+
+    public void setPushLoginDialogMessage(@Nullable String pushLoginDialogMessage) {
+        this.pushLoginDialogMessage = pushLoginDialogMessage;
+    }
+
+    @Nullable
+    public String getPushLoginAcceptButtonText() {
+        return pushLoginAcceptButtonText;
+    }
+
+    public void setPushLoginAcceptButtonText(@Nullable String pushLoginAcceptButtonText) {
+        this.pushLoginAcceptButtonText = pushLoginAcceptButtonText;
+    }
+
+    public int getPushLoginDialogThemeResId() {
+        return pushLoginDialogThemeResId;
+    }
+
+    public void setPushLoginDialogThemeResId(int pushLoginDialogThemeResId) {
+        this.pushLoginDialogThemeResId = pushLoginDialogThemeResId;
+    }
+
     public String getRequestId() {
         return requestId;
     }

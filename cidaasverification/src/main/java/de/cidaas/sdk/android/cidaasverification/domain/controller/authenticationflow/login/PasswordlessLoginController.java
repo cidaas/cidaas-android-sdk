@@ -154,10 +154,28 @@ public class PasswordlessLoginController {
                     return;
 
                 case AuthenticationType.SMARTPUSH:
-                    authenticateEntity = new AuthenticateEntity(
-                            initiateResult.getData().getExchange_id().getExchange_id(), loginRequest.getPass_code(),
-                            verificationType);
-                    break;
+                    if (loginRequest.getPass_code() == null || loginRequest.getPass_code().equals("")) {
+                        loginCredentialsResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "pass_code must not be null or empty for push verification", methodName));
+                        return;
+                    }
+                    final String pushInitExchange = initiateResult.getData().getExchange_id().getExchange_id();
+                    AuthenticatePushAcknowledgeAllowHelper.run(context, verificationType, pushInitExchange,
+                            new EventResult<String>() {
+                                @Override
+                                public void success(String finalExchangeId) {
+                                    AuthenticateEntity authenticateEntity = new AuthenticateEntity(
+                                            finalExchangeId, loginRequest.getPass_code(), verificationType);
+                                    authenticateVerification(authenticateEntity, verificationType, requestId, loginRequest,
+                                            loginCredentialsResult);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    loginCredentialsResult.failure(error);
+                                }
+                            });
+                    return;
 
                 case AuthenticationType.SMS:
                 case AuthenticationType.EMAIL:
