@@ -10,6 +10,7 @@ import java.util.Dictionary;
 import java.util.HashMap;
 
 import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListResponseEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.publicconfiguredlist.PublicConfiguredListResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.userconfiguredverification.UserConfiguredVerificationsListResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.verificationconfig.VerificationConfigsResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.accountverification.AccountVerificationListResponseEntity;
@@ -40,6 +41,7 @@ import de.cidaas.sdk.android.cidaasnative.domain.controller.accountverification.
 import de.cidaas.sdk.android.cidaasnative.domain.controller.changepassword.ChangePasswordController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.client.ClientController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.deviceconfiguredverifications.DeviceConfiguredVerificationsListController;
+import de.cidaas.sdk.android.cidaasnative.domain.controller.publicconfiguredverifications.PublicConfiguredVerificationsListController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.deduplication.DeduplicationController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.login.NativeLoginController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.progressiveregistration.ProgressiveRegistrationController;
@@ -395,6 +397,17 @@ public class CidaasNative {
             final EventResult<DeviceConfiguredVerificationsListResponseEntity> result) {
         DeviceConfiguredVerificationsListController.getShared(context).getDeviceConfiguredVerificationsList(sub,
                 result);
+    }
+
+    /**
+     * Public configured verification methods for a login/setup track (POST
+     * {@code /verification-srv/v2/setup/public/configured/list}). JSON body: {@code request_id}, {@code identifier},
+     * {@code push_id} (FCM token from storage), and {@code client_id}; no access token header.
+     */
+    public void getPublicConfiguredVerificationsList(@NonNull final String requestId, @NonNull final String identifier,
+            final EventResult<PublicConfiguredListResponseEntity> result) {
+        PublicConfiguredVerificationsListController.getShared(context).getPublicConfiguredVerificationsList(requestId,
+                identifier, result);
     }
 
     // ----------------------------------DEDEUPLICATION------------------------------------------------------------------------------------------------------

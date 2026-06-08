@@ -207,6 +207,8 @@ public final class WebAuthErrorCode {
 
     public static final int DEVICE_CONFIGURED_VERIFICATIONS_LIST_FAILURE = 10140;
 
+    public static final int PUBLIC_CONFIGURED_VERIFICATIONS_LIST_FAILURE = 10141;
+
     private WebAuthErrorCode() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }

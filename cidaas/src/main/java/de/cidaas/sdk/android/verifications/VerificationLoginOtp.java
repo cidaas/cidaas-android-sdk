@@ -26,7 +26,8 @@ import de.cidaas.sdk.android.helper.extension.WebAuthError;
  * </ol>
  *
  * <p>Step 1 requires a {@code de.cidaas.sdk.android.cidaasverification.data.entity.enduser.loginrequest.LoginRequest}
- * with {@code identifier}, {@code requestId}, and {@code usageType} set; for MFA also set {@code trackId}.</p>
+ * with {@code identifier}, {@code requestId}, and {@code usageType} set; for MFA also set {@code trackId}.
+ * Optional {@code setMediumId} is sent as {@code medium_id} on initiate when set.</p>
  * <p>On {@link #initiate} success, the callback receives
  * {@code de.cidaas.sdk.android.cidaasverification.data.entity.initiate.InitiateResponse}
  * (use {@code data.exchange_id.exchange_id} for step 2; {@code data.status_id} and {@code data.sub} are the

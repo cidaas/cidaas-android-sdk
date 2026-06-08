@@ -32,4 +32,7 @@ public final class NativeConstants {
             "UserConfiguredVerificationsListService :getUserConfiguredVerificationsList()";
     public static final String METHOD_DEVICE_CONFIGURED_VERIFICATIONS_LIST =
             "DeviceConfiguredVerificationsListService :postDeviceConfiguredVerificationsList()";
+
+    public static final String METHOD_PUBLIC_CONFIGURED_VERIFICATIONS_LIST =
+            "PublicConfiguredVerificationsListService :postPublicConfiguredVerificationsList()";
 }

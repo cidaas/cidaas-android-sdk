@@ -156,10 +156,29 @@ public class PasswordlessLoginController {
                     break;
 
                 case AuthenticationType.PATTERN:
-                    authenticateEntity = new AuthenticateEntity(
-                            initiateResult.getData().getExchange_id().getExchange_id(),
-                            loginRequest.getPass_code(), verificationType);
-                    break;
+                    if (loginRequest.getPass_code() == null || loginRequest.getPass_code().equals("")) {
+                        loginCredentialsResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "pass_code must not be null or empty for pattern verification", methodName));
+                        return;
+                    }
+                    final String patternInitExchange = initiateResult.getData().getExchange_id().getExchange_id();
+                    PatternLoginController.getShared(context).runPushAcknowledgeAllowForPattern(
+                            patternInitExchange,
+                            new EventResult<String>() {
+                                @Override
+                                public void success(String finalExchangeId) {
+                                    AuthenticateEntity authenticateEntity = new AuthenticateEntity(
+                                            finalExchangeId, loginRequest.getPass_code(), verificationType);
+                                    authenticateVerification(authenticateEntity, verificationType, requestId, loginRequest,
+                                            loginCredentialsResult);
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    loginCredentialsResult.failure(error);
+                                }
+                            });
+                    return;
 
                 case AuthenticationType.TOTP:
                     String totpCode;

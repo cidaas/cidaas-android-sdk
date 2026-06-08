@@ -26,6 +26,7 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * cidaas.verifications().login().otp().initiate(loginRequest, VerificationLoginOtp.AcceptMethod.SMS, initiateCb);
  * cidaas.verifications().login().otp().verify(otp, loginRequest, exchangeId, VerificationLoginOtp.AcceptMethod.SMS, verifyCb);
  * cidaas.verifications().login().otp().continueLogin(loginRequest, authenticateResponse, VerificationLoginOtp.AcceptMethod.SMS, continueCb);
+ * cidaas.verifications().login().pattern(loginRequest, patternLoginCb); // tokens in callback.getData()
  * cidaas.verifications().enrolment().passkey(activity, sub, passkeyCb);
  * }</pre>
  *
@@ -40,7 +41,9 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * for {@code enrolment().otp().verify}, {@code EnrollResponse}.
  * For {@code login().otp().initiate}, {@code InitiateResponse}; for {@code login().otp().verify},
  * {@code AuthenticateResponse}; for {@code login().otp().continueLogin}, {@code LoginCredentialsResponseEntity}
- * (tokens in {@code getData()}).</p>
+ * (tokens in {@code getData()}).
+ * For {@code login().pattern(loginRequest, callback)}, on success {@code LoginCredentialsResponseEntity} (tokens in
+ * {@code getData()}). Optional {@code LoginRequest#setMediumId} is included on the internal initiate call when set.</p>
  */
 public final class Verifications {
 

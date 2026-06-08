@@ -3,6 +3,7 @@ package de.cidaas.sdk.android.cidaasverification.data.entity.initiate;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
@@ -22,6 +23,13 @@ public class InitiateEntity implements Serializable {
     private String device_id = "";
     private String push_id = "";
     private String verificationType = "";
+
+    /**
+     * Optional medium id (e.g. from configured list) for initiate flows such as pattern login.
+     * Omitted from JSON when null or blank.
+     */
+    @JsonProperty("medium_id")
+    private String medium_id = "";
 
     public InitiateEntity(String identifier, String request_id, String usage_type, String verificationType) {
         this.identifier = identifier;
@@ -104,5 +112,14 @@ public class InitiateEntity implements Serializable {
 
     public void setPush_id(String push_id) {
         this.push_id = push_id;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getMedium_id() {
+        return medium_id;
+    }
+
+    public void setMedium_id(String medium_id) {
+        this.medium_id = medium_id != null ? medium_id : "";
     }
 }

@@ -16,6 +16,7 @@ import java.util.Map;
 import de.cidaas.sdk.android.browser.WebAuth;
 import de.cidaas.sdk.android.device.Device;
 import de.cidaas.sdk.android.device.Devices;
+import de.cidaas.sdk.android.publicapi.CidaasPublic;
 import de.cidaas.sdk.android.users.Users;
 import de.cidaas.sdk.android.verifications.Verifications;
 import de.cidaas.sdk.android.controller.AccessTokenController;
@@ -229,6 +230,7 @@ public class Cidaas {
      * {@code cidaas.verifications().login().otp().initiate(loginRequest, VerificationLoginOtp.AcceptMethod.SMS, cb);}
      * {@code cidaas.verifications().login().otp().verify(otp, loginRequest, exchangeId, VerificationLoginOtp.AcceptMethod.SMS, cb);}
      * {@code cidaas.verifications().login().otp().continueLogin(loginRequest, authenticateResponse, VerificationLoginOtp.AcceptMethod.SMS, cb);}
+     * {@code cidaas.verifications().login().pattern(loginRequest, cb);}
      * {@code cidaas.verifications().enrolment().push(activity, sub, dialogTitle, dialogMessage, R.style.MyPushDialog, callback);}
      * {@code cidaas.verifications().enrolment().pattern(activity, sub, dialogTitle, dialogMessage, R.style.MyPatternDialog, callback);}
      */
@@ -250,6 +252,18 @@ public class Cidaas {
     @NonNull
     public Devices devices() {
         return new Devices(this);
+    }
+
+    /**
+     * Public (unauthenticated) verification APIs. In Java use {@code getPublic()} because {@code public} is a
+     * reserved keyword. Example:
+     * {@code cidaas.getPublic().verifications().fetch(requestId, identifier, callback);}
+     * POST {@code /verification-srv/v2/setup/public/configured/list}; body includes {@code identifier} and
+     * {@code push_id} (FCM token from {@link #registerFCM(String)}).
+     */
+    @NonNull
+    public CidaasPublic getPublic() {
+        return new CidaasPublic(this);
     }
 
     /**
