@@ -6,7 +6,7 @@ package de.cidaas.sdk.android.helper.enums;
 
 public final class WebAuthErrorCode {
 
-    //General
+    // General
     public static final int DEFAULT = 10000;
     public static final int FILE_NOT_FOUND = 10001;
     public static final int NO_CONTENT_IN_FILE = 10002;
@@ -19,7 +19,7 @@ public final class WebAuthErrorCode {
     public static final int USER_CANCELLED_LOGIN = 10009;
     public static final int CODE_NOT_FOUND = 10010;
 
-    //AccessToken
+    // AccessToken
     public static final int ACCESSTOKEN_SERVICE_FAILURE = 10011;
     public static final int EMPTY_LOGIN_URL_SERVICE = 10012;
     public static final int ERROR_JSON_PARSING = 10013;
@@ -30,7 +30,7 @@ public final class WebAuthErrorCode {
     public static final int ACCESS_TOKEN_CONVERSION_FAILURE = 10200;
     public static final int SET_ACCESS_TOKEN = 10201;
 
-    //Basic calls
+    // Basic calls
     public static final int EMPTY_TENANT_INFO_SERVICE = 10018;
     public static final int EMPTY_CLIENT_INFO_SERVICE = 10019;
     public static final int TENANT_INFO_FAILURE = 10020;
@@ -39,15 +39,9 @@ public final class WebAuthErrorCode {
 
     public static final int EMPTY_LOGIN_WITH_CREDENTIALS_FAILURE = 10218;
     public static final int LOGINWITH_CREDENTIALS_FAILURE = 10221;
-    public static final int LOGOUT  = 10134;
+    public static final int LOGOUT = 10134;
     public static final int REGISTRATION_SETUP_FAILURE = 10222;
     public static final int USER_PROFILE_UPDATE_FAILURE = 10134;
-
-
-    public static final int CONSENT_URL_FAILURE = 10023;
-    public static final int CONSENT_STRING_FAILURE = 10024;
-    public static final int ACCEPT_CONSENT_FAILURE = 10025;
-    public static final int CONSENT_DETAILS_FAILURE = 10225;
 
     public static final int MFA_LIST_FAILURE = 10026;
 
@@ -91,8 +85,6 @@ public final class WebAuthErrorCode {
     public static final int INITIATE_FIDO_MFA_FAILURE = 10052;
     public static final int AUTHENTICATE_FIDO_MFA_FAILURE = 10053;
 
-    public static final int RESUME_CONSENT_FAILURE = 10054;
-
     public static final int SETUP_SMS_MFA_FAILURE = 10055;
     public static final int ENROLL_SMS_MFA_FAILURE = 10056;
 
@@ -131,7 +123,6 @@ public final class WebAuthErrorCode {
     public static final int INITIATE_ACCOUNT_VERIFICATION_FAILURE = 10078;
     public static final int VERIFY_ACCOUNT_VERIFICATION_FAILURE = 10079;
 
-
     public static final int SCANNED_PATTERN_MFA_FAILURE = 10081;
     public static final int SCANNED_FACE_MFA_FAILURE = 10082;
     public static final int SCANNED_VOICE_MFA_FAILURE = 10083;
@@ -155,21 +146,14 @@ public final class WebAuthErrorCode {
     public static final int GET_LOGIN_URL_FAILURE = 10095;
     public static final int GET_SOCIAL_LOGIN_URL_FAILURE = 10096;
 
-    public static final int ON_CANCEL_FACEBOOK = 10097;
-
-    public static final int GOOGLE_ERROR = 10098;
-
     public static final int LOGOUT_ERROR = 10099;
 
-
-    //Common Error Code maintained in Authenticator app
+    // Common Error Code maintained in Authenticator app
     public static final int DEVICE_VERIFICATION_FAILURE = 10080;
-
 
     public static final int LOCAL_AUHTHENTICATION_CANCELLED = 10101;
     public static final int LOCAL_AUHTHENTICATION_FAILED = 10102;
     public static final int NO_LOCAL_AUHTHENTICATION_FOUND = 10103;
-
 
     public static final int FINGERPRINT_SDK_VERSION_NOT_SUPPORTED = 10104;
     public static final int FINGERPRINT_BIOMETRIC_AUTHENTICATION_NOT_SUPPORTED = 10105;
@@ -181,7 +165,7 @@ public final class WebAuthErrorCode {
 
     public static final int DOCUMENT_VERIFICATION_FAILURE = 10111;
 
-    //V2-Verification Error Codes
+    // V2-Verification Error Codes
     public static final int SETUP_VERIFICATION_FAILURE = 10112;
     public static final int SCANNED_VERIFICATION_FAILURE = 10113;
     public static final int ENROLL_VERIFICATION_FAILURE = 10114;
@@ -195,7 +179,6 @@ public final class WebAuthErrorCode {
     public static final int DELETE_VERIFICATION_FAILURE = 10120;
     public static final int MFA_LIST_VERIFICATION_FAILURE = 10121;
 
-
     public static final int USER_LOGIN_INFO_SERVICE_FAILURE = 10122;
 
     public static final int PARAMS_TO_DICTIONARY_CONVERTER_ERROR = 10123;
@@ -208,7 +191,6 @@ public final class WebAuthErrorCode {
     public static final int CONFIGURE_MFA_FAILURE = 10130;
     public static final int PASSWORDLESS_LOGIN_FAILURE = 10131;
     public static final int INVALID_PROPERTIES = 10132;
-
 
     public static final int TIME_OUT_ERROR = 10133;
 
@@ -229,6 +211,4 @@ public final class WebAuthErrorCode {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
-
 }
-

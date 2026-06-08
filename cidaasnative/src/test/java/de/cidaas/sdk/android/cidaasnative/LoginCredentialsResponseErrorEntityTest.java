@@ -34,13 +34,6 @@ public class LoginCredentialsResponseErrorEntityTest {
     }
 
     @Test
-    public void setConsentURL() {
-        loginCredentialsResponseErrorEntity.setConsentUrl("URL");
-        Assert.assertEquals("URL", loginCredentialsResponseErrorEntity.getConsentUrl());
-
-    }
-
-    @Test
     public void setData() {
         error = new LoginCredentialsErrorDataEntity();
 
@@ -51,4 +44,5 @@ public class LoginCredentialsResponseErrorEntityTest {
     }
 }
 
-//Generated with love by TestMe :) Please report issues and submit feature requests at: http://weirddev.com/forum#!/testme
+// Generated with love by TestMe :) Please report issues and submit feature
+// requests at: http://weirddev.com/forum#!/testme

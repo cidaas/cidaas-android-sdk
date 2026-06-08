@@ -1,5 +1,6 @@
 package de.cidaas.sdk.android.cidaasverification.data.entity.verificationcontinue;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.io.Serializable;
@@ -19,8 +20,21 @@ public class VerificationContinue implements Serializable {
     private String device_id = "";
     private String push_id = "";
 
+    /** When true, {@link de.cidaas.sdk.android.cidaasverification.domain.controller.authenticationflow.verificationcontinue.VerificationContinueController} uses {@code /login-srv/verification/login}. */
+    @JsonIgnore
+    private boolean useVerificationLoginPath;
 
     public VerificationContinue() {
+    }
+
+    @JsonIgnore
+    public boolean isUseVerificationLoginPath() {
+        return useVerificationLoginPath;
+    }
+
+    @JsonIgnore
+    public void setUseVerificationLoginPath(boolean useVerificationLoginPath) {
+        this.useVerificationLoginPath = useVerificationLoginPath;
     }
 
 

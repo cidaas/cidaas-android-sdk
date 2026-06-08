@@ -100,7 +100,11 @@ public class VerificationContinueController {
                 public void success(final Dictionary<String, String> loginPropertiesResult) {
                     final String baseurl = loginPropertiesResult.get("DomainURL");
 
-                    if (verificationContinueEntity.getUsageType().equals(UsageType.MFA)) {
+                    if (verificationContinueEntity.isUseVerificationLoginPath()) {
+                        String verificationContinueUrl =
+                                VerificationURLHelper.getShared().getVerificationLoginUrl(baseurl);
+                        callVerificationContinue(verificationContinueUrl, verificationContinueEntity, verificationContinueResponseResult);
+                    } else if (verificationContinueEntity.getUsageType().equals(UsageType.MFA)) {
                         //call VerificationContinue call
                         String verificationContinueUrl = VerificationURLHelper.getShared().getMfaContinueCallUrl(baseurl, verificationContinueEntity.getTrackId());
                         callVerificationContinue(verificationContinueUrl, verificationContinueEntity, verificationContinueResponseResult);
@@ -154,7 +158,18 @@ public class VerificationContinueController {
     public void getAccessTokenFromCode(VerificationContinueResponseEntity result, final EventResult<LoginCredentialsResponseEntity> verificationContinueResult) {
         String methodName = "VerificationContinueController:-getAccessTokenFromCode()";
         try {
-            AccessTokenController.getShared(context).getAccessTokenByCode(result.getData().getCode(), new EventResult<AccessTokenEntity>() {
+            if (result == null || result.getData() == null) {
+                verificationContinueResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                        "Login continue response missing data", VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
+                return;
+            }
+            String code = result.getData().getCode();
+            if (code == null || code.isEmpty()) {
+                verificationContinueResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                        "Login continue response missing authorization code", VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
+                return;
+            }
+            AccessTokenController.getShared(context).getAccessTokenByCode(code, new EventResult<AccessTokenEntity>() {
                 @Override
                 public void success(AccessTokenEntity accessTokenresult) {
                     LoginCredentialsResponseEntity loginCredentialsResponseEntity = new LoginCredentialsResponseEntity();

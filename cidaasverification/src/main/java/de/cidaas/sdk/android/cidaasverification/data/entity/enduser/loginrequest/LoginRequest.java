@@ -2,6 +2,7 @@ package de.cidaas.sdk.android.cidaasverification.data.entity.enduser.loginreques
 
 import androidx.annotation.NonNull;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -11,18 +12,22 @@ import java.io.Serializable;
 import de.cidaas.sdk.android.entities.FingerPrintEntity;
 import de.cidaas.sdk.android.helper.enums.UsageType;
 
-
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class LoginRequest implements Serializable {
 
     private String pass_code = "";
-    private String sub = "";
+    /**
+     * User identifier for login (e.g. username, email, or OIDC subject). Serialized as {@code identifier};
+     * {@code sub} is accepted on deserialize for backward compatibility.
+     */
+    @JsonAlias("sub")
+    private String identifier = "";
 
-    //For face and voice
+    // For face and voice
     private File fileToSend;
     private int attempt = 0;
 
-    //For Fingerprint
+    // For Fingerprint
     @JsonIgnore
     private FingerPrintEntity fingerPrintEntity;
 
@@ -31,7 +36,6 @@ public class LoginRequest implements Serializable {
     private String trackId = "";
 
     private String requestId = "";
-
 
     public LoginRequest() {
     }
@@ -60,12 +64,30 @@ public class LoginRequest implements Serializable {
         this.usageType = usageType;
     }
 
-    public String getSub() {
-        return sub;
+    public String getIdentifier() {
+        return identifier;
     }
 
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
+    /**
+     * @deprecated Use {@link #getIdentifier()} — same value; login flows use "identifier" as the API concept.
+     */
+    @Deprecated
+    @JsonIgnore
+    public String getSub() {
+        return identifier;
+    }
+
+    /**
+     * @deprecated Use {@link #setIdentifier(String)}.
+     */
+    @Deprecated
+    @JsonIgnore
     public void setSub(String sub) {
-        this.sub = sub;
+        this.identifier = sub;
     }
 
     public File getFileToSend() {
@@ -100,147 +122,161 @@ public class LoginRequest implements Serializable {
         this.trackId = trackId;
     }
 
-    public static LoginRequest getPasswordlessRequestEntity(@NonNull String sub, @NonNull String requestId) {
+    // --- Static factories (passwordless / MFA login) — use identifier, not separate "sub" ---
+
+    @NonNull
+    public static LoginRequest getPasswordlessRequestEntity(@NonNull String identifier, @NonNull String requestId) {
         LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setSub(sub);
+        loginRequest.setIdentifier(identifier);
         loginRequest.setRequestId(requestId);
         loginRequest.setUsageType(UsageType.PASSWORDLESS);
-
         return loginRequest;
     }
 
-    //For Passwordless Email
-    public static LoginRequest getPasswordlessEmailRequestEntity(@NonNull String sub, @NonNull String requestId) {
-        return getPasswordlessRequestEntity(sub, requestId);
+    @NonNull
+    public static LoginRequest getPasswordlessEmailRequestEntity(@NonNull String identifier, @NonNull String requestId) {
+        return getPasswordlessRequestEntity(identifier, requestId);
     }
 
-    //For Passwordless SMS
-    public static LoginRequest getPasswordlessSMSRequestEntity(@NonNull String sub, @NonNull String requestId) {
-        return getPasswordlessRequestEntity(sub, requestId);
+    @NonNull
+    public static LoginRequest getPasswordlessSMSRequestEntity(@NonNull String identifier, @NonNull String requestId) {
+        return getPasswordlessRequestEntity(identifier, requestId);
     }
 
-    //For Passwordless IVR
-    public static LoginRequest getPasswordlessIVRRequestEntity(@NonNull String sub, @NonNull String requestId) {
-        return getPasswordlessRequestEntity(sub, requestId);
+    @NonNull
+    public static LoginRequest getPasswordlessIVRRequestEntity(@NonNull String identifier, @NonNull String requestId) {
+        return getPasswordlessRequestEntity(identifier, requestId);
     }
 
-    /**
-     * @param pass_code
-     * @param sub
-     * @param requestId
-     * @return
-     */
-
-    //For Passwordless Pattern
-    public static LoginRequest getPasswordlessPatternLoginRequestEntity(@NonNull String pass_code, @NonNull String sub, @NonNull String requestId) {
-        LoginRequest loginRequest = getPasswordlessRequestEntity(sub,requestId);
+    @NonNull
+    public static LoginRequest getPasswordlessPatternLoginRequestEntity(
+            @NonNull String pass_code, @NonNull String identifier, @NonNull String requestId) {
+        LoginRequest loginRequest = getPasswordlessRequestEntity(identifier, requestId);
         loginRequest.setPass_code(pass_code);
         return loginRequest;
     }
 
-    //For Passwordless SmartPush
-    public static LoginRequest getPasswordlessSmartPushLoginRequestEntity(@NonNull String sub, @NonNull String requestId) {
-        return getPasswordlessRequestEntity(sub, requestId);
+    @NonNull
+    public static LoginRequest getPasswordlessSmartPushLoginRequestEntity(
+            @NonNull String identifier, @NonNull String requestId) {
+        return getPasswordlessRequestEntity(identifier, requestId);
     }
 
-    //For Passwordless TOTP
-    public static LoginRequest getPasswordlessTOTPRequestEntity(@NonNull String sub, @NonNull String requestId) {
-        return getPasswordlessRequestEntity(sub, requestId);
+    @NonNull
+    public static LoginRequest getPasswordlessTOTPRequestEntity(@NonNull String identifier, @NonNull String requestId) {
+        return getPasswordlessRequestEntity(identifier, requestId);
     }
 
-    //For Passwordless Face
-    public static LoginRequest getPasswordlessFaceLoginRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull File fileToSend) {
-        LoginRequest loginRequest = getPasswordlessRequestEntity(sub,requestId);
+    @NonNull
+    public static LoginRequest getPasswordlessFaceLoginRequestEntity(
+            @NonNull String identifier, @NonNull String requestId, @NonNull File fileToSend) {
+        LoginRequest loginRequest = getPasswordlessRequestEntity(identifier, requestId);
         loginRequest.setFileToSend(fileToSend);
         return loginRequest;
     }
 
-    //For Passwordless Voice
-    public static LoginRequest getPasswordlessVoiceLoginRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull File fileToSend) {
-        return getPasswordlessFaceLoginRequestEntity(sub, requestId, fileToSend);
+    @NonNull
+    public static LoginRequest getPasswordlessVoiceLoginRequestEntity(
+            @NonNull String identifier, @NonNull String requestId, @NonNull File fileToSend) {
+        return getPasswordlessFaceLoginRequestEntity(identifier, requestId, fileToSend);
     }
 
-    //For Passwordless Fingerprint
-    public static LoginRequest getPasswordlessFingerprintLoginRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull FingerPrintEntity fingerPrintEntity) {
-        LoginRequest loginRequest = getPasswordlessRequestEntity(sub,requestId);
+    @NonNull
+    public static LoginRequest getPasswordlessFingerprintLoginRequestEntity(
+            @NonNull String identifier, @NonNull String requestId, @NonNull FingerPrintEntity fingerPrintEntity) {
+        LoginRequest loginRequest = getPasswordlessRequestEntity(identifier, requestId);
         loginRequest.setFingerPrintEntity(fingerPrintEntity);
         return loginRequest;
     }
 
-    //For Passwordless Email
-    public static LoginRequest getMFAEmailRequestEntity(@NonNull String sub, @NonNull String requestId) {
-        return getPasswordlessRequestEntity(sub, requestId);
+    @NonNull
+    public static LoginRequest getMFAEmailRequestEntity(@NonNull String identifier, @NonNull String requestId) {
+        return getPasswordlessRequestEntity(identifier, requestId);
     }
 
-    //For Passwordless SMS
-    public static LoginRequest getMFASMSRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull String trackId) {
-        LoginRequest loginRequest = getPasswordlessRequestEntity(sub,requestId);
+    @NonNull
+    public static LoginRequest getMFASMSRequestEntity(
+            @NonNull String identifier, @NonNull String requestId, @NonNull String trackId) {
+        LoginRequest loginRequest = getPasswordlessRequestEntity(identifier, requestId);
         loginRequest.setUsageType(UsageType.MFA);
         loginRequest.setTrackId(trackId);
         return loginRequest;
     }
 
-    //For Passwordless IVR
-    public static LoginRequest getMFAIVRRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull String trackId) {
+    @NonNull
+    public static LoginRequest getMFAIVRRequestEntity(
+            @NonNull String identifier, @NonNull String requestId, @NonNull String trackId) {
         LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setSub(sub);
+        loginRequest.setIdentifier(identifier);
         loginRequest.setRequestId(requestId);
         loginRequest.setUsageType(UsageType.MFA);
         loginRequest.setTrackId(trackId);
-
         return loginRequest;
     }
 
-
-    //For MFA Pattern
-    public static LoginRequest getMFAPatternLoginRequestEntity(@NonNull String pass_code, @NonNull String sub, @NonNull String requestId, @NonNull String trackId) {
+    @NonNull
+    public static LoginRequest getMFAPatternLoginRequestEntity(
+            @NonNull String pass_code,
+            @NonNull String identifier,
+            @NonNull String requestId,
+            @NonNull String trackId) {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setPass_code(pass_code);
-        loginRequest.setSub(sub);
+        loginRequest.setIdentifier(identifier);
         loginRequest.setRequestId(requestId);
         loginRequest.setUsageType(UsageType.MFA);
         loginRequest.setTrackId(trackId);
-
         return loginRequest;
-
     }
 
-    //For Passwordless SmartPush
-    public static LoginRequest getMFASmartPushLoginRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull String trackId) {
-        return getMFAIVRRequestEntity(sub, requestId, trackId);
+    @NonNull
+    public static LoginRequest getMFASmartPushLoginRequestEntity(
+            @NonNull String identifier, @NonNull String requestId, @NonNull String trackId) {
+        return getMFAIVRRequestEntity(identifier, requestId, trackId);
     }
 
-    //For Passwordless TOTP
-    public static LoginRequest getMFATOTPRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull String trackId) {
-        return getMFASmartPushLoginRequestEntity(sub, requestId, trackId);
+    @NonNull
+    public static LoginRequest getMFATOTPRequestEntity(
+            @NonNull String identifier, @NonNull String requestId, @NonNull String trackId) {
+        return getMFASmartPushLoginRequestEntity(identifier, requestId, trackId);
     }
 
-    //For MFA Face
-    public static LoginRequest getMFAFaceLoginRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull File fileToSend, @NonNull String trackId) {
+    @NonNull
+    public static LoginRequest getMFAFaceLoginRequestEntity(
+            @NonNull String identifier,
+            @NonNull String requestId,
+            @NonNull File fileToSend,
+            @NonNull String trackId) {
         LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setSub(sub);
+        loginRequest.setIdentifier(identifier);
         loginRequest.setFileToSend(fileToSend);
         loginRequest.setRequestId(requestId);
         loginRequest.setUsageType(UsageType.MFA);
         loginRequest.setTrackId(trackId);
-
         return loginRequest;
     }
 
-    //For MFA Voice
-    public static LoginRequest getMFAVoiceLoginRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull File fileToSend, @NonNull String trackId) {
-        return getMFAFaceLoginRequestEntity(sub, requestId, fileToSend,trackId);
+    @NonNull
+    public static LoginRequest getMFAVoiceLoginRequestEntity(
+            @NonNull String identifier,
+            @NonNull String requestId,
+            @NonNull File fileToSend,
+            @NonNull String trackId) {
+        return getMFAFaceLoginRequestEntity(identifier, requestId, fileToSend, trackId);
     }
 
-    //For MFA Fingerprint
-    public static LoginRequest getMFAFingerprintLoginRequestEntity(@NonNull String sub, @NonNull String requestId, @NonNull FingerPrintEntity fingerPrintEntity, @NonNull String trackId) {
+    @NonNull
+    public static LoginRequest getMFAFingerprintLoginRequestEntity(
+            @NonNull String identifier,
+            @NonNull String requestId,
+            @NonNull FingerPrintEntity fingerPrintEntity,
+            @NonNull String trackId) {
         LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setSub(sub);
+        loginRequest.setIdentifier(identifier);
         loginRequest.setRequestId(requestId);
         loginRequest.setFingerPrintEntity(fingerPrintEntity);
         loginRequest.setUsageType(UsageType.MFA);
         loginRequest.setTrackId(trackId);
-
         return loginRequest;
     }
 }

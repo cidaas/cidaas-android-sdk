@@ -12,25 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "real_consent"
-})
 public class CustomFields implements Serializable {
 
-    @JsonProperty("real_consent")
-    private Boolean realConsent;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
-
-    @JsonProperty("real_consent")
-    public Boolean getRealConsent() {
-        return realConsent;
-    }
-
-    @JsonProperty("real_consent")
-    public void setRealConsent(Boolean realConsent) {
-        this.realConsent = realConsent;
-    }
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {

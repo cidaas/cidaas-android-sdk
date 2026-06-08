@@ -3,10 +3,13 @@ package de.cidaas.sdk.android.cidaasverification.domain.service.verificationcont
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
+import java.io.IOException;
 import java.util.Map;
 
 import de.cidaas.sdk.android.cidaasverification.data.entity.verificationcontinue.VerificationContinue;
+import de.cidaas.sdk.android.cidaasverification.data.entity.verificationcontinue.VerificationContinueResponseDataEntity;
 import de.cidaas.sdk.android.cidaasverification.data.entity.verificationcontinue.VerificationContinueResponseEntity;
 import de.cidaas.sdk.android.cidaasverification.data.service.CidaasSDK_V2_Service;
 import de.cidaas.sdk.android.cidaasverification.data.service.ICidaasSDK_V2_Services;
@@ -16,6 +19,7 @@ import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.logger.LogFile;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -54,21 +58,39 @@ public class VerificationContinueService {
                                                 final EventResult<VerificationContinueResponseEntity> verificationContinueCallback) {
         final String methodName = "VerificationContinueService:-callVerificationContinueService()";
         try {
-            //call service
+            //call service — ResponseBody so non-JSON bodies (e.g. "Found. Redirecting to …?code=…") do not break Jackson
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();
-            cidaasSDK_v2_services.verificationContinue(verificationContinueURL, headers, verificationContinueEntity).enqueue(new Callback<VerificationContinueResponseEntity>() {
+            cidaasSDK_v2_services.verificationContinue(verificationContinueURL, headers, verificationContinueEntity).enqueue(new Callback<ResponseBody>() {
                 @Override
-                public void onResponse(Call<VerificationContinueResponseEntity> call, Response<VerificationContinueResponseEntity> response) {
-                    if (response.isSuccessful()) {
-                        verificationContinueCallback.success(response.body());
-                    } else {
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    String successBodyText = null;
+                    if (response.isSuccessful() && response.body() != null) {
+                        successBodyText = readBodySafely(response.body());
+                    }
+                    String code = VerificationContinueAuthorizationCodeParser.findAuthorizationCode(response.raw(), successBodyText);
+                    if (code != null && !code.isEmpty()) {
+                        VerificationContinueResponseEntity wrapped = new VerificationContinueResponseEntity();
+                        wrapped.setSuccess(response.isSuccessful());
+                        wrapped.setStatus(response.code());
+                        VerificationContinueResponseDataEntity data = new VerificationContinueResponseDataEntity();
+                        data.setCode(code);
+                        wrapped.setData(data);
+                        verificationContinueCallback.success(wrapped);
+                        return;
+                    }
+                    if (!response.isSuccessful()) {
                         verificationContinueCallback.failure(CommonError.getShared(context).generateCommonErrorEntity(WebAuthErrorCode.RESUME_LOGIN_FAILURE,
                                 response, VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
+                    } else {
+                        verificationContinueCallback.failure(WebAuthError.getShared(context).serviceCallFailureException(
+                                WebAuthErrorCode.RESUME_LOGIN_FAILURE,
+                                "No authorization code in login continue response",
+                                VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
                     }
                 }
 
                 @Override
-                public void onFailure(Call<VerificationContinueResponseEntity> call, Throwable t) {
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
                     verificationContinueCallback.failure(WebAuthError.getShared(context).serviceCallFailureException(WebAuthErrorCode.RESUME_LOGIN_FAILURE,
                             t.getMessage(), VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
                 }
@@ -76,6 +98,18 @@ public class VerificationContinueService {
         } catch (Exception e) {
             verificationContinueCallback.failure(WebAuthError.getShared(context).methodException(VerificationConstants.ERROR_LOGGING_PREFIX + methodName, WebAuthErrorCode.RESUME_LOGIN_FAILURE,
                     e.getMessage()));
+        }
+    }
+
+    @Nullable
+    private static String readBodySafely(@Nullable ResponseBody body) {
+        if (body == null) {
+            return null;
+        }
+        try {
+            return body.string();
+        } catch (IOException e) {
+            return null;
         }
     }
 }
