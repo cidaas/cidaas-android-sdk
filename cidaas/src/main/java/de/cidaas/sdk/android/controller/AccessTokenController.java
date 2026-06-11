@@ -45,6 +45,10 @@ public class AccessTokenController {
 
     //-------------------------------------------------------Get AccessToken By Code-------------------------------------------------------
     public void getAccessTokenByCode(final String code, final EventResult<AccessTokenEntity> callback) {
+        getAccessTokenByCode(code, false, callback);
+    }
+
+    public void getAccessTokenByCode(final String code, final boolean useDpop, final EventResult<AccessTokenEntity> callback) {
         try {
 
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
@@ -52,7 +56,7 @@ public class AccessTokenController {
                 public void success(Dictionary<String, String> result) {
                     String baseurl = result.get("DomainURL");
                     // Check notnull
-                    getAccessWithCode(baseurl, code, callback);
+                    getAccessWithCode(baseurl, code, useDpop, callback);
                 }
 
                 @Override
@@ -67,12 +71,12 @@ public class AccessTokenController {
         }
     }
 
-    private void getAccessWithCode(String baseurl, final String code, final EventResult<AccessTokenEntity> callback) {
+    private void getAccessWithCode(String baseurl, final String code, boolean useDpop, final EventResult<AccessTokenEntity> callback) {
         String methodName = "AccessToken Controller :getAccessWithCode()";
         try {
             //Log File
             LogFile.getShared(context).addInfoLog("Info of ", " Info Baseurl" + baseurl + " code" + code);
-            AccessTokenService.getShared(context).getAccessTokenByCode(baseurl, code, new EventResult<AccessTokenEntity>() {
+            AccessTokenService.getShared(context).getAccessTokenByCode(baseurl, code, useDpop, new EventResult<AccessTokenEntity>() {
                 @Override
                 public void success(final AccessTokenEntity result) {
                     accessTokenConversion(result, callback);

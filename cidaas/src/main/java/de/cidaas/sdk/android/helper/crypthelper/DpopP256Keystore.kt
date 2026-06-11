@@ -1,13 +1,11 @@
 package de.cidaas.sdk.android.helper.crypthelper
 
 import android.content.Context
-import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import org.json.JSONObject
 import java.math.BigInteger
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.Signature
@@ -17,6 +15,8 @@ import java.util.UUID
 
 /**
  * Non-biometric P-256 key in Android Keystore for DPoP proof JWTs during device registration.
+ * New keys prefer **StrongBox** (API 28+); if unavailable, generation falls back to the default
+ * Keystore implementation (typically **TEE**-backed on production devices).
  */
 object DpopP256Keystore {
 
@@ -24,21 +24,11 @@ object DpopP256Keystore {
 
     @JvmStatic
     fun ensureKey(context: Context) {
-        val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        if (ks.containsAlias(alias)) return
-
-        val spec = KeyGenParameterSpec.Builder(
-            alias,
-            KeyProperties.PURPOSE_SIGN,
-        )
-            .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
-            .setDigests(KeyProperties.DIGEST_SHA256)
-            .setUserAuthenticationRequired(false)
-            .build()
-
-        val gen = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
-        gen.initialize(spec)
-        gen.generateKeyPair()
+        KeystoreEcP256StrongBoxHelper.ensureEcP256SignKey(alias) {
+            setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
+            setDigests(KeyProperties.DIGEST_SHA256)
+            setUserAuthenticationRequired(false)
+        }
     }
 
     @JvmStatic

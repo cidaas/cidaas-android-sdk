@@ -174,7 +174,16 @@ public class Cidaas {
     public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
             @Nullable final Map<String, String> extraParams,
             final EventResult<AccessTokenEntity> callbacktoMain) {
-        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, callbacktoMain);
+        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, false, callbacktoMain);
+    }
+
+    /**
+     * Hosted login with optional {@code DPoP} on the token endpoint (use {@link WebAuth#useDpop()}).
+     */
+    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
+            @Nullable final Map<String, String> extraParams, boolean useDpop,
+            final EventResult<AccessTokenEntity> callbacktoMain) {
+        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, useDpop, callbacktoMain);
     }
 
     public void logoutWithBrowser(@NonNull final Context activityContext, @NonNull final String sub,
@@ -188,7 +197,7 @@ public class Cidaas {
      * Browser-based login, logout, and social login. Pass the {@link Context} used
      * to launch the custom tab
      * (typically your current {@link Activity}). Example:
-     * {@code cidaas.webAuth(this).extraParams(map).signIn(callback);}
+     * {@code cidaas.webAuth(this).extraParams(map).signIn(callback);} or {@code cidaas.webAuth(this).useDpop().signIn(callback);}
      */
     @NonNull
     public WebAuth webAuth(@NonNull Context activityContext) {
@@ -198,7 +207,7 @@ public class Cidaas {
     /**
      * OAuth / hosted-flow {@code requestId} (delegates to
      * {@code CidaasNative.getRequestId} at runtime). Example:
-     * {@code cidaas.requestId().fetch(callback);}
+     * {@code cidaas.requestId().fetch(callback);} or {@code cidaas.requestId().useDpop().fetch(callback);}
      */
     @NonNull
     public AuthRequestId requestId() {

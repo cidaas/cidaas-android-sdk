@@ -17,6 +17,7 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  *
  * <pre>{@code
  * cidaas.webAuth(this).extraParams(map).signIn(callback);
+ * cidaas.webAuth(this).useDpop().signIn(callback);
  * cidaas.webAuth(this).signOut(sub, callback);
  * cidaas.webAuth(this).signOut(sub, postLogoutRedirectUri, callback);
  * cidaas.webAuth(this).social(requestId, provider).signIn(callback);
@@ -28,6 +29,7 @@ public final class WebAuth {
     private final Context activityContext;
     private String color;
     private Map<String, String> extraParams;
+    private boolean useDpop;
 
     public WebAuth(@NonNull Cidaas cidaas, @NonNull Context activityContext) {
         if (activityContext == null) {
@@ -50,10 +52,21 @@ public final class WebAuth {
     }
 
     /**
+     * Send a {@code DPoP} proof JWT on the authorization-code token exchange (RFC 9449) and add
+     * {@code dpop_jkt} to the authorization URL query.
+     * Call before {@link #signIn(EventResult)}.
+     */
+    @NonNull
+    public WebAuth useDpop() {
+        this.useDpop = true;
+        return this;
+    }
+
+    /**
      * Hosted login in a custom tab ({@link Cidaas#loginWithBrowser}).
      */
     public void signIn(@NonNull EventResult<AccessTokenEntity> callback) {
-        cidaas.loginWithBrowser(activityContext, color, extraParams, callback);
+        cidaas.loginWithBrowser(activityContext, color, extraParams, useDpop, callback);
     }
 
     /**

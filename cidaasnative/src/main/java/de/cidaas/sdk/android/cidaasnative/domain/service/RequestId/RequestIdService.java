@@ -100,6 +100,18 @@ public class RequestIdService {
                 for (Map.Entry<String, String> entry : Cidaas.extraParams.entrySet()) {
                     authRequestEntityMap.put(entry.getKey(), URLEncoder.encode(entry.getValue(), "utf-8"));
                 }
+                if (extraParams != null) {
+                    for (HashMap<String, String> extraMap : extraParams) {
+                        if (extraMap == null) {
+                            continue;
+                        }
+                        for (Map.Entry<String, String> e : extraMap.entrySet()) {
+                            if (e.getKey() != null && e.getValue() != null) {
+                                authRequestEntityMap.put(e.getKey(), URLEncoder.encode(e.getValue(), "utf-8"));
+                            }
+                        }
+                    }
+                }
                 serviceForGetRequestId(requestidURL, authRequestEntityMap, headers, callback);
             } else {
                 callback.failure(WebAuthError.getShared(context).propertyMissingException(context.getString(R.string.EMPTY_BASE_URL_SERVICE),

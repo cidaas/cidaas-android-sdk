@@ -9,12 +9,12 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.cidaas.sdk.android.helper.crypthelper.DpopP256Keystore;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 
 /**
  * Fetches an auth {@code requestId} via {@code CidaasNative.getRequestId} (reflection). Obtain from
- * {@link Cidaas#requestId()} or {@link de.cidaas.sdk.android.browser.WebAuth#requestId()}; complete with
- * {@link #fetch(EventResult)}.
+ * {@link Cidaas#requestId()}; complete with {@link #fetch(EventResult)}.
  *
  * <p>Callback success receives
  * {@code de.cidaas.sdk.android.cidaasnative.data.entity.authrequest.AuthRequestResponseEntity} at runtime; add
@@ -27,6 +27,7 @@ public final class AuthRequestId {
 
     private final Cidaas cidaas;
     private Map<String, String> extraParams;
+    private boolean useDpop;
 
     public AuthRequestId(@NonNull Cidaas cidaas, @Nullable Map<String, String> extraParams) {
         this.cidaas = cidaas;
@@ -40,16 +41,37 @@ public final class AuthRequestId {
     }
 
     /**
+     * Include {@code dpop_jkt} (RFC 9449) in the request-id call form parameters (same JWK as
+     * {@link de.cidaas.sdk.android.browser.WebAuth#useDpop()}). Call before {@link #fetch(EventResult)}.
+     */
+    @NonNull
+    public AuthRequestId useDpop() {
+        this.useDpop = true;
+        return this;
+    }
+
+    /**
      * Calls {@code CidaasNative.getRequestId(EventResult, HashMap...)} using {@link Cidaas#context}.
      */
     @SuppressWarnings("unchecked")
     public void fetch(@NonNull EventResult<?> callback) {
+        HashMap<String, String> merged = new HashMap<>();
+        if (extraParams != null) {
+            merged.putAll(extraParams);
+        }
+        if (useDpop) {
+            try {
+                merged.put("dpop_jkt", DpopP256Keystore.jwkThumbprintSha256(cidaas.context));
+            } catch (Exception e) {
+                throw new IllegalStateException("requestId().fetch: could not compute dpop_jkt for DPoP.", e);
+            }
+        }
         try {
             Class<?> nativeClazz = Class.forName(NATIVE_CIDAAS_NATIVE);
             Object nativeInstance =
                     nativeClazz.getMethod("getInstance", Context.class).invoke(null, cidaas.context);
             Method m = nativeClazz.getMethod("getRequestId", EventResult.class, HashMap[].class);
-            HashMap<String, String>[] varargs = toRequestIdVarargs(extraParams);
+            HashMap<String, String>[] varargs = toRequestIdVarargs(merged);
             m.invoke(nativeInstance, callback, varargs);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(
