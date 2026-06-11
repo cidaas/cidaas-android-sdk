@@ -175,6 +175,11 @@ public class AccessTokenService {
     // Refresh Token-----------------------------------------------------------
     public void getAccessTokenByRefreshToken(String refreshToken, Dictionary<String, String> loginProperties,
             final EventResult<AccessTokenEntity> callback) {
+        getAccessTokenByRefreshToken(refreshToken, loginProperties, false, callback);
+    }
+
+    public void getAccessTokenByRefreshToken(String refreshToken, Dictionary<String, String> loginProperties, boolean useDpop,
+            final EventResult<AccessTokenEntity> callback) {
         String methodName = "AccessToken service :-getAccessTokenByRefreshToken()";
         try {
             // Local Variables
@@ -186,6 +191,19 @@ public class AccessTokenService {
 
                 // Header generation
                 Map<String, String> headers = Headers.getShared(context).getHeaders(null, false, URLHelper.contentType);
+
+                if (useDpop) {
+                    try {
+                        String dpopProof = DpopP256Keystore.proofJwt(context, "POST", url);
+                        headers.put("DPoP", dpopProof);
+                    } catch (Exception e) {
+                        callback.failure(WebAuthError.getShared(context).methodException(
+                                CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                                WebAuthErrorCode.ACCESSTOKEN_SERVICE_FAILURE,
+                                e.getMessage()));
+                        return;
+                    }
+                }
 
                 // Challenge Generation
                 Dictionary<String, String> challengeProperties = DBHelper.getShared().getChallengeProperties();

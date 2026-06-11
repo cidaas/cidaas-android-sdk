@@ -140,7 +140,15 @@ public class Cidaas {
     }
 
     public void getAccessTokenFromRefreshToken(String refershtoken, EventResult<AccessTokenEntity> result) {
-        AccessTokenController.getShared(context).getAccessTokenByRefreshToken(refershtoken, result);
+        getAccessTokenFromRefreshToken(refershtoken, false, result);
+    }
+
+    /**
+     * @param useDpop set {@code true} when the refresh token belongs to a DPoP session (e.g. after
+     *                {@link de.cidaas.sdk.android.browser.WebAuth#useDpop()}); otherwise use {@code false}.
+     */
+    public void getAccessTokenFromRefreshToken(String refershtoken, boolean useDpop, EventResult<AccessTokenEntity> result) {
+        AccessTokenController.getShared(context).getAccessTokenByRefreshToken(refershtoken, useDpop, result);
     }
 
     public void getAccessTokenBySocial(SocialAccessTokenEntity socialAccessTokenEntity,
