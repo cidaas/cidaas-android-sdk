@@ -210,6 +210,17 @@ public class PasswordlessLoginController {
                             loginRequest.getPass_code(), verificationType);
                     break;
 
+                case AuthenticationType.PASSWORD:
+                    if (loginRequest.getPass_code() == null || loginRequest.getPass_code().equals("")) {
+                        loginCredentialsResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "password must not be null or empty for password verification", methodName));
+                        return;
+                    }
+                    authenticateEntity = AuthenticateEntity.forPassword(
+                            initiateResult.getData().getExchange_id().getExchange_id(),
+                            loginRequest.getPass_code(), verificationType);
+                    break;
+
                 case AuthenticationType.PATTERN:
                     if (loginRequest.getPass_code() == null || loginRequest.getPass_code().equals("")) {
                         loginCredentialsResult.failure(WebAuthError.getShared(context).propertyMissingException(

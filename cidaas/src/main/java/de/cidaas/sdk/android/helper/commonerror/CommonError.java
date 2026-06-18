@@ -44,61 +44,66 @@ public class CommonError {
     //Method to get Error Entity
     public WebAuthError generateCommonErrorEntity(int webAuthErrorCode, Response response, String methodName) {
         try {
-
             assert response.errorBody() != null;
-
-            response.message().toLowerCase();
-
-            // Handle proper error message
             String errorResponse = response.errorBody().source().readByteString().utf8();
+            return generateCommonErrorEntityFromBody(webAuthErrorCode, errorResponse, methodName);
+        } catch (Exception e) {
+            return WebAuthError.getShared(context).methodException(
+                    "Exception :CommonError :generateCommonErrorEntity()", webAuthErrorCode, e.getMessage());
+        }
+    }
 
-
+    public WebAuthError generateCommonErrorEntityFromBody(
+            int webAuthErrorCode, String errorResponse, String methodName) {
+        try {
             if (errorResponse.contains("<!DOCTYPE html>")) {
-                return WebAuthError.getShared(context).emptyResponseException(webAuthErrorCode, HttpStatusCode.NOT_FOUND, methodName);
+                return WebAuthError.getShared(context).emptyResponseException(
+                        webAuthErrorCode, HttpStatusCode.NOT_FOUND, methodName);
             }
 
-            if (errorResponse.contains("invalid_request: given url is not allowed by the application configuration.")) {
-                String error_message = "Configured redirect url for your application in cidaas is not allowed by the application configuration. " +
-                        "Please update your application configuration in cidaas to include the redirect url";
+            if (errorResponse.contains(
+                    "invalid_request: given url is not allowed by the application configuration.")) {
+                String error_message =
+                        "Configured redirect url for your application in cidaas is not allowed by the application "
+                                + "configuration. Please update your application configuration in cidaas to include "
+                                + "the redirect url";
                 return WebAuthError.getShared(context).customException(webAuthErrorCode, error_message, methodName);
             }
 
+            final CommonErrorEntity commonErrorEntity =
+                    objectMapper.readValue(errorResponse, CommonErrorEntity.class);
 
-            final CommonErrorEntity commonErrorEntity;
-            commonErrorEntity = objectMapper.readValue(errorResponse, CommonErrorEntity.class);
-
-            // Handle error based on its type
             if (commonErrorEntity.getErrorAsString() != null) {
-                // Error is a string
                 String errorMessage = commonErrorEntity.getErrorAsString();
-                LogFile.getShared(context).addFailureLog("Error:- WebAuthErrorCode: " + webAuthErrorCode + " Response Message:- " + response.message() +
-                        " ErrorCode:- " + commonErrorEntity.getCode() + "error message:-" + commonErrorEntity.getError()+errorMessage);
+                LogFile.getShared(context).addFailureLog(
+                        "Error:- WebAuthErrorCode: " + webAuthErrorCode + " ErrorCode:- "
+                                + commonErrorEntity.getCode() + "error message:-"
+                                + commonErrorEntity.getError() + errorMessage);
 
-
-                return WebAuthError.getShared(context).serviceCallException(webAuthErrorCode, errorMessage, commonErrorEntity.getStatus(),
+                return WebAuthError.getShared(context).serviceCallException(
+                        webAuthErrorCode, errorMessage, commonErrorEntity.getStatus(),
                         null, errorResponse, methodName);
 
             } else if (commonErrorEntity.getErrorAsObject() != null) {
-                // Error is an object
                 ErrorEntity errorEntity = commonErrorEntity.getErrorAsObject();
-                LogFile.getShared(context).addFailureLog("Error:- WebAuthErrorCode: " + webAuthErrorCode + " Response Message:- " + response.message() +
-                        " ErrorCode:- " + errorEntity.getCode() + "error message:-" + errorEntity.getError());
+                LogFile.getShared(context).addFailureLog(
+                        "Error:- WebAuthErrorCode: " + webAuthErrorCode + " ErrorCode:- "
+                                + errorEntity.getCode() + "error message:-" + errorEntity.getError());
 
-
-                return WebAuthError.getShared(context).serviceCallException(webAuthErrorCode, errorEntity.getError(), commonErrorEntity.getStatus(),
+                return WebAuthError.getShared(context).serviceCallException(
+                        webAuthErrorCode, errorEntity.getError(), commonErrorEntity.getStatus(),
                         errorEntity, errorResponse, methodName);
 
             } else {
-                LogFile.getShared(context).addFailureLog("Error:- WebAuthErrorCode: " + webAuthErrorCode + " Response Message:- " + errorResponse +
-                        "error is Different type than Object or String");
-                return WebAuthError.getShared(context).methodException("Exception :CommonError :generateCommonErrorEntity()", webAuthErrorCode, errorResponse);
+                LogFile.getShared(context).addFailureLog(
+                        "Error:- WebAuthErrorCode: " + webAuthErrorCode + " Response Message:- " + errorResponse
+                                + "error is Different type than Object or String");
+                return WebAuthError.getShared(context).methodException(
+                        "Exception :CommonError :generateCommonErrorEntity()", webAuthErrorCode, errorResponse);
             }
-
-
         } catch (Exception e) {
-
-            return WebAuthError.getShared(context).methodException("Exception :CommonError :generateCommonErrorEntity()", webAuthErrorCode, e.getMessage());
-
+            return WebAuthError.getShared(context).methodException(
+                    "Exception :CommonError :generateCommonErrorEntity()", webAuthErrorCode, e.getMessage());
         }
     }
 

@@ -13,6 +13,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import de.cidaas.sdk.android.helper.crypthelper.DpopP256Keystore;
 import de.cidaas.sdk.android.helper.customtab.CustomTabHelper;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
@@ -64,6 +65,9 @@ public class LoginController {
 
     String codeVerifier = "";
     String codeChallenge = "";
+
+    /** When true, the next browser login code exchange sends a {@code DPoP} header (see {@link de.cidaas.sdk.android.browser.WebAuth#useDpop()}). */
+    private boolean browserLoginPendingDpop = false;
 
     // Generate Code Challenge and Code verifier
     public void generateChallenge() {
@@ -292,15 +296,32 @@ public class LoginController {
 
     //Get Login With Browser
     public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
-        loginWithBrowser(activityContext, color, null, callbacktoMain);
+        loginWithBrowser(activityContext, color, null, false, callbacktoMain);
     }
 
     public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
                                  final EventResult<AccessTokenEntity> callbacktoMain) {
+        loginWithBrowser(activityContext, color, extraParams, false, callbacktoMain);
+    }
+
+    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
+                                 boolean useDpop,
+                                 final EventResult<AccessTokenEntity> callbacktoMain) {
+        browserLoginPendingDpop = useDpop;
         final String methodName = "LoginController :loginWithBrowser()";
         try {
 
-            getLoginURL(extraParams, new EventResult<String>() {
+            final Map<String, String> authorizeExtraParams;
+            try {
+                authorizeExtraParams = authorizeExtraParamsWithOptionalDpop(extraParams, useDpop);
+            } catch (Exception e) {
+                callbacktoMain.failure(WebAuthError.getShared(context)
+                        .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE, e.getMessage()));
+                browserLoginPendingDpop = false;
+                return;
+            }
+
+            getLoginURL(authorizeExtraParams, new EventResult<String>() {
                 @Override
                 public void success(String result) {
                     String loginURL = result;
@@ -313,6 +334,7 @@ public class LoginController {
                                 "EMPTY URL", methodName));
                         // Clear callback after failure
                         logincallback = null;
+                        browserLoginPendingDpop = false;
                     }
                 }
 
@@ -321,6 +343,7 @@ public class LoginController {
                     callbacktoMain.failure(error);
                     // Clear callback after failure
                     logincallback = null;
+                    browserLoginPendingDpop = false;
                 }
             });
 
@@ -332,6 +355,7 @@ public class LoginController {
                     .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE, e.getMessage()));
             // Clear callback after exception
             logincallback = null;
+            browserLoginPendingDpop = false;
         }
 
 
@@ -362,6 +386,23 @@ public class LoginController {
         } catch (Exception e) {
             WebAuthError.getShared(context).methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.SAVE_LOGIN_PROPERTIES, e.getMessage());
         }
+    }
+
+    /**
+     * When DPoP is enabled for hosted login, adds {@code dpop_jkt} (JWK thumbprint, RFC 9449) to the
+     * authorization URL query alongside any {@code extraParams}.
+     */
+    @Nullable
+    private Map<String, String> authorizeExtraParamsWithOptionalDpop(@Nullable Map<String, String> extraParams, boolean useDpop) {
+        if (!useDpop) {
+            return extraParams;
+        }
+        LinkedHashMap<String, String> merged = new LinkedHashMap<>();
+        if (extraParams != null) {
+            merged.putAll(extraParams);
+        }
+        merged.put("dpop_jkt", DpopP256Keystore.jwkThumbprintSha256(context));
+        return merged;
     }
 
    /* public void loginWithSocial(@NonNull final Context activityContext, @NonNull final String requestId, @NonNull final String provider,
@@ -430,11 +471,12 @@ public class LoginController {
         if (logincallback != null) {
             getLoginCode(code, logincallback);
         }
-        if(logoutcallback != null){
+        if (logoutcallback != null) {
             logoutcallback.success(true);
             // Clear both callbacks after logout callback is invoked
             logoutcallback = null;
             logincallback = null;
+            browserLoginPendingDpop = false;
         }
     }
 
@@ -463,7 +505,9 @@ public class LoginController {
                     }
                 };
 
-                AccessTokenController.getShared(context).getAccessTokenByCode(code, wrappedCallback);
+                boolean sendDpop = browserLoginPendingDpop;
+                browserLoginPendingDpop = false;
+                AccessTokenController.getShared(context).getAccessTokenByCode(code, sendDpop, wrappedCallback);
             } else {
                 // hideLoader();
                 String loggerMessage = "Request-Id params to dictionary conversion failure : " + "Error Code - ";
@@ -471,6 +515,7 @@ public class LoginController {
                 LogFile.getShared(context).addFailureLog(loggerMessage);
                 // Clear callback when code is null
                 logincallback = null;
+                browserLoginPendingDpop = false;
             }
         } catch (Exception e) {
 
@@ -479,6 +524,7 @@ public class LoginController {
 
             // Clear callback after exception
             logincallback = null;
+            browserLoginPendingDpop = false;
             // handle Exception
         }
     }
@@ -725,6 +771,7 @@ public class LoginController {
     public void registerWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
                                     final EventResult<AccessTokenEntity> callbacktoMain) {
         final String methodName = "LoginController :loginWithBrowser()";
+        browserLoginPendingDpop = false;
         try {
 
             getRegistrationURL(extraParams, new EventResult<String>() {
@@ -740,6 +787,7 @@ public class LoginController {
                                 "EMPTY URL", methodName));
                         // Clear callback after failure
                         logincallback = null;
+                        browserLoginPendingDpop = false;
                     }
                 }
 
@@ -748,6 +796,7 @@ public class LoginController {
                     callbacktoMain.failure(error);
                     // Clear callback after failure
                     logincallback = null;
+                    browserLoginPendingDpop = false;
                 }
             });
 
@@ -759,6 +808,7 @@ public class LoginController {
                     .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE, e.getMessage()));
             // Clear callback after exception
             logincallback = null;
+            browserLoginPendingDpop = false;
         }
 
 
@@ -767,6 +817,7 @@ public class LoginController {
     public void loginWithSocial(@NonNull final Context activityContext, @NonNull final String requestId, @NonNull final String provider,
                                 @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
         final String methodName = "LoginController :loginWithSocial()";
+        browserLoginPendingDpop = false;
         try {
             getSocialLoginURL(provider, requestId, new EventResult<String>() {
                 @Override
@@ -779,6 +830,7 @@ public class LoginController {
                                 "EMPTY SOCIAL URL", "Error" + methodName));
                         // Clear callback after failure
                         logincallback = null;
+                        browserLoginPendingDpop = false;
                     }
                 }
 
@@ -787,6 +839,7 @@ public class LoginController {
                     callbacktoMain.failure(error);
                     // Clear callback after failure
                     logincallback = null;
+                    browserLoginPendingDpop = false;
                 }
             });
 
@@ -794,6 +847,7 @@ public class LoginController {
             callbacktoMain.failure(WebAuthError.getShared(context).methodException("Exception : " + methodName, WebAuthErrorCode.GET_SOCIAL_LOGIN_URL_FAILURE, e.getMessage()));
             // Clear callback after exception
             logincallback = null;
+            browserLoginPendingDpop = false;
         }
 
     }

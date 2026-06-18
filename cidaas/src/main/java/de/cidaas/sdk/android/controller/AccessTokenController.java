@@ -45,6 +45,10 @@ public class AccessTokenController {
 
     //-------------------------------------------------------Get AccessToken By Code-------------------------------------------------------
     public void getAccessTokenByCode(final String code, final EventResult<AccessTokenEntity> callback) {
+        getAccessTokenByCode(code, false, callback);
+    }
+
+    public void getAccessTokenByCode(final String code, final boolean useDpop, final EventResult<AccessTokenEntity> callback) {
         try {
 
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
@@ -52,7 +56,7 @@ public class AccessTokenController {
                 public void success(Dictionary<String, String> result) {
                     String baseurl = result.get("DomainURL");
                     // Check notnull
-                    getAccessWithCode(baseurl, code, callback);
+                    getAccessWithCode(baseurl, code, useDpop, callback);
                 }
 
                 @Override
@@ -67,15 +71,15 @@ public class AccessTokenController {
         }
     }
 
-    private void getAccessWithCode(String baseurl, final String code, final EventResult<AccessTokenEntity> callback) {
+    private void getAccessWithCode(String baseurl, final String code, boolean useDpop, final EventResult<AccessTokenEntity> callback) {
         String methodName = "AccessToken Controller :getAccessWithCode()";
         try {
             //Log File
             LogFile.getShared(context).addInfoLog("Info of ", " Info Baseurl" + baseurl + " code" + code);
-            AccessTokenService.getShared(context).getAccessTokenByCode(baseurl, code, new EventResult<AccessTokenEntity>() {
+            AccessTokenService.getShared(context).getAccessTokenByCode(baseurl, code, useDpop, new EventResult<AccessTokenEntity>() {
                 @Override
                 public void success(final AccessTokenEntity result) {
-                    accessTokenConversion(result, callback);
+                    accessTokenConversion(result, callback, useDpop);
                 }
 
                 @Override
@@ -89,10 +93,11 @@ public class AccessTokenController {
     }
 
     //-------------------------------------------------------- accessTokenConversion---------------------------------------------------------
-    private void accessTokenConversion(final AccessTokenEntity accessTokenEntity, final EventResult<AccessTokenEntity> callback) {
+    private void accessTokenConversion(final AccessTokenEntity accessTokenEntity, final EventResult<AccessTokenEntity> callback,
+            boolean persistDpopSession) {
         final String methodName = "AccessToken Controller :accessTokenConversion()";
         try {
-            EntityToModelConverter.getShared(context).accessTokenEntityToAccessTokenModel(accessTokenEntity, accessTokenEntity.getSub(),
+            EntityToModelConverter.getShared(context).accessTokenEntityToAccessTokenModel(accessTokenEntity, accessTokenEntity.getSub(), persistDpopSession,
                     new EventResult<AccessTokenModel>() {
                         @Override
                         public void success(AccessTokenModel modelresult) {
@@ -146,7 +151,7 @@ public class AccessTokenController {
                     if (timeToExpire > currentSeconds) {
                         callback.success(result);
                     } else {
-                        getAccessTokenByRefreshToken(result.getRefresh_token(), callback);
+                        getAccessTokenByRefreshToken(result.getRefresh_token(), accessTokenModel.isDpopSession(), callback);
                     }
                 }
 
@@ -162,6 +167,14 @@ public class AccessTokenController {
 
     //--------------------------------------------------------Get Access Token by Refresh Token-------------------------------------------------------
     public void getAccessTokenByRefreshToken(final String refreshToken, final EventResult<AccessTokenEntity> callback) {
+        getAccessTokenByRefreshToken(refreshToken, false, callback);
+    }
+
+    /**
+     * @param useDpop send {@code DPoP} proof on the token request (use {@code true} when refreshing a DPoP session
+     *                obtained via {@link de.cidaas.sdk.android.browser.WebAuth#useDpop()}).
+     */
+    public void getAccessTokenByRefreshToken(final String refreshToken, final boolean useDpop, final EventResult<AccessTokenEntity> callback) {
         String methodName = "AccessToken Controller :getAccessTokenByRefreshToken()";
         try {
             //Log Info message
@@ -170,10 +183,10 @@ public class AccessTokenController {
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
                 @Override
                 public void success(Dictionary<String, String> loginPropertiesResult) {
-                    AccessTokenService.getShared(context).getAccessTokenByRefreshToken(refreshToken, loginPropertiesResult, new EventResult<AccessTokenEntity>() {
+                    AccessTokenService.getShared(context).getAccessTokenByRefreshToken(refreshToken, loginPropertiesResult, useDpop, new EventResult<AccessTokenEntity>() {
                         @Override
                         public void success(AccessTokenEntity result) {
-                            accessTokenConversion(result, callback);
+                            accessTokenConversion(result, callback, useDpop);
                         }
 
                         @Override

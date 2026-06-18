@@ -8,6 +8,8 @@ import java.util.concurrent.TimeUnit;
 
 import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.helper.general.DBHelper;
+import de.cidaas.sdk.android.helper.network.CertificatePinningHelper;
+import okhttp3.CertificatePinner;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -38,9 +40,16 @@ public class CidaasSDK_V2_Service {
 
         final String HEADER_USER_AGENT = "User-Agent";
 
-        okHttpClient = new OkHttpClient.Builder()
+        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                 .readTimeout(40, TimeUnit.SECONDS)
-                .connectTimeout(100, TimeUnit.SECONDS)
+                .connectTimeout(100, TimeUnit.SECONDS);
+
+        CertificatePinner certificatePinner = CertificatePinningHelper.buildCertificatePinner(mcontext);
+        if (certificatePinner != null) {
+            clientBuilder.certificatePinner(certificatePinner);
+        }
+
+        okHttpClient = clientBuilder
                 .addNetworkInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {

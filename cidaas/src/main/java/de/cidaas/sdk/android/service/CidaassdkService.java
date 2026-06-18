@@ -71,7 +71,7 @@ public class CidaassdkService {
                 .readTimeout(40, TimeUnit.SECONDS)
                 .connectTimeout(100, TimeUnit.SECONDS);
 
-        CertificatePinner certificatePinner = CertificatePinningHelper.buildCertificatePinner();
+        CertificatePinner certificatePinner = CertificatePinningHelper.buildCertificatePinner(mcontext);
         if (certificatePinner != null) {
             clientBuilder.certificatePinner(certificatePinner);
         }

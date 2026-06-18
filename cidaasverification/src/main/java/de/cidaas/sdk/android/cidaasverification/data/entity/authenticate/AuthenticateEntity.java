@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import androidx.annotation.NonNull;
+
 import java.io.File;
 import java.io.Serializable;
 
@@ -17,7 +19,11 @@ public class AuthenticateEntity implements Serializable {
     private String device_id = "";
     private String push_id = "";
     private String client_id = "";
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private String pass_code = "";
+    /** Password factor authenticate body field (not {@code pass_code}); see cidaas PASSWORD method matrix. */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private String password = "";
     private String verificationType = "";
 
     /**
@@ -38,11 +44,22 @@ public class AuthenticateEntity implements Serializable {
 
 
 
-    //For Pattern,push
+    // OTP / pattern / push pass_code flows (JSON field {@code pass_code}, not {@code password})
     public AuthenticateEntity(String exchange_id, String pass_code, String verificationType) {
         this.exchange_id = exchange_id;
-        this.pass_code = pass_code;
+        setPass_code(pass_code);
         this.verificationType = verificationType;
+    }
+
+    /** Password login authenticate: JSON field {@code password} only (not {@code pass_code}). */
+    @NonNull
+    public static AuthenticateEntity forPassword(
+            @NonNull String exchangeId, @NonNull String password, @NonNull String verificationType) {
+        AuthenticateEntity entity = new AuthenticateEntity();
+        entity.setExchange_id(exchangeId);
+        entity.setPassword(password);
+        entity.setVerificationType(verificationType);
+        return entity;
     }
 
 
@@ -138,6 +155,20 @@ public class AuthenticateEntity implements Serializable {
 
     public void setPass_code(String pass_code) {
         this.pass_code = pass_code;
+        if (pass_code != null && !pass_code.isEmpty()) {
+            this.password = "";
+        }
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+        if (password != null && !password.isEmpty()) {
+            this.pass_code = "";
+        }
     }
 
     public String getAttestation() {

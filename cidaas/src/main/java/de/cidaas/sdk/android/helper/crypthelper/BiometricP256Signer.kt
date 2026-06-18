@@ -1,7 +1,6 @@
 package de.cidaas.sdk.android.helper.crypthelper
 
 import android.content.Context
-import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -10,7 +9,6 @@ import org.json.JSONObject
 import java.math.BigInteger
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.MessageDigest
 import java.security.Signature
@@ -26,6 +24,8 @@ import kotlinx.coroutines.launch
 
 /**
  * EC P-256 in Android Keystore with biometric auth per signature for device-registration proofs.
+ * New keys prefer **StrongBox** (API 28+); if unavailable, generation falls back to the default
+ * Keystore implementation (typically **TEE**-backed on production devices).
  *
  * @param keyAlias keystore entry alias; use a dedicated alias for flows that must not share the device-registration key.
  */
@@ -35,22 +35,12 @@ class BiometricP256Signer @JvmOverloads constructor(
 ) {
 
     fun ensureKey() {
-        val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        if (ks.containsAlias(keyAlias)) return
-
-        val spec = KeyGenParameterSpec.Builder(
-            keyAlias,
-            KeyProperties.PURPOSE_SIGN,
-        )
-            .setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
-            .setDigests(KeyProperties.DIGEST_NONE)
-            .setUserAuthenticationRequired(true)
-            .setInvalidatedByBiometricEnrollment(true)
-            .build()
-
-        val gen = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
-        gen.initialize(spec)
-        gen.generateKeyPair()
+        KeystoreEcP256StrongBoxHelper.ensureEcP256SignKey(keyAlias) {
+            setAlgorithmParameterSpec(ECGenParameterSpec("secp256r1"))
+            setDigests(KeyProperties.DIGEST_NONE)
+            setUserAuthenticationRequired(true)
+            setInvalidatedByBiometricEnrollment(true)
+        }
     }
 
     fun jwkThumbprintSha256(): String {
@@ -63,6 +53,14 @@ class BiometricP256Signer @JvmOverloads constructor(
         val json = """{"crv":"P-256","kty":"EC","x":"$xStr","y":"$yStr"}"""
         val digest = MessageDigest.getInstance("SHA-256").digest(json.toByteArray(StandardCharsets.UTF_8))
         return digest.toBase64UrlNoPad()
+    }
+
+    /** SubjectPublicKeyInfo DER of the biometric EC key, standard Base64 (RFC 4648, no line wraps). */
+    fun publicKeyDerBase64(): String {
+        ensureKey()
+        val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val der = ks.getCertificate(keyAlias).publicKey.encoded
+        return android.util.Base64.encodeToString(der, android.util.Base64.NO_WRAP)
     }
 
     fun proofJwt(

@@ -93,8 +93,6 @@ public interface ICidaasSDKService {
     @POST
     Call<DeviceRegistrationResponseEntity> verifyDeviceRegistration(@Url String url,
             @HeaderMap Map<String, String> headers,
-            @Header("DPoP") String dpopProof,
-            @Header("Biometric") String biometricProof,
             @Body DeviceRegistrationVerificationRequestEntity body);
 
     // -----------------------------------------------------GetCall-----------------------------------------------------------------

@@ -26,6 +26,9 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * cidaas.verifications().login().otp().initiate(loginRequest, VerificationLoginOtp.AcceptMethod.SMS, initiateCb);
  * cidaas.verifications().login().otp().verify(otp, loginRequest, exchangeId, VerificationLoginOtp.AcceptMethod.SMS, verifyCb);
  * cidaas.verifications().login().otp().continueLogin(loginRequest, authenticateResponse, VerificationLoginOtp.AcceptMethod.SMS, continueCb);
+ * cidaas.verifications().login().password().initiate(loginRequest, passwordInitiateCb);
+ * cidaas.verifications().login().password().verify(password, loginRequest, exchangeId, passwordVerifyCb);
+ * cidaas.verifications().login().password().continueLogin(loginRequest, authenticateResponse, passwordContinueCb);
  * cidaas.verifications().login().pattern(loginRequest, patternLoginCb); // tokens in callback.getData()
  * cidaas.verifications().login().fingerprint(loginRequest, fingerprintLoginCb);
  * cidaas.verifications().login().push(loginRequest, pushLoginCb);
@@ -45,6 +48,8 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * For {@code login().otp().initiate}, {@code InitiateResponse}; for {@code login().otp().verify},
  * {@code AuthenticateResponse}; for {@code login().otp().continueLogin}, {@code LoginCredentialsResponseEntity}
  * (tokens in {@code getData()}).
+ * For {@code login().password().initiate}, {@code InitiateResponse}; for {@code login().password().verify},
+ * {@code AuthenticateResponse}; for {@code login().password().continueLogin}, {@code LoginCredentialsResponseEntity}.
  * For {@code login().pattern(loginRequest, callback)}, {@code login().fingerprint(loginRequest, callback)},
  * {@code login().push(loginRequest, callback)}, and {@code login().face(loginRequest, callback)}, on success
  * {@code LoginCredentialsResponseEntity} (tokens in {@code getData()}). Optional {@code LoginRequest#setMediumId} is

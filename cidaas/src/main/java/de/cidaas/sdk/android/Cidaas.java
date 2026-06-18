@@ -125,6 +125,17 @@ public class Cidaas {
         CidaasHelper.clearCertificatePinning();
     }
 
+    /**
+     * Use SPKI pins from a {@code res/xml/network_security_config.xml} resource (same {@code domain-config} /
+     * {@code pin-set} / {@code pin} schema as {@code android:networkSecurityConfig}). OkHttp does not read that
+     * file automatically; the SDK parses it and applies an OkHttp {@code CertificatePinner}.
+     *
+     * @param xmlResId application resource id, e.g. {@code R.xml.network_security_config}
+     */
+    public void setCertificatePinningFromNetworkSecurityConfig(int xmlResId) {
+        CidaasHelper.setCertificatePinningFromNetworkSecurityConfig(xmlResId);
+    }
+
     // ****** LOGIN WITH Document
     // *****-------------------------------------------------------------------------------------------------------
     public void VerifyDocument(final File photo, final String sub,
@@ -140,7 +151,15 @@ public class Cidaas {
     }
 
     public void getAccessTokenFromRefreshToken(String refershtoken, EventResult<AccessTokenEntity> result) {
-        AccessTokenController.getShared(context).getAccessTokenByRefreshToken(refershtoken, result);
+        getAccessTokenFromRefreshToken(refershtoken, false, result);
+    }
+
+    /**
+     * @param useDpop set {@code true} when the refresh token belongs to a DPoP session (e.g. after
+     *                {@link de.cidaas.sdk.android.browser.WebAuth#useDpop()}); otherwise use {@code false}.
+     */
+    public void getAccessTokenFromRefreshToken(String refershtoken, boolean useDpop, EventResult<AccessTokenEntity> result) {
+        AccessTokenController.getShared(context).getAccessTokenByRefreshToken(refershtoken, useDpop, result);
     }
 
     public void getAccessTokenBySocial(SocialAccessTokenEntity socialAccessTokenEntity,
@@ -174,7 +193,16 @@ public class Cidaas {
     public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
             @Nullable final Map<String, String> extraParams,
             final EventResult<AccessTokenEntity> callbacktoMain) {
-        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, callbacktoMain);
+        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, false, callbacktoMain);
+    }
+
+    /**
+     * Hosted login with optional {@code DPoP} on the token endpoint (use {@link WebAuth#useDpop()}).
+     */
+    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
+            @Nullable final Map<String, String> extraParams, boolean useDpop,
+            final EventResult<AccessTokenEntity> callbacktoMain) {
+        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, useDpop, callbacktoMain);
     }
 
     public void logoutWithBrowser(@NonNull final Context activityContext, @NonNull final String sub,
@@ -188,7 +216,7 @@ public class Cidaas {
      * Browser-based login, logout, and social login. Pass the {@link Context} used
      * to launch the custom tab
      * (typically your current {@link Activity}). Example:
-     * {@code cidaas.webAuth(this).extraParams(map).signIn(callback);}
+     * {@code cidaas.webAuth(this).extraParams(map).signIn(callback);} or {@code cidaas.webAuth(this).useDpop().signIn(callback);}
      */
     @NonNull
     public WebAuth webAuth(@NonNull Context activityContext) {
@@ -198,7 +226,7 @@ public class Cidaas {
     /**
      * OAuth / hosted-flow {@code requestId} (delegates to
      * {@code CidaasNative.getRequestId} at runtime). Example:
-     * {@code cidaas.requestId().fetch(callback);}
+     * {@code cidaas.requestId().fetch(callback);} or {@code cidaas.requestId().useDpop().fetch(callback);}
      */
     @NonNull
     public AuthRequestId requestId() {
@@ -212,6 +240,7 @@ public class Cidaas {
      * {@code cidaas.users().accountVerification().initiate(initiateRequestEntity, callback);}
      * {@code cidaas.users().accountVerification().validate(verifyRequestEntity, callback);}
      * {@code cidaas.users().changePassword(sub, changePasswordRequestEntity, callback);}
+     * {@code cidaas.users().setPassword(sub, "MyNewPassword#1", callback);}
      * {@code cidaas.users().fetch(sub, callback);}
      * {@code cidaas.users().register(registrationEntity, callback);} or
      * {@code cidaas.users().register(requestId, registrationEntity, callback);}
@@ -230,6 +259,9 @@ public class Cidaas {
      * {@code cidaas.verifications().login().otp().initiate(loginRequest, VerificationLoginOtp.AcceptMethod.SMS, cb);}
      * {@code cidaas.verifications().login().otp().verify(otp, loginRequest, exchangeId, VerificationLoginOtp.AcceptMethod.SMS, cb);}
      * {@code cidaas.verifications().login().otp().continueLogin(loginRequest, authenticateResponse, VerificationLoginOtp.AcceptMethod.SMS, cb);}
+     * {@code cidaas.verifications().login().password().initiate(loginRequest, cb);}
+     * {@code cidaas.verifications().login().password().verify(password, loginRequest, exchangeId, cb);}
+     * {@code cidaas.verifications().login().password().continueLogin(loginRequest, authenticateResponse, cb);}
      * {@code cidaas.verifications().login().pattern(loginRequest, cb);}
      * {@code cidaas.verifications().login().fingerprint(loginRequest, cb);}
      * {@code cidaas.verifications().login().push(loginRequest, cb);}

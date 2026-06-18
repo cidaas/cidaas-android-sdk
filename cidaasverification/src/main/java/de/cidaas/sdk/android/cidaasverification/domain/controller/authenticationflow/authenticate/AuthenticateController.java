@@ -114,6 +114,31 @@ public class AuthenticateController {
                     addPropertiesForFaceOrVoice(voice, authenticateEntity, authenticateResult);
                     break;
                 }
+                case AuthenticationType.PASSWORD: {
+                    if (authenticateEntity.getPassword() == null || authenticateEntity.getPassword().isEmpty()) {
+                        authenticateResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "password must not be null or empty for password verification",
+                                VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
+                        return;
+                    }
+                    addProperties(authenticateEntity, authenticateResult);
+                    break;
+                }
+                case AuthenticationType.SMS:
+                case AuthenticationType.EMAIL:
+                case AuthenticationType.IVR:
+                case AuthenticationType.CHAT:
+                case AuthenticationType.TOTP:
+                case AuthenticationType.BACKUPCODE: {
+                    if (authenticateEntity.getPass_code() == null || authenticateEntity.getPass_code().isEmpty()) {
+                        authenticateResult.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "pass_code must not be null or empty",
+                                VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
+                        return;
+                    }
+                    addProperties(authenticateEntity, authenticateResult);
+                    break;
+                }
                 default: {
                     if (authenticateEntity.getPass_code() != null && !authenticateEntity.getPass_code().equals("")) {
 

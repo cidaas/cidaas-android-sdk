@@ -36,6 +36,7 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * cidaas.users().accountVerification().initiate(initiateRequestEntity, callback);
  * cidaas.users().accountVerification().validate(verifyRequestEntity, callback);
  * cidaas.users().changePassword(sub, changePasswordRequestEntity, callback);
+ * cidaas.users().setPassword(sub, "MyNewPassword#1", callback);
  * cidaas.users().fetch(sub, callback);
  * cidaas.users().register(registrationEntity, callback);
  * cidaas.users().register(requestId, registrationEntity, callback);
@@ -48,6 +49,7 @@ public final class Users {
     private static final String NATIVE_CIDAAS_NATIVE = "de.cidaas.sdk.android.cidaasnative.view.CidaasNative";
     private static final String REGISTRATION_ENTITY_CLASS = "de.cidaas.sdk.android.cidaasnative.data.entity.register.RegistrationEntity";
     private static final String CHANGE_PASSWORD_REQUEST_ENTITY_CLASS = "de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepassword.ChangePasswordRequestEntity";
+    private static final String SET_PASSWORD_REQUEST_ENTITY_CLASS = "de.cidaas.sdk.android.cidaasnative.data.entity.setpassword.SetPasswordRequestEntity";
 
     private final Context context;
 
@@ -82,6 +84,14 @@ public final class Users {
     @NonNull
     public Verifications verifications() {
         return new Verifications(this);
+    }
+
+    /**
+     * Initial password setup for users without an existing password. Loads the access token for {@code sub},
+     * then POST {@code /password-srv/password} with {@code password} and {@code confirmPassword} (same value).
+     */
+    public void setPassword(@NonNull String sub, @NonNull String password, @NonNull EventResult<?> callback) {
+        setPasswordInternal(sub, password, callback);
     }
 
     /**
@@ -332,6 +342,56 @@ public final class Users {
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw new IllegalStateException("users().changePassword delegation failed.", cause);
+        }
+    }
+
+    private void setPasswordInternal(@NonNull String sub, @NonNull String password,
+            @NonNull EventResult<?> callback) {
+        if (sub == null || sub.isEmpty()) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException("Sub must not be null or empty",
+                    "Users.setPassword"));
+            return;
+        }
+        if (password == null || password.isEmpty()) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "password must not be null or empty", "Users.setPassword"));
+            return;
+        }
+        AccessTokenController.getShared(context).getAccessToken(sub, new EventResult<AccessTokenEntity>() {
+            @Override
+            public void success(AccessTokenEntity accessTokenEntity) {
+                String token = accessTokenEntity.getAccess_token();
+                if (token == null || token.isEmpty()) {
+                    callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                            "Access Token must not be empty", "Users.setPassword"));
+                    return;
+                }
+                invokeSetPassword(token, password, callback);
+            }
+
+            @Override
+            public void failure(WebAuthError error) {
+                callback.failure(error);
+            }
+        });
+    }
+
+    private void invokeSetPassword(@NonNull String accessToken, @NonNull String password,
+            @NonNull EventResult<?> callback) {
+        try {
+            Class<?> reqClazz = Class.forName(SET_PASSWORD_REQUEST_ENTITY_CLASS);
+            Object requestEntity = reqClazz.getDeclaredConstructor().newInstance();
+            reqClazz.getMethod("setPassword", String.class).invoke(requestEntity, password);
+            reqClazz.getMethod("setConfirmPassword", String.class).invoke(requestEntity, password);
+            Object cidaasNative = nativeCidaasNative(context);
+            invoke(cidaasNative, "setPassword",
+                    new Class<?>[] { String.class, reqClazz, EventResult.class },
+                    new Object[] { accessToken, requestEntity, callback });
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException("users().setPassword delegation failed.", cause);
         }
     }
 

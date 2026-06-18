@@ -46,6 +46,13 @@ public class CidaasHelper {
     @Nullable
     public static CertificatePinningConfig certificatePinningConfig;
 
+    /**
+     * When non-zero, {@link de.cidaas.sdk.android.helper.network.CertificatePinningHelper} builds pins
+     * by parsing this {@code res/xml} resource (Network Security Config schema) instead of using
+     * {@link #certificatePinningConfig}.
+     */
+    public static int networkSecurityPinningXmlResId;
+
     public static CidaasHelper getShared(Context context) {
         if (shared == null) {
             shared = new CidaasHelper(context);
@@ -177,6 +184,7 @@ public class CidaasHelper {
      * Call after the domain URL is known (e.g. after {@code setURL}).
      */
     public static void setCertificatePinning(@NonNull String... pinHashes) {
+        networkSecurityPinningXmlResId = 0;
         certificatePinningConfig = new CertificatePinningConfig(null, pinHashes);
     }
 
@@ -184,15 +192,31 @@ public class CidaasHelper {
      * Pins a specific host (use when the pin host differs from the configured base URL).
      */
     public static void setCertificatePinning(@NonNull String host, @NonNull String... pinHashes) {
+        networkSecurityPinningXmlResId = 0;
         certificatePinningConfig = new CertificatePinningConfig(host, pinHashes);
     }
 
     public static void setCertificatePinning(@NonNull CertificatePinningConfig config) {
+        networkSecurityPinningXmlResId = 0;
         certificatePinningConfig = config;
+    }
+
+    /**
+     * Use certificate pins declared in {@code res/xml/network_security_config.xml} (same {@code domain-config} /
+     * {@code pin-set} format as {@code android:networkSecurityConfig}). OkHttp does not read that file
+     * automatically; the SDK parses it and builds an OkHttp {@code CertificatePinner}.
+     * <p>
+     * Mutually exclusive with {@link #setCertificatePinning(String...)} for a given build: when this id is
+     * non-zero, programmatic {@link #certificatePinningConfig} is ignored until cleared.
+     */
+    public static void setCertificatePinningFromNetworkSecurityConfig(int xmlResId) {
+        certificatePinningConfig = null;
+        networkSecurityPinningXmlResId = xmlResId;
     }
 
     public static void clearCertificatePinning() {
         certificatePinningConfig = null;
+        networkSecurityPinningXmlResId = 0;
     }
 
 }
