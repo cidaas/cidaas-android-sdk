@@ -47,6 +47,7 @@ public class NativeURLHelper {
 
     String resetPasswordURL = "/password-srv/resetpassword";
     String ChangePasswordURL = "/password-srv/password";
+    String setPasswordURL = "/password-srv/password";
 
     String RegisterUserAccountInitiate = "/verification-actions-srv/account/initiation";
     String RegisterUserAccountVerify = "/verification-actions-srv/account";
@@ -211,6 +212,10 @@ public class NativeURLHelper {
 
     public String getChangePasswordURL() {
         return ChangePasswordURL;
+    }
+
+    public String getSetPasswordURL() {
+        return setPasswordURL;
     }
 
     public String getResetPassword() {

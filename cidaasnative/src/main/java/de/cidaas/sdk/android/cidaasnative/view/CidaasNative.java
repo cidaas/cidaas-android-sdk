@@ -36,10 +36,12 @@ import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepasswo
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetNewPasswordResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetPasswordEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetpasswordvalidatecode.ResetPasswordValidateCodeResponseEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.setpassword.SetPasswordRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.tenantinfo.TenantInfoEntity;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.accountverification.AccountVerificationController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.changepassword.ChangePasswordController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.client.ClientController;
+import de.cidaas.sdk.android.cidaasnative.domain.controller.setpassword.SetPasswordController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.deviceconfiguredverifications.DeviceConfiguredVerificationsListController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.publicconfiguredverifications.PublicConfiguredVerificationsListController;
 import de.cidaas.sdk.android.cidaasnative.domain.controller.deduplication.DeduplicationController;
@@ -579,6 +581,17 @@ public class CidaasNative {
         } else {
             result.failure(WebAuthError.getShared(context).propertyMissingException("Access Token must not be empty",
                     "Exception :Cidaas :changePassword()"));
+        }
+    }
+
+    public void setPassword(String accessToken, final SetPasswordRequestEntity setPasswordRequestEntity,
+            final EventResult<ChangePasswordResponseEntity> result) {
+        if (accessToken != null && !accessToken.isEmpty()) {
+            setPasswordRequestEntity.setAccess_token(accessToken);
+            SetPasswordController.getShared(context).setPassword(setPasswordRequestEntity, result);
+        } else {
+            result.failure(WebAuthError.getShared(context).propertyMissingException("Access Token must not be empty",
+                    "Exception :Cidaas :setPassword()"));
         }
     }
 

@@ -32,7 +32,6 @@ import timber.log.Timber;
 
 public class OauthService {
 
-
     CidaassdkService service;
 
     public Context context;
@@ -41,8 +40,7 @@ public class OauthService {
     URLHelper urlHelper = new URLHelper();
     public ObjectMapper objectMapper = new ObjectMapper();
 
-
-    //Create Shared instances
+    // Create Shared instances
     public static OauthService getShared(Context contextfromcidaas) {
         if (shared == null) {
             shared = new OauthService(contextfromcidaas);
@@ -50,7 +48,7 @@ public class OauthService {
         return shared;
     }
 
-    //Constructor
+    // Constructor
     OauthService(Context contextfromcidaas) {
         this.context = contextfromcidaas;
         if (service == null) {
@@ -59,17 +57,16 @@ public class OauthService {
         webAuthError = new WebAuthError(context);
     }
 
-
-    //Get Login URL
+    // Get Login URL
     public void getLoginUrl(String requestId, @NonNull String DomainURL, final EventResult<String> callback) {
         try {
-            //Local Variables
+            // Local Variables
             String finalUrl = "";
             String baseUrl = "";
 
             URLHelper urlComponents;
 
-            //Get Properties From DB
+            // Get Properties From DB
             Dictionary<String, String> loginProperties = DBHelper.getShared().getLoginProperties(DomainURL);
 
             if (loginProperties == null) {
@@ -84,21 +81,20 @@ public class OauthService {
         }
     }
 
-
     public void getUserinfo(String AccessToken, String DomainURL, final EventResult<UserInfoEntity> callback) {
         final String methodName = "OauthService:-getUserinfo()";
         try {
-            //Local Variables
+            // Local Variables
             String url = "";
             String baseUrl = "";
 
             Map<String, String> headers = new Hashtable<>();
 
-            //get Device Information
+            // get Device Information
             DeviceInfoEntity deviceInfoEntity = DBHelper.getShared().getDeviceInfo();
 
-            //check Construct Headers pending,Null Checking Pending
-            //Add headers
+            // check Construct Headers pending,Null Checking Pending
+            // Add headers
             headers.put("Content-Type", URLHelper.contentType);
             headers.put("access_token", AccessToken);
             headers.put("device-id", deviceInfoEntity.getDeviceId());
@@ -108,24 +104,22 @@ public class OauthService {
             headers.put("lat", LocationDetails.getShared(context).getLatitude());
             headers.put("long", LocationDetails.getShared(context).getLongitude());
 
-
-            //Get Properties From DB
+            // Get Properties From DB
 
             Dictionary<String, String> loginProperties = DBHelper.getShared().getLoginProperties(DomainURL);
             if (loginProperties == null) {
                 callback.failure(WebAuthError.getShared(context).loginURLMissingException(methodName));
             }
 
+            // querymap.put("UserInfoURL",loginProperties.get("UserInfoURL"));
 
-            //   querymap.put("UserInfoURL",loginProperties.get("UserInfoURL"));
-
-            //Assign Url
+            // Assign Url
             // Perform Null Check
-            if (null != loginProperties){
+            if (null != loginProperties) {
                 url = loginProperties.get("DomainURL") + URLHelper.getShared().getUserInfoURL();
             }
 
-            //call Service
+            // call Service
             ICidaasSDKService cidaassdkService = service.getInstance();
             cidaassdkService.getUserInfo(url, headers).enqueue(new Callback<UserInfoEntity>() {
                 @Override
@@ -135,21 +129,25 @@ public class OauthService {
                         if (response.code() == 200) {
                             callback.success(response.body());
                         } else {
-                            callback.failure(WebAuthError.getShared(context).emptyResponseException(WebAuthErrorCode.USER_INFO_SERVICE_FAILURE,
+                            callback.failure(WebAuthError.getShared(context).emptyResponseException(
+                                    WebAuthErrorCode.USER_INFO_SERVICE_FAILURE,
                                     response.code(), methodName));
                         }
                     } else {
                         // callback requires
                         assert response.errorBody() != null;
-                        CommonError.getShared(context).generateCommonErrorEntity(WebAuthErrorCode.USER_INFO_SERVICE_FAILURE, response, methodName);
-                        callback.failure(CommonError.getShared(context).generateCommonErrorEntity(WebAuthErrorCode.USER_INFO_SERVICE_FAILURE, response, methodName));
+                        CommonError.getShared(context).generateCommonErrorEntity(
+                                WebAuthErrorCode.USER_INFO_SERVICE_FAILURE, response, methodName);
+                        callback.failure(CommonError.getShared(context).generateCommonErrorEntity(
+                                WebAuthErrorCode.USER_INFO_SERVICE_FAILURE, response, methodName));
                     }
                 }
 
                 @Override
                 public void onFailure(Call<UserInfoEntity> call, Throwable t) {
                     Timber.e("Faliure in getAccessTokenByCode id call" + t.getMessage());
-                    callback.failure(WebAuthError.getShared(context).serviceCallFailureException(WebAuthErrorCode.REQUEST_ID_SERVICE_FAILURE, t.getMessage(), methodName));
+                    callback.failure(WebAuthError.getShared(context).serviceCallFailureException(
+                            WebAuthErrorCode.REQUEST_ID_SERVICE_FAILURE, t.getMessage(), methodName));
 
                 }
             });
@@ -158,6 +156,5 @@ public class OauthService {
             callback.failure(webAuthError);
         }
     }
-
 
 }

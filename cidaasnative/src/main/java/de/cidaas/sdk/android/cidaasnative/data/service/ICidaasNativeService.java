@@ -26,6 +26,7 @@ import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepasswo
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.changepassword.ChangePasswordResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetNewPasswordResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.resetpassword.resetnewpassword.ResetPasswordEntity;
+import de.cidaas.sdk.android.cidaasnative.data.entity.setpassword.SetPasswordRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.tenantinfo.TenantInfoEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.deviceconfiguredverification.DeviceConfiguredVerificationsListResponseEntity;
@@ -92,6 +93,11 @@ public interface ICidaasNativeService {
     @PUT
     Call<ChangePasswordResponseEntity> changePassword(@Url String url, @HeaderMap Map<String, String> headers,
                                                       @Body ChangePasswordRequestEntity changePasswordRequestEntity);
+
+    //Set Password (initial password for passwordless/social users)
+    @POST
+    Call<ChangePasswordResponseEntity> setPassword(@Url String url, @HeaderMap Map<String, String> headers,
+                                                   @Body SetPasswordRequestEntity setPasswordRequestEntity);
 
 
     //Register New User
