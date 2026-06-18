@@ -10,10 +10,39 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 /**
- * Requests a Play Integrity token with nonce = Base64.URL_SAFE | NO_WRAP over the server challenge bytes.
+ * Requests a Play Integrity token. Pass {@code data.nonce} from device-registration initiation
+ * unchanged as the API nonce so server-side attestation validation matches.
  */
 object PlayIntegrityHelper {
 
+    /**
+     * Requests a Play Integrity token. {@code nonce} must be the URL-safe base64 string from the
+     * initiation response ({@code data.nonce}) — pass it through unchanged so server-side validation matches.
+     */
+    @JvmStatic
+    fun requestToken(
+        context: Context,
+        nonce: String,
+        cloudProjectNumber: Long?,
+        listener: PlayIntegrityTokenListener,
+    ) {
+        val trimmedNonce = nonce.trim()
+        if (trimmedNonce.isEmpty()) {
+            listener.onFailure(IllegalArgumentException("Play Integrity nonce must not be empty"))
+            return
+        }
+        val mgr = IntegrityManagerFactory.create(context.applicationContext)
+        val reqBuilder = IntegrityTokenRequest.builder().setNonce(trimmedNonce)
+        val projectNumber = cloudProjectNumber ?: readCloudProjectNumberFromManifest(context)
+        if (projectNumber != null && projectNumber > 0L) {
+            reqBuilder.setCloudProjectNumber(projectNumber)
+        }
+        mgr.requestIntegrityToken(reqBuilder.build())
+            .addOnSuccessListener { response -> listener.onSuccess(response.token()) }
+            .addOnFailureListener { e -> listener.onFailure(e) }
+    }
+
+    /** @deprecated Prefer {@link #requestToken(Context, String, Long, PlayIntegrityTokenListener)} with initiation {@code nonce}. */
     @JvmStatic
     fun requestToken(
         context: Context,
@@ -25,16 +54,21 @@ object PlayIntegrityHelper {
             challengeBytes,
             android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP,
         )
-        val mgr = IntegrityManagerFactory.create(context.applicationContext)
-        val reqBuilder = IntegrityTokenRequest.builder().setNonce(nonce)
-        val projectNumber = cloudProjectNumber ?: readCloudProjectNumberFromManifest(context)
-        if (projectNumber != null && projectNumber > 0L) {
-            reqBuilder.setCloudProjectNumber(projectNumber)
-        }
-        mgr.requestIntegrityToken(reqBuilder.build())
-            .addOnSuccessListener { response -> listener.onSuccess(response.token()) }
-            .addOnFailureListener { e -> listener.onFailure(e) }
+        requestToken(context, nonce, cloudProjectNumber, listener)
     }
+
+    suspend fun requestToken(context: Context, nonce: String, cloudProjectNumber: Long?): String =
+        suspendCoroutine { cont ->
+            requestToken(
+                context,
+                nonce,
+                cloudProjectNumber,
+                object : PlayIntegrityTokenListener {
+                    override fun onSuccess(token: String) = cont.resume(token)
+                    override fun onFailure(error: Throwable) = cont.resumeWithException(error)
+                },
+            )
+        }
 
     suspend fun requestToken(context: Context, challengeBytes: ByteArray, cloudProjectNumber: Long?): String =
         suspendCoroutine { cont ->

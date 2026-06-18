@@ -55,6 +55,14 @@ class BiometricP256Signer @JvmOverloads constructor(
         return digest.toBase64UrlNoPad()
     }
 
+    /** SubjectPublicKeyInfo DER of the biometric EC key, standard Base64 (RFC 4648, no line wraps). */
+    fun publicKeyDerBase64(): String {
+        ensureKey()
+        val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val der = ks.getCertificate(keyAlias).publicKey.encoded
+        return android.util.Base64.encodeToString(der, android.util.Base64.NO_WRAP)
+    }
+
     fun proofJwt(
         activity: FragmentActivity,
         httpMethod: String,

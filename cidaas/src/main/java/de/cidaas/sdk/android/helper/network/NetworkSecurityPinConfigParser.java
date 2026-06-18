@@ -123,7 +123,7 @@ public final class NetworkSecurityPinConfigParser {
             builder.add(host, pins);
             anyPattern[0] = true;
             if (includeSub) {
-                builder.add("*." + host, pins);
+                builder.add("**." + host, pins);
                 anyPattern[0] = true;
             }
         }

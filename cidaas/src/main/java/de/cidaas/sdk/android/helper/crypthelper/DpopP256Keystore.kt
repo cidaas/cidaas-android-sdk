@@ -45,7 +45,42 @@ object DpopP256Keystore {
     }
 
     @JvmStatic
-    fun proofJwt(context: Context, httpMethod: String, requestUrlString: String): String {
+    fun proofJwt(context: Context, httpMethod: String, requestUrlString: String): String =
+        proofJwtInternal(context, httpMethod, requestUrlString, null, null, null, null)
+
+    /**
+     * DPoP proof for device-registration verification: standard DPoP claims plus {@code session_id},
+     * {@code nonce}, {@code attestation} (Play Integrity / App Check token), and {@code biometric_public_key_der}
+     * (standard Base64 of SubjectPublicKeyInfo DER).
+     */
+    @JvmStatic
+    fun proofJwtForDeviceRegistration(
+        context: Context,
+        httpMethod: String,
+        requestUrlString: String,
+        sessionId: String,
+        initiationNonce: String,
+        appAttestationToken: String,
+        biometricPublicKeyDerBase64: String,
+    ): String = proofJwtInternal(
+        context,
+        httpMethod,
+        requestUrlString,
+        sessionId,
+        initiationNonce,
+        appAttestationToken,
+        biometricPublicKeyDerBase64,
+    )
+
+    private fun proofJwtInternal(
+        context: Context,
+        httpMethod: String,
+        requestUrlString: String,
+        sessionId: String?,
+        initiationNonce: String?,
+        appAttestationToken: String?,
+        biometricPublicKeyDerBase64: String?,
+    ): String {
         ensureKey(context)
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         val entry = ks.getEntry(alias, null) as KeyStore.PrivateKeyEntry
@@ -70,6 +105,18 @@ object DpopP256Keystore {
             .put("htu", canonicalHtu(requestUrlString))
             .put("iat", iat)
             .put("jti", jti)
+        if (!sessionId.isNullOrEmpty()) {
+            payload.put("session_id", sessionId)
+        }
+        if (!initiationNonce.isNullOrEmpty()) {
+            payload.put("nonce", initiationNonce)
+        }
+        if (!appAttestationToken.isNullOrEmpty()) {
+            payload.put("attestation", appAttestationToken)
+        }
+        if (!biometricPublicKeyDerBase64.isNullOrEmpty()) {
+            payload.put("biometric_public_key_der", biometricPublicKeyDerBase64)
+        }
         val headerB64 = header.toString().toByteArray(StandardCharsets.UTF_8).toBase64UrlNoPad()
         val payloadB64 = payload.toString().toByteArray(StandardCharsets.UTF_8).toBase64UrlNoPad()
         val signingInput = "$headerB64.$payloadB64"

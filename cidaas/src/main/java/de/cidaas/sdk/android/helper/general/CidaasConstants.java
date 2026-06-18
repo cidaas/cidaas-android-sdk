@@ -28,4 +28,7 @@ public final class CidaasConstants {
     public static final String PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER =
             "de.cidaas.sdk.android.PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER";
 
+    /** Device registration API error when the device is already registered (treated as success by the SDK). */
+    public static final String DEVICE_ALREADY_REGISTERED_ERROR_CODE = "VAC1177";
+
 }
