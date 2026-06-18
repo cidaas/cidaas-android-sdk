@@ -21,6 +21,8 @@ public class AuthenticationType {
      */
     public static final String CHAT = "CHAT";
     public static final String BACKUPCODE = "BACKUPCODE";
+    /** Password factor for v2 verification login ({@code /authenticate/initiate/password}). */
+    public static final String PASSWORD = "PASSWORD";
 
     private AuthenticationType() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");

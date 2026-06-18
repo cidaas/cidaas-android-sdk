@@ -552,7 +552,36 @@ public class CidaasVerification {
     }
 
     /**
-     * OTP login step 3 (after {@link #loginOtpVerify}): POST
+     * Password login step 1: POST
+     * {@code /verification-srv/v2/authenticate/initiate/password}. Same body shape as
+     * {@link #loginOtpInitiate(LoginRequest, String, EventResult)} — use {@code LoginRequest} with
+     * {@code identifier}, {@code requestId}, and {@code usageType}; for MFA set {@code trackId}.
+     */
+    public void loginPasswordInitiate(
+            @NonNull LoginRequest loginRequest,
+            @NonNull EventResult<InitiateResponse> callback) {
+        loginOtpInitiate(loginRequest, AuthenticationType.PASSWORD, callback);
+    }
+
+    /**
+     * Password login step 2: POST
+     * {@code /verification-srv/v2/authenticate/authenticate/password} with {@code password}
+     * (not {@code pass_code}; no login continue). On success, {@code callback} receives {@link AuthenticateResponse}.
+     * Call {@link #loginOtpContinueLogin} with {@link AuthenticationType#PASSWORD} next to obtain tokens
+     * (or use {@code cidaas.verifications().login().password().continueLogin(...)} from the main SDK module).
+     */
+    public void loginPasswordVerify(
+            @NonNull String password,
+            @NonNull LoginRequest loginRequest,
+            @NonNull String exchangeId,
+            @NonNull EventResult<AuthenticateResponse> callback) {
+        AuthenticateEntity authenticateEntity =
+                AuthenticateEntity.forPassword(exchangeId, password, AuthenticationType.PASSWORD);
+        PasswordlessLoginController.getShared(context).authenticateVerificationOnly(authenticateEntity, callback);
+    }
+
+    /**
+     * OTP or password login step 3 (after {@link #loginOtpVerify} or {@link #loginPasswordVerify}): POST
      * {@code /login-srv/verification/login}. Response may be JSON
      * with {@code data.code} or HTTP {@code 302} with {@code code} in
      * {@code Location}; the code is exchanged for tokens.
@@ -560,7 +589,8 @@ public class CidaasVerification {
      * with
      * {@link de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity} in
      * {@code getData()}.
-     * Prefer {@code cidaas.verifications().login().otp().continueLogin(...)} from
+     * Prefer {@code cidaas.verifications().login().otp().continueLogin(...)} or
+     * {@code cidaas.verifications().login().password().continueLogin(...)} from
      * the main SDK module.
      */
     public void loginOtpContinueLogin(

@@ -1,5 +1,7 @@
 package de.cidaas.sdk.android.helper.network;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -15,8 +17,27 @@ public final class CertificatePinningHelper {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
+    /**
+     * Builds a pinner using {@link CidaasHelper#networkSecurityPinningXmlResId} (parsed NSC XML) when set,
+     * otherwise {@link CidaasHelper#certificatePinningConfig}. Uses {@link CidaasHelper#shared} for
+     * {@code Context} when {@code context} is null.
+     */
     @Nullable
     public static CertificatePinner buildCertificatePinner() {
+        Context ctx = CidaasHelper.shared != null ? CidaasHelper.shared.context : null;
+        return buildCertificatePinner(ctx);
+    }
+
+    @Nullable
+    public static CertificatePinner buildCertificatePinner(@Nullable Context context) {
+        if (CidaasHelper.networkSecurityPinningXmlResId != 0 && context != null) {
+            CertificatePinner fromXml = NetworkSecurityPinConfigParser.parseFromResource(
+                    context, CidaasHelper.networkSecurityPinningXmlResId);
+            if (fromXml != null) {
+                return fromXml;
+            }
+        }
+
         CertificatePinningConfig config = CidaasHelper.certificatePinningConfig;
         if (config == null || !config.hasPins()) {
             return null;

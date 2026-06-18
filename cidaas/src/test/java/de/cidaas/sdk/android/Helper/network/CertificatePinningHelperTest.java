@@ -15,6 +15,7 @@ public class CertificatePinningHelperTest {
   @After
   public void tearDown() {
     CidaasHelper.certificatePinningConfig = null;
+    CidaasHelper.networkSecurityPinningXmlResId = 0;
     CidaasHelper.baseurl = "";
   }
 

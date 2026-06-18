@@ -36,6 +36,15 @@ public final class VerificationLogin {
     }
 
     /**
+     * Password login: {@link VerificationLoginPassword#initiate}, {@link VerificationLoginPassword#verify},
+     * then {@link VerificationLoginPassword#continueLogin} for tokens.
+     */
+    @NonNull
+    public VerificationLoginPassword password() {
+        return new VerificationLoginPassword(context);
+    }
+
+    /**
      * Pattern login in one call: initiate → pattern lock UI → login continue to tokens.
      * Use {@code cidaas.verifications().login().pattern(loginRequest, callback)} — set
      * {@link de.cidaas.sdk.android.cidaasverification.data.entity.enduser.loginrequest.LoginRequest#setMediumId(String)}

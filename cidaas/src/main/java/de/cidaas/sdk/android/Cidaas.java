@@ -125,6 +125,17 @@ public class Cidaas {
         CidaasHelper.clearCertificatePinning();
     }
 
+    /**
+     * Use SPKI pins from a {@code res/xml/network_security_config.xml} resource (same {@code domain-config} /
+     * {@code pin-set} / {@code pin} schema as {@code android:networkSecurityConfig}). OkHttp does not read that
+     * file automatically; the SDK parses it and applies an OkHttp {@code CertificatePinner}.
+     *
+     * @param xmlResId application resource id, e.g. {@code R.xml.network_security_config}
+     */
+    public void setCertificatePinningFromNetworkSecurityConfig(int xmlResId) {
+        CidaasHelper.setCertificatePinningFromNetworkSecurityConfig(xmlResId);
+    }
+
     // ****** LOGIN WITH Document
     // *****-------------------------------------------------------------------------------------------------------
     public void VerifyDocument(final File photo, final String sub,
@@ -247,6 +258,9 @@ public class Cidaas {
      * {@code cidaas.verifications().login().otp().initiate(loginRequest, VerificationLoginOtp.AcceptMethod.SMS, cb);}
      * {@code cidaas.verifications().login().otp().verify(otp, loginRequest, exchangeId, VerificationLoginOtp.AcceptMethod.SMS, cb);}
      * {@code cidaas.verifications().login().otp().continueLogin(loginRequest, authenticateResponse, VerificationLoginOtp.AcceptMethod.SMS, cb);}
+     * {@code cidaas.verifications().login().password().initiate(loginRequest, cb);}
+     * {@code cidaas.verifications().login().password().verify(password, loginRequest, exchangeId, cb);}
+     * {@code cidaas.verifications().login().password().continueLogin(loginRequest, authenticateResponse, cb);}
      * {@code cidaas.verifications().login().pattern(loginRequest, cb);}
      * {@code cidaas.verifications().login().fingerprint(loginRequest, cb);}
      * {@code cidaas.verifications().login().push(loginRequest, cb);}
