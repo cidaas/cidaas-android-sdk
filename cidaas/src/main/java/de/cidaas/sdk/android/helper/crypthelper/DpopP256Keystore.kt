@@ -3,7 +3,6 @@ package de.cidaas.sdk.android.helper.crypthelper
 import android.content.Context
 import android.security.keystore.KeyProperties
 import org.json.JSONObject
-import java.math.BigInteger
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
@@ -35,13 +34,8 @@ object DpopP256Keystore {
     fun jwkThumbprintSha256(context: Context): String {
         ensureKey(context)
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        val pub = (ks.getCertificate(alias).publicKey as ECPublicKey)
-        val w = pub.w
-        val xStr = coord32ToB64Url(w.affineX)
-        val yStr = coord32ToB64Url(w.affineY)
-        val json = """{"crv":"P-256","kty":"EC","x":"$xStr","y":"$yStr"}"""
-        val digest = MessageDigest.getInstance("SHA-256").digest(json.toByteArray(StandardCharsets.UTF_8))
-        return digest.toBase64UrlNoPad()
+        val der = ks.getCertificate(alias).publicKey.encoded
+        return EcP256JwkThumbprint.sha256ThumbprintFromSpkiDer(der)
     }
 
     @JvmStatic
@@ -86,14 +80,7 @@ object DpopP256Keystore {
         val entry = ks.getEntry(alias, null) as KeyStore.PrivateKeyEntry
         val priv = entry.privateKey
         val pub = entry.certificate.publicKey as ECPublicKey
-        val w = pub.w
-        val xStr = coord32ToB64Url(w.affineX)
-        val yStr = coord32ToB64Url(w.affineY)
-        val jwk = JSONObject()
-            .put("kty", "EC")
-            .put("crv", "P-256")
-            .put("x", xStr)
-            .put("y", yStr)
+        val jwk = JSONObject(EcP256JwkThumbprint.canonicalJwkJson(pub))
         val header = JSONObject()
             .put("typ", "dpop+jwt")
             .put("alg", "ES256")
@@ -179,20 +166,6 @@ object DpopP256Keystore {
             return ByteArray(32 - b.size) { 0 } + b
         }
         return b.copyOf(32)
-    }
-
-    private fun coord32ToB64Url(n: BigInteger): String = coord32(n).toBase64UrlNoPad()
-
-    private fun coord32(n: BigInteger): ByteArray {
-        var b = n.toByteArray()
-        if (b.isNotEmpty() && b[0] == 0.toByte() && b.size > 1) {
-            b = b.copyOfRange(1, b.size)
-        }
-        require(b.size <= 32) { "unexpected EC coordinate length ${b.size}" }
-        if (b.size < 32) {
-            return ByteArray(32 - b.size) { 0 } + b
-        }
-        return b
     }
 
     private fun ByteArray.toBase64UrlNoPad(): String =
