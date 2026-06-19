@@ -74,8 +74,7 @@ public final class FingerprintLoginController {
                                         }
                                         String authenticateUrl = VerificationURLHelper.getShared().getAuthenticateURL(
                                                 baseurl, AuthenticationType.FINGERPRINT);
-                                        final BiometricP256Signer signer = new BiometricP256Signer(context,
-                                                BiometricP256Signer.VERIFICATION_FINGERPRINT_KEY_ALIAS);
+                                        final BiometricP256Signer signer = new BiometricP256Signer(context);
                                         signer.ensureKey();
                                         signer.proofJwt(activity, "POST", authenticateUrl, new BiometricProofListener() {
                                             @Override

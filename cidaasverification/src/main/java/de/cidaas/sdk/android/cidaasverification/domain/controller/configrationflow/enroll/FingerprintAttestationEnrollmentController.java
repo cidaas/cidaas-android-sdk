@@ -116,13 +116,13 @@ public final class FingerprintAttestationEnrollmentController {
                                                 }
                                                 String enrollUrl = VerificationURLHelper.getShared().getEnrollURL(
                                                         baseurl, verificationType);
-                                                final BiometricP256Signer signer = new BiometricP256Signer(context,
-                                                        BiometricP256Signer.VERIFICATION_FINGERPRINT_KEY_ALIAS);
+                                                final BiometricP256Signer signer = new BiometricP256Signer(context);
                                                 signer.ensureKey();
                                                 signer.proofJwt(activity, "POST", enrollUrl, new BiometricProofListener() {
                                                     @Override
                                                     public void onSuccess(String proofJwt) {
                                                         EnrollEntity enrollEntity = new EnrollEntity();
+                                                        enrollEntity.setSub(sub);
                                                         enrollEntity.setExchange_id(scannedExchangeId);
                                                         enrollEntity.setVerificationType(verificationType);
                                                         enrollEntity.setAttestation(proofJwt);

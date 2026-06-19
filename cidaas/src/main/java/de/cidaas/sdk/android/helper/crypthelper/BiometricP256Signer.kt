@@ -6,7 +6,6 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import org.json.JSONObject
-import java.math.BigInteger
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
@@ -23,15 +22,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * EC P-256 in Android Keystore with biometric auth per signature for device-registration proofs.
- * New keys prefer **StrongBox** (API 28+); if unavailable, generation falls back to the default
- * Keystore implementation (typically **TEE**-backed on production devices).
- *
- * @param keyAlias keystore entry alias; use a dedicated alias for flows that must not share the device-registration key.
+ * EC P-256 in Android Keystore with biometric auth per signature. Used for device registration
+ * and MFA fingerprint enrollment/login (same {@link #DEVICE_BIOMETRIC_KEY_ALIAS}).
  */
 class BiometricP256Signer @JvmOverloads constructor(
     private val context: Context,
-    private val keyAlias: String = "cidaas.device.biometric.ecdsa",
+    private val keyAlias: String = DEVICE_BIOMETRIC_KEY_ALIAS,
 ) {
 
     fun ensureKey() {
@@ -46,13 +42,8 @@ class BiometricP256Signer @JvmOverloads constructor(
     fun jwkThumbprintSha256(): String {
         ensureKey()
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        val pub = (ks.getCertificate(keyAlias).publicKey as ECPublicKey)
-        val w = pub.w
-        val xStr = coord32ToB64Url(w.affineX)
-        val yStr = coord32ToB64Url(w.affineY)
-        val json = """{"crv":"P-256","kty":"EC","x":"$xStr","y":"$yStr"}"""
-        val digest = MessageDigest.getInstance("SHA-256").digest(json.toByteArray(StandardCharsets.UTF_8))
-        return digest.toBase64UrlNoPad()
+        val der = ks.getCertificate(keyAlias).publicKey.encoded
+        return EcP256JwkThumbprint.sha256ThumbprintFromSpkiDer(der)
     }
 
     /** SubjectPublicKeyInfo DER of the biometric EC key, standard Base64 (RFC 4648, no line wraps). */
@@ -85,14 +76,7 @@ class BiometricP256Signer @JvmOverloads constructor(
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         val entry = ks.getEntry(keyAlias, null) as KeyStore.PrivateKeyEntry
         val pub = entry.certificate.publicKey as ECPublicKey
-        val w = pub.w
-        val xStr = coord32ToB64Url(w.affineX)
-        val yStr = coord32ToB64Url(w.affineY)
-        val jwk = JSONObject()
-            .put("kty", "EC")
-            .put("crv", "P-256")
-            .put("x", xStr)
-            .put("y", yStr)
+        val jwk = JSONObject(EcP256JwkThumbprint.canonicalJwkJson(pub))
         val header = JSONObject()
             .put("typ", "biometric+jwt")
             .put("alg", "ES256")
@@ -208,27 +192,16 @@ class BiometricP256Signer @JvmOverloads constructor(
         return b.copyOf(32)
     }
 
-    private fun coord32ToB64Url(n: BigInteger): String = coord32(n).toBase64UrlNoPad()
-
-    private fun coord32(n: BigInteger): ByteArray {
-        var b = n.toByteArray()
-        if (b.isNotEmpty() && b[0] == 0.toByte() && b.size > 1) {
-            b = b.copyOfRange(1, b.size)
-        }
-        require(b.size <= 32) { "unexpected EC coordinate length ${b.size}" }
-        if (b.size < 32) {
-            return ByteArray(32 - b.size) { 0 } + b
-        }
-        return b
-    }
-
     private fun ByteArray.toBase64UrlNoPad(): String =
         android.util.Base64.encodeToString(this, android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP)
             .trimEnd('=')
 
     companion object {
-        /** Keystore alias for MFA fingerprint enrollment proofs (separate from device registration). */
-        const val VERIFICATION_FINGERPRINT_KEY_ALIAS = "cidaas.verification.fingerprint.ecdsa"
+        /** Keystore alias shared with device registration; MFA fingerprint must use the same key. */
+        const val DEVICE_BIOMETRIC_KEY_ALIAS = "cidaas.device.biometric.ecdsa"
+
+        /** @deprecated Use {@link #DEVICE_BIOMETRIC_KEY_ALIAS} — same alias as device registration. */
+        const val VERIFICATION_FINGERPRINT_KEY_ALIAS = DEVICE_BIOMETRIC_KEY_ALIAS
 
         @JvmStatic
         fun decodeChallengeB64(challengeB64: String): ByteArray {
