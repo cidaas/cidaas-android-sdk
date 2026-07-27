@@ -59,7 +59,7 @@ public class AuthenticateService {
         try {
 
             LogFile.getShared(context).addInfoLog(methodName, " AuthenticateURL:- " + authenticateURL +
-                    VerificationConstants.EXCHANGE_ID + authenticateEntity.getExchange_id() + " PassCode:- " + authenticateEntity.getPass_code());
+                    VerificationConstants.EXCHANGE_ID + authenticateEntity.getExchange_id());
 
             //call service
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();

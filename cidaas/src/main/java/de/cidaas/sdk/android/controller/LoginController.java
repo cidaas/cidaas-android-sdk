@@ -635,7 +635,7 @@ public class LoginController {
                 }
 
             } else {
-                String errorMessage = "Login properties in null";
+                String errorMessage = "Login properties are null";
                 result.failure(WebAuthError.getShared(context).cidaasPropertyMissingException(errorMessage, methodName));
             }
         } catch (Exception e) {

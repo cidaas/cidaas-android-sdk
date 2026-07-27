@@ -3,7 +3,6 @@ package de.cidaas.sdk.android.controller;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Environment;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -99,14 +98,14 @@ public class DocumentScannnerController {
             return imageFile;
 
         } catch (Exception e) {
-            Log.d("Raja file", e.getLocalizedMessage());
+            Timber.e(e, "Failed to save document scanner image file");
         } finally {
             try {
                 if (out != null) {
                     out.close();
                 }
             } catch (Exception e) {
-                Log.d("Raja io", e.getLocalizedMessage());
+                Timber.e(e, "Failed to close document scanner image output stream");
             }
         }
         return imageFile;
