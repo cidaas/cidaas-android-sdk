@@ -98,7 +98,7 @@ public class LocationDetailsTest {
 
     @Test
     public void testOnLocationChanged() throws Exception {
-        locationDetails.onLocationChanged(null);
+        locationDetails.onLocationChanged((Location) null);
     }
 
     @Test

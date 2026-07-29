@@ -12,7 +12,6 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
@@ -78,6 +77,11 @@ public class LocationDetails implements LocationListener {
 
     public Location getLocation() {
         try {
+            if (!Privacy.isLocationEnabled()) {
+                canGetLocation = false;
+                location = null;
+                return null;
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 getLocationPermissions();
@@ -97,6 +101,8 @@ public class LocationDetails implements LocationListener {
     private void getLocationPermissions() {
 
         if (!Privacy.isLocationEnabled()) {
+            canGetLocation = false;
+            location = null;
             return;
         }
 
@@ -113,6 +119,12 @@ public class LocationDetails implements LocationListener {
 
     @SuppressLint("MissingPermission")
     private void getLocationAfterPermission() {
+        if (!Privacy.isLocationEnabled()) {
+            canGetLocation = false;
+            location = null;
+            return;
+        }
+
         try {
 
             locationManager = (LocationManager) mContext
@@ -136,7 +148,6 @@ public class LocationDetails implements LocationListener {
                             LocationManager.NETWORK_PROVIDER,
                             MIN_TIME_BW_UPDATES,
                             MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-                    Log.d("Network", "Network");
                     if (locationManager != null) {
                         location = locationManager
                                 .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -154,7 +165,6 @@ public class LocationDetails implements LocationListener {
                                 LocationManager.GPS_PROVIDER,
                                 MIN_TIME_BW_UPDATES,
                                 MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-                        Log.d("GPS Enabled", "GPS Enabled");
                         if (locationManager != null) {
                             location = locationManager
                                     .getLastKnownLocation(LocationManager.GPS_PROVIDER);
@@ -186,6 +196,9 @@ public class LocationDetails implements LocationListener {
      * Function to get latitude
      */
     public String getLatitude() {
+        if (!Privacy.isLocationEnabled()) {
+            return "";
+        }
 
         String Lat = "";
 
@@ -210,6 +223,10 @@ public class LocationDetails implements LocationListener {
      * Function to get longitude
      */
     public String getLongitude() {
+        if (!Privacy.isLocationEnabled()) {
+            return "";
+        }
+
         String Long = "";
         if (ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
@@ -230,6 +247,9 @@ public class LocationDetails implements LocationListener {
     }
 
     public float getBearing() {
+        if (!Privacy.isLocationEnabled()) {
+            return 0f;
+        }
         if (location != null) {
             bearing = location.getBearing();
         }
@@ -242,6 +262,9 @@ public class LocationDetails implements LocationListener {
      * @return boolean
      */
     public boolean canGetLocation() {
+        if (!Privacy.isLocationEnabled()) {
+            return false;
+        }
         return this.canGetLocation;
     }
 

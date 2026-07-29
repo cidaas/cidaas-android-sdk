@@ -35,6 +35,7 @@ import de.cidaas.sdk.android.helper.general.DBHelper;
 import de.cidaas.sdk.android.helper.loaders.ICustomLoader;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricCallback;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricEntity;
+import de.cidaas.sdk.android.library.common.Privacy;
 import de.cidaas.sdk.android.service.entity.UserInfo.UserInfoEntity;
 import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 import de.cidaas.sdk.android.service.entity.documentscanner.DocumentScannerServiceResultEntity;
@@ -86,6 +87,19 @@ public class Cidaas {
 
     public void setENABLE_PKCE(boolean ENABLE_PKCE) {
         CidaasHelper.getShared(context).setENABLE_PKCE(ENABLE_PKCE);
+    }
+
+    /**
+     * Controls whether the SDK may access device location (lat/lon headers and GPS lookups).
+     * Default is {@code true} for backward compatibility.
+     */
+    public void setEnableLocationAccess(boolean enableLocationAccess) {
+        Privacy.setLocationEnabled(enableLocationAccess);
+    }
+
+    /** @return whether SDK location access is currently enabled (default {@code true}). */
+    public boolean isEnableLocationAccess() {
+        return Privacy.isLocationEnabled();
     }
 
     // enableLog
