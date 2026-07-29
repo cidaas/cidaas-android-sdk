@@ -2,24 +2,14 @@ package de.cidaas.sdk.android.library.common;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 public class PrivacyTest {
 
-    @Before
-    public void setUp() {
-        Privacy.setLocationEnabled(true);
-    }
-
     @After
     public void tearDown() {
+        // Isolate tests; does not claim to verify the field initializer default
         Privacy.setLocationEnabled(true);
-    }
-
-    @Test
-    public void defaultLocationAccessIsEnabled() {
-        Assert.assertTrue(Privacy.isLocationEnabled());
     }
 
     @Test

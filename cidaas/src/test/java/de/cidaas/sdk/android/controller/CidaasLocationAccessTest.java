@@ -33,12 +33,6 @@ public class CidaasLocationAccessTest {
     }
 
     @Test
-    public void defaultEnableLocationAccessIsTrue() {
-        Assert.assertTrue(cidaas.isEnableLocationAccess());
-        Assert.assertTrue(Privacy.isLocationEnabled());
-    }
-
-    @Test
     public void setEnableLocationAccess_updatesPrivacy() {
         cidaas.setEnableLocationAccess(false);
         Assert.assertFalse(cidaas.isEnableLocationAccess());
@@ -47,5 +41,14 @@ public class CidaasLocationAccessTest {
         cidaas.setEnableLocationAccess(true);
         Assert.assertTrue(cidaas.isEnableLocationAccess());
         Assert.assertTrue(Privacy.isLocationEnabled());
+    }
+
+    @Test
+    public void isEnableLocationAccess_reflectsPrivacyState() {
+        Privacy.setLocationEnabled(false);
+        Assert.assertFalse(cidaas.isEnableLocationAccess());
+
+        Privacy.setLocationEnabled(true);
+        Assert.assertTrue(cidaas.isEnableLocationAccess());
     }
 }
