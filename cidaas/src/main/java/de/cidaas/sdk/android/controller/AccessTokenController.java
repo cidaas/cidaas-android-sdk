@@ -118,7 +118,7 @@ public class AccessTokenController {
     public void getAccessToken(String sub, final EventResult<AccessTokenEntity> callback) {
         String methodName = "AccessToken Controller :getAccessToken()";
         try {
-            LogFile.getShared(context).addInfoLog(methodName, "Retrieving access token for Sub:-" + sub);
+            LogFile.getShared(context).addInfoLog(methodName, "Retrieving access token");
 
             if (sub != null && !sub.equals("")) {
                 final AccessTokenModel accessTokenModel = DBHelper.getShared().getAccessToken(sub);

@@ -58,8 +58,7 @@ public class AuthenticateService {
         final String methodName = "AuthenticateService:-callAuthenticateService()";
         try {
 
-            LogFile.getShared(context).addInfoLog(methodName, " AuthenticateURL:- " + authenticateURL +
-                    VerificationConstants.EXCHANGE_ID + authenticateEntity.getExchange_id());
+            LogFile.getShared(context).addInfoLog(methodName, " AuthenticateURL:- " + authenticateURL);
 
             //call service
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();
@@ -69,8 +68,8 @@ public class AuthenticateService {
                     if (response.isSuccessful()) {
                         authenticateCallback.success(response.body());
 
-                        LogFile.getShared(context).addSuccessLog(methodName, " Sub:- " + response.body().getData().getSub() +
-                                " Status id:- " + response.body().getData().getStatus_id() + VerificationConstants.EXCHANGE_ID + response.body().getData().getExchange_id());
+                        LogFile.getShared(context).addSuccessLog(methodName,
+                                "Authenticate succeeded. Status id:- " + response.body().getData().getStatus_id());
                     } else {
                         authenticateCallback.failure(CommonError.getShared(context).generateCommonErrorEntity(WebAuthErrorCode.AUTHENTICATE_VERIFICATION_FAILURE,
                                 response, VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
@@ -96,8 +95,7 @@ public class AuthenticateService {
         try {
             //call service
 
-            LogFile.getShared(context).addInfoLog(methodName, " AuthenticateURL:- " + authenticateURL +
-                    VerificationConstants.EXCHANGE_ID + authenticateHashmap.get("exchange_id"));
+            LogFile.getShared(context).addInfoLog(methodName, " AuthenticateURL:- " + authenticateURL);
 
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();
             cidaasSDK_v2_services.authenticateWithMultipart(authenticateURL, headers, fileToSend, authenticateHashmap).enqueue(new Callback<AuthenticateResponse>() {
@@ -107,8 +105,8 @@ public class AuthenticateService {
 
                         authenticateCallback.success(response.body());
 
-                        LogFile.getShared(context).addSuccessLog(methodName, " Sub:- " + response.body().getData().getSub() +
-                                " Status id:- " + response.body().getData().getStatus_id() + VerificationConstants.EXCHANGE_ID + response.body().getData().getExchange_id());
+                        LogFile.getShared(context).addSuccessLog(methodName,
+                                "Authenticate succeeded. Status id:- " + response.body().getData().getStatus_id());
                     } else {
                         authenticateCallback.failure(CommonError.getShared(context).generateCommonErrorEntity(
                                 WebAuthErrorCode.AUTHENTICATE_VERIFICATION_FAILURE, response, VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
