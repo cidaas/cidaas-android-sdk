@@ -99,13 +99,6 @@ public class LocationDetails implements LocationListener {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void getLocationPermissions() {
-
-        if (!Privacy.isLocationEnabled()) {
-            canGetLocation = false;
-            location = null;
-            return;
-        }
-
         if (ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(mContext,

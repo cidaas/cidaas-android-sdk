@@ -48,7 +48,7 @@ public class HeadersLocationAccessTest {
     }
 
     @Test
-    public void getHeaders_whenLocationEnabled_includesLatAndLon() {
+    public void getHeaders_whenLocationEnabled_includesLatAndLonKeys() {
         Privacy.setLocationEnabled(true);
 
         Map<String, String> result = headers.getHeaders(null, false, null);
