@@ -119,12 +119,6 @@ public class LocationDetails implements LocationListener {
 
     @SuppressLint("MissingPermission")
     private void getLocationAfterPermission() {
-        if (!Privacy.isLocationEnabled()) {
-            canGetLocation = false;
-            location = null;
-            return;
-        }
-
         try {
 
             locationManager = (LocationManager) mContext

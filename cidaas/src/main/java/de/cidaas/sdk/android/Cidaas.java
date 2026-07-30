@@ -92,12 +92,19 @@ public class Cidaas {
     /**
      * Controls whether the SDK may access device location (lat/lon headers and GPS lookups).
      * Default is {@code true} for backward compatibility.
+     *
+     * <p><strong>Note:</strong> this setting is process-wide. Because {@link Privacy} holds a
+     * static flag, calling this method on any {@code Cidaas} instance affects every instance
+     * in the same process.
      */
     public void setEnableLocationAccess(boolean enableLocationAccess) {
         Privacy.setLocationEnabled(enableLocationAccess);
     }
 
-    /** @return whether SDK location access is currently enabled (default {@code true}). */
+    /**
+     * @return whether SDK location access is currently enabled (default {@code true}).
+     * This reflects the process-wide {@link Privacy} flag shared by all {@code Cidaas} instances.
+     */
     public boolean isEnableLocationAccess() {
         return Privacy.isLocationEnabled();
     }
