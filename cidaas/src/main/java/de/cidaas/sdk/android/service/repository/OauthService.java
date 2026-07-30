@@ -145,7 +145,7 @@ public class OauthService {
 
                 @Override
                 public void onFailure(Call<UserInfoEntity> call, Throwable t) {
-                    Timber.e("Faliure in getAccessTokenByCode id call" + t.getMessage());
+                    Timber.e("Failure in getUserInfo service call: " + t.getMessage());
                     callback.failure(WebAuthError.getShared(context).serviceCallFailureException(
                             WebAuthErrorCode.REQUEST_ID_SERVICE_FAILURE, t.getMessage(), methodName));
 

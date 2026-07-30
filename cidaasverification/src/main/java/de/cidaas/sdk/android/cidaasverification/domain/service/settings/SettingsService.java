@@ -4,9 +4,6 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import com.google.gson.Gson;
-
-import java.util.Arrays;
 import java.util.Map;
 
 import de.cidaas.sdk.android.cidaasverification.data.entity.settings.configuredmfalist.ConfiguredMFAList;
@@ -60,7 +57,7 @@ public class SettingsService {
         final String methodName = "SettingsService:-getConfigurationList()";
         try {
 
-            LogFile.getShared(context).addInfoLog(methodName, getMFAListEntity.getSub());
+            LogFile.getShared(context).addInfoLog(methodName, "Requesting configuration list");
             //call service
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();
             cidaasSDK_v2_services.getConfiguredMFAList(settingsURL, headers, getMFAListEntity).enqueue(new Callback<ConfiguredMFAList>() {
@@ -68,8 +65,7 @@ public class SettingsService {
                 public void onResponse(Call<ConfiguredMFAList> call, Response<ConfiguredMFAList> response) {
                     if (response.isSuccessful()) {
 
-                        LogFile.getShared(context).addSuccessLog(methodName, response.toString() + "Sub:-" + getMFAListEntity.getSub()
-                        );
+                        LogFile.getShared(context).addSuccessLog(methodName, "Configuration list retrieved successfully");
                         if (response.code() == 200) {
                             configuredMFAListResult.success(response.body());
                         } else {
@@ -132,10 +128,8 @@ public class SettingsService {
         final String methodName = "SettingsService:-getConfigurationList()";
         try {
 
-            LogFile.getShared(context).addInfoLog(methodName, getMFAListEntity.getSub());
+            LogFile.getShared(context).addInfoLog(methodName, "Requesting other_devices configuration list");
             LogFile.getShared(context).addAPILog("other_devices configuration list API url: "+configuredListURL);
-            LogFile.getShared(context).addAPILog("other_devices configuration list API headers"+ Arrays.asList(headers));
-            LogFile.getShared(context).addAPILog("other_devices configuration list API params: "+new Gson().toJson(getMFAListEntity));
             //call service
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();
             cidaasSDK_v2_services.getConfiguredMFAList(configuredListURL, headers, getMFAListEntity).enqueue(new Callback<ConfiguredMFAList>() {
@@ -143,11 +137,10 @@ public class SettingsService {
                 public void onResponse(Call<ConfiguredMFAList> call, Response<ConfiguredMFAList> response) {
                     if (response.isSuccessful()) {
 
-                        LogFile.getShared(context).addSuccessLog(methodName, response.toString() + "Sub:-" + getMFAListEntity.getSub()
-                        );
+                        LogFile.getShared(context).addSuccessLog(methodName, "Configuration list retrieved successfully");
                         if (response.code() == 200) {
                             configuredMFAListResult.success(response.body());
-                            LogFile.getShared(context).addAPILog("other_devices configuration list api success body: "+ new Gson().toJson(response.body())+"\n");
+                            LogFile.getShared(context).addAPILog("other_devices configuration list api completed successfully\n");
                         } else {
 
                             ConfiguredMFAList configuredMFAList = new ConfiguredMFAList();
