@@ -69,7 +69,7 @@ public class AuthenticateService {
                         authenticateCallback.success(response.body());
 
                         LogFile.getShared(context).addSuccessLog(methodName,
-                                "Authenticate succeeded. Status id:- " + response.body().getData().getStatus_id());
+                                "Authenticate succeeded. Status id:- " + resolveStatusId(response));
                     } else {
                         authenticateCallback.failure(CommonError.getShared(context).generateCommonErrorEntity(WebAuthErrorCode.AUTHENTICATE_VERIFICATION_FAILURE,
                                 response, VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
@@ -106,7 +106,7 @@ public class AuthenticateService {
                         authenticateCallback.success(response.body());
 
                         LogFile.getShared(context).addSuccessLog(methodName,
-                                "Authenticate succeeded. Status id:- " + response.body().getData().getStatus_id());
+                                "Authenticate succeeded. Status id:- " + resolveStatusId(response));
                     } else {
                         authenticateCallback.failure(CommonError.getShared(context).generateCommonErrorEntity(
                                 WebAuthErrorCode.AUTHENTICATE_VERIFICATION_FAILURE, response, VerificationConstants.ERROR_LOGGING_PREFIX + methodName));
@@ -132,5 +132,12 @@ public class AuthenticateService {
             authenticateCallback.failure(WebAuthError.getShared(context).methodException(VerificationConstants.ERROR_LOGGING_PREFIX + methodName,
                     WebAuthErrorCode.AUTHENTICATE_VERIFICATION_FAILURE, e.getMessage()));
         }
+    }
+
+    private static String resolveStatusId(Response<AuthenticateResponse> response) {
+        if (response.body() != null && response.body().getData() != null) {
+            return String.valueOf(response.body().getData().getStatus_id());
+        }
+        return "unknown";
     }
 }
