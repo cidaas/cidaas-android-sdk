@@ -4,8 +4,6 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import com.google.gson.Gson;
-
 import java.util.Map;
 
 import de.cidaas.sdk.android.cidaasverification.data.entity.authenticatedhistory.AuthenticatedHistoryEntity;
@@ -185,12 +183,10 @@ public class AuthenticatedHistoryService {
                 public void onResponse(Call<DeviceListResponse> call, Response<DeviceListResponse> response) {
 
                     if (response.isSuccessful()) {
-                        LogFile.getShared(context).addInfoLog("multidevice api ", "response successful");
-
-                        LogFile.getShared(context).addAPILog("Multidevices api success body: "+ new Gson().toJson(response.body())+"\n");
+                        LogFile.getShared(context).addInfoLog(methodName, "Devices list response successful");
                         authenticatedHistoryCallback.success(response.body());
                     } else {
-                        LogFile.getShared(context).addInfoLog("multidevice api ", "response unsuccessful");
+                        LogFile.getShared(context).addFailureLog(methodName + " Devices list response unsuccessful");
                         authenticatedHistoryCallback.failure(CommonError.getShared(context).generateCommonErrorEntity(WebAuthErrorCode.SCANNED_VERIFICATION_FAILURE,
                                 response, "Error:- " + methodName));
                     }
@@ -198,13 +194,13 @@ public class AuthenticatedHistoryService {
 
                 @Override
                 public void onFailure(Call<DeviceListResponse> call, Throwable t) {
-                    LogFile.getShared(context).addInfoLog("multidevice api response ","failure case");
+                    LogFile.getShared(context).addFailureLog(methodName + " Devices list request failed:-" + t.getMessage());
                     authenticatedHistoryCallback.failure(WebAuthError.getShared(context).serviceCallFailureException(WebAuthErrorCode.SCANNED_VERIFICATION_FAILURE,
                             t.getMessage(), "Error:- " + methodName));
                 }
             });
         } catch (Exception e) {
-            LogFile.getShared(context).addInfoLog("multidevice api response ","exception - " );
+            LogFile.getShared(context).addFailureLog(methodName + " Exception:-" + e.getMessage());
             authenticatedHistoryCallback.failure(WebAuthError.getShared(context).methodException("Exception :" + methodName, WebAuthErrorCode.SCANNED_VERIFICATION_FAILURE,
                     e.getMessage()));
         }

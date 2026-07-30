@@ -337,12 +337,11 @@ public class AuthenticatedHistoryController {
 
             //AuthenticatedHistory Service call
             AuthenticatedHistoryService.getShared(context).callGetDevicesService(authenticatedHistoryUrl, headers, devicesListEntity, deviceListResponseEventResult);
-            LogFile.getShared(context).addInfoLog("Multidevices section api calls"," "+authenticatedHistoryUrl+" params: clientid- "+devicesListEntity.getClient_id()+" ,pushid - "+devicesListEntity.getPush_id()+" ,sub - "+devicesListEntity.getSub()[0]);
-            LogFile.getShared(context).addAPILog("Multidevices api url: "+ authenticatedHistoryUrl);
-            LogFile.getShared(context).addAPILog("Multidevices api params: "+ "clientid- "+devicesListEntity.getClient_id()+" ,pushid - "+devicesListEntity.getPush_id()+" ,sub - "+devicesListEntity.getSub()[0]);
+            LogFile.getShared(context).addInfoLog(methodName, "Requesting devices list. URL:-" + authenticatedHistoryUrl);
+            LogFile.getShared(context).addAPILog("Multidevices api url: " + authenticatedHistoryUrl);
 
         } catch (Exception e) {
-            LogFile.getShared(context).addInfoLog("methodName ", "response unsuccessful");
+            LogFile.getShared(context).addFailureLog(methodName + " Exception:-" + e.getMessage());
             deviceListResponseEventResult.failure(WebAuthError.getShared(context).methodException("Exception:-" + methodName, WebAuthErrorCode.SCANNED_VERIFICATION_FAILURE,
                     e.getMessage()));
         }

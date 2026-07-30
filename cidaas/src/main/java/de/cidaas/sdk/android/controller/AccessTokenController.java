@@ -74,8 +74,7 @@ public class AccessTokenController {
     private void getAccessWithCode(String baseurl, final String code, boolean useDpop, final EventResult<AccessTokenEntity> callback) {
         String methodName = "AccessToken Controller :getAccessWithCode()";
         try {
-            //Log File
-            LogFile.getShared(context).addInfoLog("Info of ", " Info Baseurl" + baseurl + " code" + code);
+            LogFile.getShared(context).addInfoLog(methodName, "Requesting access token by authorization code. Baseurl:-" + baseurl);
             AccessTokenService.getShared(context).getAccessTokenByCode(baseurl, code, useDpop, new EventResult<AccessTokenEntity>() {
                 @Override
                 public void success(final AccessTokenEntity result) {
@@ -119,7 +118,7 @@ public class AccessTokenController {
     public void getAccessToken(String sub, final EventResult<AccessTokenEntity> callback) {
         String methodName = "AccessToken Controller :getAccessToken()";
         try {
-            LogFile.getShared(context).addInfoLog("Info " + methodName, " Info Sub:-" + sub);
+            LogFile.getShared(context).addInfoLog(methodName, "Retrieving access token");
 
             if (sub != null && !sub.equals("")) {
                 final AccessTokenModel accessTokenModel = DBHelper.getShared().getAccessToken(sub);
@@ -177,8 +176,7 @@ public class AccessTokenController {
     public void getAccessTokenByRefreshToken(final String refreshToken, final boolean useDpop, final EventResult<AccessTokenEntity> callback) {
         String methodName = "AccessToken Controller :getAccessTokenByRefreshToken()";
         try {
-            //Log Info message
-            LogFile.getShared(context).addInfoLog("Info " + methodName, " Info RefreshToken:-" + refreshToken);
+            LogFile.getShared(context).addInfoLog(methodName, "Requesting access token by refresh token");
 
             CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
                 @Override
@@ -243,10 +241,11 @@ public class AccessTokenController {
         String methodName = "AccessToken Controller :checkNotNullForSocialEntity()";
         try {
 
-//Log info Message
-            LogFile.getShared(context).addInfoLog("Info of AccessToken Controller :getAccessTokenBySocial()",
-                    " Info TokenOrCode:-" + socialTokenEntity.getToken() + "provider:-" + socialTokenEntity.getProvider() + "requestId:-" + socialTokenEntity.getRequestId() +
-                            "viewType:-" + socialTokenEntity.getViewType() + "DomainURL:-" + socialTokenEntity.getDomainURL());
+            LogFile.getShared(context).addInfoLog(methodName,
+                    "Social token exchange. provider:-" + socialTokenEntity.getProvider()
+                            + " requestId:-" + socialTokenEntity.getRequestId()
+                            + " viewType:-" + socialTokenEntity.getViewType()
+                            + " DomainURL:-" + socialTokenEntity.getDomainURL());
 
 
             if (socialTokenEntity.getToken() == null || socialTokenEntity.getToken().equals("") ||
@@ -300,9 +299,8 @@ public class AccessTokenController {
     private void conversionToAccessTokenModel(final AccessTokenEntity accessTokenEntity, final EventResult<LoginCredentialsResponseEntity> result) {
         String methodName = "AccessToken Controller :conversionToAccessTokenModel()";
         try {
-            //Log Info message
-            LogFile.getShared(context).addInfoLog("Info " + methodName, " Info AccessToken:-" + accessTokenEntity.getAccess_token() +
-                    "refreshToken:-" + accessTokenEntity.getRefresh_token() + "ExpiresIn:-" + accessTokenEntity.getExpires_in());
+            LogFile.getShared(context).addInfoLog(methodName,
+                    "Converting access token entity. ExpiresIn:-" + accessTokenEntity.getExpires_in());
 
 
             //Entity converter
@@ -328,9 +326,8 @@ public class AccessTokenController {
         String methodName = "AccessToken Controller :generateLoginCredentials()";
 
         try {
-            //Log Success Message
-            LogFile.getShared(context).addInfoLog("Info" + methodName, " Success AccessToken:-" + accessTokenEntity.getAccess_token() +
-                    "refreshToken:-" + accessTokenEntity.getRefresh_token() + "ExpiresIn:-" + accessTokenEntity.getExpires_in());
+            LogFile.getShared(context).addSuccessLog(methodName,
+                    "Access token stored successfully. ExpiresIn:-" + accessTokenEntity.getExpires_in());
 
             //Save accessToken Locally
             DBHelper.getShared().setAccessToken(accessTokenModel);

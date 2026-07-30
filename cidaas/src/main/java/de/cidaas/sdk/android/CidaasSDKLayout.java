@@ -9,7 +9,6 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
@@ -184,8 +183,8 @@ public class CidaasSDKLayout extends RelativeLayout {
 
                                                 }
                                             });
-                                    String loggerMessage = "Success Login Code";
-                                    LogFile.getShared(GLOBAL_CONTEXT).addFailureLog(loggerMessage);
+                                    String loggerMessage = "Login authorization code received successfully";
+                                    LogFile.getShared(GLOBAL_CONTEXT).addSuccessLog("CidaasSDKLayout", loggerMessage);
                                 } else {
                                     hideLoader();
                                     WebAuthError.getShared(GLOBAL_CONTEXT).customException(400, "Invlaid URL",
@@ -306,7 +305,6 @@ public class CidaasSDKLayout extends RelativeLayout {
         @Override
         public void onLoadResource(WebView view, String url) {
             super.onLoadResource(view, url);
-            Log.d("URL", url);
 
             if (url.contains(CidaasConstants.CODE_EQUAL)) {
                 getLoginCode(url);
@@ -378,7 +376,7 @@ public class CidaasSDKLayout extends RelativeLayout {
                     settings.setUserAgentString(
                             "\"Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1\"");
                     webViewInstance.setWebViewClient(new CidaasWebViewClient());
-                    LogFile.getShared(GLOBAL_CONTEXT).addFailureLog("Get Login");
+                    LogFile.getShared(GLOBAL_CONTEXT).addInfoLog("CidaasSDKLayout", "Preparing login WebView");
                 }
 
                 @Override
@@ -496,7 +494,7 @@ public class CidaasSDKLayout extends RelativeLayout {
                         textViewInstance.setVisibility(GONE);
                         buttonInstance.setVisibility(GONE);
                         login(extraParams);
-                        LogFile.getShared(GLOBAL_CONTEXT).addFailureLog("Login loaded Sucessfully");
+                        LogFile.getShared(GLOBAL_CONTEXT).addSuccessLog("CidaasSDKLayout", "Login loaded successfully");
                     }
                 }
 
