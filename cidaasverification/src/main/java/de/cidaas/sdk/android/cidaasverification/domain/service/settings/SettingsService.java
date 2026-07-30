@@ -57,7 +57,7 @@ public class SettingsService {
         final String methodName = "SettingsService:-getConfigurationList()";
         try {
 
-            LogFile.getShared(context).addInfoLog(methodName, getMFAListEntity.getSub());
+            LogFile.getShared(context).addInfoLog(methodName, "Requesting configuration list");
             //call service
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();
             cidaasSDK_v2_services.getConfiguredMFAList(settingsURL, headers, getMFAListEntity).enqueue(new Callback<ConfiguredMFAList>() {
@@ -65,8 +65,7 @@ public class SettingsService {
                 public void onResponse(Call<ConfiguredMFAList> call, Response<ConfiguredMFAList> response) {
                     if (response.isSuccessful()) {
 
-                        LogFile.getShared(context).addSuccessLog(methodName, "Configuration list retrieved successfully. Sub:-" + getMFAListEntity.getSub()
-                        );
+                        LogFile.getShared(context).addSuccessLog(methodName, "Configuration list retrieved successfully");
                         if (response.code() == 200) {
                             configuredMFAListResult.success(response.body());
                         } else {
@@ -129,7 +128,7 @@ public class SettingsService {
         final String methodName = "SettingsService:-getConfigurationList()";
         try {
 
-            LogFile.getShared(context).addInfoLog(methodName, getMFAListEntity.getSub());
+            LogFile.getShared(context).addInfoLog(methodName, "Requesting other_devices configuration list");
             LogFile.getShared(context).addAPILog("other_devices configuration list API url: "+configuredListURL);
             //call service
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();
@@ -138,8 +137,7 @@ public class SettingsService {
                 public void onResponse(Call<ConfiguredMFAList> call, Response<ConfiguredMFAList> response) {
                     if (response.isSuccessful()) {
 
-                        LogFile.getShared(context).addSuccessLog(methodName, "Configuration list retrieved successfully. Sub:-" + getMFAListEntity.getSub()
-                        );
+                        LogFile.getShared(context).addSuccessLog(methodName, "Configuration list retrieved successfully");
                         if (response.code() == 200) {
                             configuredMFAListResult.success(response.body());
                             LogFile.getShared(context).addAPILog("other_devices configuration list api completed successfully\n");
