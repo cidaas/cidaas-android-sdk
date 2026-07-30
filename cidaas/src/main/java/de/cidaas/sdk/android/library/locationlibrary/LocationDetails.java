@@ -78,8 +78,6 @@ public class LocationDetails implements LocationListener {
     public Location getLocation() {
         try {
             if (!Privacy.isLocationEnabled()) {
-                canGetLocation = false;
-                location = null;
                 return null;
             }
 
