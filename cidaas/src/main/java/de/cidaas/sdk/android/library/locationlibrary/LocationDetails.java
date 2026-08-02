@@ -16,6 +16,13 @@ import android.provider.Settings;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
+import androidx.core.location.LocationManagerCompat;
+import androidx.core.os.CancellationSignal;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import de.cidaas.sdk.android.helper.logger.LogFile;
 import timber.log.Timber;
@@ -50,6 +57,8 @@ public class LocationDetails implements LocationListener {
     // The minimum time between updates in milliseconds
     private static final long MIN_TIME_BW_UPDATES = 1000 * 10 * 1; // 10 seconds
 
+    private static final long CURRENT_LOCATION_TIMEOUT_SEC = 3;
+
     // Declaring a Location Manager
     protected LocationManager locationManager;
 
@@ -69,7 +78,8 @@ public class LocationDetails implements LocationListener {
         if (shared == null) {
             shared = new LocationDetails(contextfromcidaas);
         } else {
-            new LocationDetails(contextfromcidaas, "String");
+            // Refresh on the same instance (do not create a throwaway listener).
+            shared.getLocation();
         }
 
         return shared;
@@ -133,37 +143,100 @@ public class LocationDetails implements LocationListener {
                             LocationManager.NETWORK_PROVIDER,
                             MIN_TIME_BW_UPDATES,
                             MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-                    if (locationManager != null) {
-                        location = locationManager
-                                .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                        if (location != null) {
-                            latitude = location.getLatitude();
-                            longitude = location.getLongitude();
-                            bearing = location.getBearing();
-                        }
-                    }
+                    applyLastKnownIfPresent(LocationManager.NETWORK_PROVIDER);
                 }
                 // if GPS Enabled get lat/long using GPS Services
                 if (isGPSEnabled) {
+                    locationManager.requestLocationUpdates(
+                            LocationManager.GPS_PROVIDER,
+                            MIN_TIME_BW_UPDATES,
+                            MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
                     if (location == null) {
-                        locationManager.requestLocationUpdates(
-                                LocationManager.GPS_PROVIDER,
-                                MIN_TIME_BW_UPDATES,
-                                MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-                        if (locationManager != null) {
-                            location = locationManager
-                                    .getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                            if (location != null) {
-                                latitude = location.getLatitude();
-                                longitude = location.getLongitude();
-                                bearing = location.getBearing();
-                            }
-                        }
+                        applyLastKnownIfPresent(LocationManager.GPS_PROVIDER);
                     }
+                }
+
+                if (location == null) {
+                    applyLastKnownIfPresent(LocationManager.PASSIVE_PROVIDER);
+                }
+
+                // First tap often has no lastKnown yet — fetch a fresh fix.
+                // Callback uses a background executor so this is safe on the UI thread.
+                if (location == null) {
+                    resolveCurrentLocationIfNeeded();
                 }
             }
         } catch (Exception e) {
 
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void applyLastKnownIfPresent(String provider) {
+        if (locationManager == null) {
+            return;
+        }
+        Location lastKnown = locationManager.getLastKnownLocation(provider);
+        if (lastKnown != null) {
+            applyLocation(lastKnown);
+        }
+    }
+
+    private void applyLocation(Location newLocation) {
+        if (newLocation == null) {
+            return;
+        }
+        location = newLocation;
+        latitude = newLocation.getLatitude();
+        longitude = newLocation.getLongitude();
+        bearing = newLocation.getBearing();
+    }
+
+    /**
+     * Blocks briefly for a current fix. Uses a background executor for the callback
+     * so it does not deadlock when invoked from the main thread.
+     */
+    @SuppressLint("MissingPermission")
+    private void resolveCurrentLocationIfNeeded() {
+        if (location != null || locationManager == null || !canGetLocation) {
+            return;
+        }
+
+        // Network is usually faster for the first fix; fall back to GPS.
+        if (isNetworkEnabled) {
+            awaitCurrentLocation(LocationManager.NETWORK_PROVIDER);
+        }
+        if (location == null && isGPSEnabled) {
+            awaitCurrentLocation(LocationManager.GPS_PROVIDER);
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void awaitCurrentLocation(String provider) {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final CancellationSignal cancellationSignal = new CancellationSignal();
+
+        try {
+            LocationManagerCompat.getCurrentLocation(
+                    locationManager,
+                    provider,
+                    cancellationSignal,
+                    executor,
+                    loc -> {
+                        if (loc != null) {
+                            applyLocation(loc);
+                        }
+                        latch.countDown();
+                    });
+
+            if (!latch.await(CURRENT_LOCATION_TIMEOUT_SEC, TimeUnit.SECONDS)) {
+                cancellationSignal.cancel();
+            }
+        } catch (Exception e) {
+            Timber.e(e.getMessage());
+        } finally {
+            executor.shutdownNow();
         }
     }
 
@@ -192,8 +265,9 @@ public class LocationDetails implements LocationListener {
                 ContextCompat.checkSelfPermission(mContext,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-            if (getLocation() != null) {
-                latitude = getLocation().getLatitude();
+            Location current = getLocation();
+            if (current != null) {
+                latitude = current.getLatitude();
                 Lat = "" + latitude;
             }
         } else {
@@ -218,8 +292,9 @@ public class LocationDetails implements LocationListener {
                 ContextCompat.checkSelfPermission(mContext,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-            if (getLocation() != null) {
-                longitude = getLocation().getLongitude();
+            Location current = getLocation();
+            if (current != null) {
+                longitude = current.getLongitude();
                 Long = "" + longitude;
             }
         } else {
@@ -287,6 +362,7 @@ public class LocationDetails implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
+        applyLocation(location);
     }
 
     @Override
