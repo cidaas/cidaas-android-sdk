@@ -16,13 +16,6 @@ import android.provider.Settings;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
-import androidx.core.location.LocationManagerCompat;
-import androidx.core.os.CancellationSignal;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import de.cidaas.sdk.android.helper.logger.LogFile;
 import timber.log.Timber;
@@ -56,8 +49,6 @@ public class LocationDetails implements LocationListener {
 
     // The minimum time between updates in milliseconds
     private static final long MIN_TIME_BW_UPDATES = 1000 * 10 * 1; // 10 seconds
-
-    private static final long CURRENT_LOCATION_TIMEOUT_SEC = 3;
 
     // Declaring a Location Manager
     protected LocationManager locationManager;
@@ -147,23 +138,17 @@ public class LocationDetails implements LocationListener {
                 }
                 // if GPS Enabled get lat/long using GPS Services
                 if (isGPSEnabled) {
-                    locationManager.requestLocationUpdates(
-                            LocationManager.GPS_PROVIDER,
-                            MIN_TIME_BW_UPDATES,
-                            MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
                     if (location == null) {
+                        locationManager.requestLocationUpdates(
+                                LocationManager.GPS_PROVIDER,
+                                MIN_TIME_BW_UPDATES,
+                                MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
                         applyLastKnownIfPresent(LocationManager.GPS_PROVIDER);
                     }
                 }
 
                 if (location == null) {
                     applyLastKnownIfPresent(LocationManager.PASSIVE_PROVIDER);
-                }
-
-                // First tap often has no lastKnown yet — fetch a fresh fix.
-                // Callback uses a background executor so this is safe on the UI thread.
-                if (location == null) {
-                    resolveCurrentLocationIfNeeded();
                 }
             }
         } catch (Exception e) {
@@ -190,54 +175,6 @@ public class LocationDetails implements LocationListener {
         latitude = newLocation.getLatitude();
         longitude = newLocation.getLongitude();
         bearing = newLocation.getBearing();
-    }
-
-    /**
-     * Blocks briefly for a current fix. Uses a background executor for the callback
-     * so it does not deadlock when invoked from the main thread.
-     */
-    @SuppressLint("MissingPermission")
-    private void resolveCurrentLocationIfNeeded() {
-        if (location != null || locationManager == null || !canGetLocation) {
-            return;
-        }
-
-        // Network is usually faster for the first fix; fall back to GPS.
-        if (isNetworkEnabled) {
-            awaitCurrentLocation(LocationManager.NETWORK_PROVIDER);
-        }
-        if (location == null && isGPSEnabled) {
-            awaitCurrentLocation(LocationManager.GPS_PROVIDER);
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private void awaitCurrentLocation(String provider) {
-        final CountDownLatch latch = new CountDownLatch(1);
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        final CancellationSignal cancellationSignal = new CancellationSignal();
-
-        try {
-            LocationManagerCompat.getCurrentLocation(
-                    locationManager,
-                    provider,
-                    cancellationSignal,
-                    executor,
-                    loc -> {
-                        if (loc != null) {
-                            applyLocation(loc);
-                        }
-                        latch.countDown();
-                    });
-
-            if (!latch.await(CURRENT_LOCATION_TIMEOUT_SEC, TimeUnit.SECONDS)) {
-                cancellationSignal.cancel();
-            }
-        } catch (Exception e) {
-            Timber.e(e.getMessage());
-        } finally {
-            executor.shutdownNow();
-        }
     }
 
     /**
