@@ -69,8 +69,7 @@ public class LocationDetails implements LocationListener {
         if (shared == null) {
             shared = new LocationDetails(contextfromcidaas);
         } else {
-            // Refresh on the same instance (do not create a throwaway listener).
-            shared.getLocation();
+            new LocationDetails(contextfromcidaas, "String");
         }
 
         return shared;
@@ -145,10 +144,6 @@ public class LocationDetails implements LocationListener {
                                 MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
                         applyLastKnownIfPresent(LocationManager.GPS_PROVIDER);
                     }
-                }
-
-                if (location == null) {
-                    applyLastKnownIfPresent(LocationManager.PASSIVE_PROVIDER);
                 }
             }
         } catch (Exception e) {
@@ -299,7 +294,6 @@ public class LocationDetails implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-        applyLocation(location);
     }
 
     @Override
