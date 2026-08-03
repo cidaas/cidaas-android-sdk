@@ -36,6 +36,7 @@ import de.cidaas.sdk.android.helper.loaders.ICustomLoader;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricCallback;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricEntity;
 import de.cidaas.sdk.android.library.common.Privacy;
+import de.cidaas.sdk.android.library.locationlibrary.LocationDetails;
 import de.cidaas.sdk.android.service.entity.UserInfo.UserInfoEntity;
 import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 import de.cidaas.sdk.android.service.entity.documentscanner.DocumentScannerServiceResultEntity;
@@ -96,9 +97,15 @@ public class Cidaas {
      * <p><strong>Note:</strong> this setting is process-wide. Because {@link Privacy} holds a
      * static flag, calling this method on any {@code Cidaas} instance affects every instance
      * in the same process.
+     *
+     * <p>When set to {@code false}, any already-registered location listener on
+     * the shared {@link LocationDetails} instance is stopped via {@link LocationDetails#stopUsingGPS()}.
      */
     public static void setEnableLocationAccess(boolean enableLocationAccess) {
         Privacy.setLocationEnabled(enableLocationAccess);
+        if (!enableLocationAccess && LocationDetails.shared != null) {
+            LocationDetails.shared.stopUsingGPS();
+        }
     }
 
     /**
