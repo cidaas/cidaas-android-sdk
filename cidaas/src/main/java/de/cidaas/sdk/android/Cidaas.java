@@ -100,6 +100,10 @@ public class Cidaas {
      *
      * <p>When set to {@code false}, any already-registered location listener on
      * the shared {@link LocationDetails} instance is stopped via {@link LocationDetails#stopUsingGPS()}.
+     *
+     * <p>When set back to {@code true}, location listeners are not automatically
+     * restarted. They will be re-registered on the next call to
+     * {@link LocationDetails#getLocation()} (or any method that invokes it internally).
      */
     public static void setEnableLocationAccess(boolean enableLocationAccess) {
         Privacy.setLocationEnabled(enableLocationAccess);

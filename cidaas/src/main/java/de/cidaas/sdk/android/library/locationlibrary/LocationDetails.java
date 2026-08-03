@@ -163,9 +163,6 @@ public class LocationDetails implements LocationListener {
     }
 
     private void applyLocation(Location newLocation) {
-        if (newLocation == null) {
-            return;
-        }
         location = newLocation;
         latitude = newLocation.getLatitude();
         longitude = newLocation.getLongitude();
