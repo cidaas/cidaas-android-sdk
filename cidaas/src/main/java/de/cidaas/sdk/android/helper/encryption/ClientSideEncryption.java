@@ -23,7 +23,15 @@ public final class ClientSideEncryption {
      * When encryption is disabled or {@code value} is null/empty, returns {@code value} unchanged.
      * Otherwise returns a compact JWE string (with {@code kid}, {@code iat}, {@code jti}).
      *
+     * <p><strong>Fail-closed:</strong> when encryption is enabled, JWKS fetch / key selection / JWE
+     * failures throw {@link IllegalStateException}. There is no plaintext fallback — callers' try/catch
+     * surfaces this as a service failure. Prefer warming the cache with
+     * {@link JwksClient#prefetchAsync} or {@code Cidaas.setEncryptionEnabled(true)} before login/register
+     * so the main thread is not blocked and cold-cache errors are less likely.
+     *
      * @param baseUrlOverride optional domain URL; falls back to {@link de.cidaas.sdk.android.helper.general.CidaasHelper#baseurl}
+     * @throws IllegalStateException if encryption is on and JWKS is unavailable, has no suitable key,
+     *         or JWE construction fails
      */
     @Nullable
     public static String encryptIfEnabled(@Nullable String value, @Nullable String baseUrlOverride) {

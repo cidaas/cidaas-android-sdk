@@ -7,7 +7,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -21,13 +20,15 @@ import okhttp3.ResponseBody;
 
 /**
  * Fetches and caches JWKS from {@code {baseUrl}/.well-known/jwks.json}.
- * Network I/O is never performed on the Android main thread (offloaded when needed).
+ *
+ * <p>HTTP is never performed on the Android main thread. If the cache is cold and
+ * {@link #getJwksJson} is called from the main thread, it fails immediately — call
+ * {@link #prefetchAsync} (also done by {@code Cidaas.setEncryptionEnabled(true)}) first.
  */
 public final class JwksClient {
 
     private static final String TAG = "CIDAAS_JWKS";
     private static final long CACHE_TTL_MS = TimeUnit.MINUTES.toMillis(15);
-    private static final long MAIN_THREAD_FETCH_TIMEOUT_SEC = 20;
 
     private static final AtomicReference<CachedJwks> CACHE = new AtomicReference<>();
     private static final ExecutorService FETCH_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
@@ -90,7 +91,10 @@ public final class JwksClient {
         }
 
         if (isMainThread()) {
-            return fetchOffMainThread(baseUrl);
+            throw new IOException(
+                    "JWKS cache is cold and encryption was requested on the main thread. "
+                            + "Call JwksClient.prefetchAsync() or Cidaas.setEncryptionEnabled(true) "
+                            + "before performing sensitive operations.");
         }
         return fetchFromNetwork(baseUrl);
     }
@@ -106,41 +110,6 @@ public final class JwksClient {
             return cached.jwksJson;
         }
         return null;
-    }
-
-    @NonNull
-    private static String fetchOffMainThread(@NonNull String baseUrl) throws IOException {
-        final AtomicReference<String> result = new AtomicReference<>();
-        final AtomicReference<IOException> error = new AtomicReference<>();
-        final CountDownLatch latch = new CountDownLatch(1);
-        FETCH_EXECUTOR.execute(() -> {
-            try {
-                result.set(fetchFromNetwork(baseUrl));
-            } catch (IOException e) {
-                error.set(e);
-            } catch (Exception e) {
-                error.set(new IOException("JWKS fetch failed: " + e.getClass().getSimpleName()
-                        + (e.getMessage() != null ? (": " + e.getMessage()) : ""), e));
-            } finally {
-                latch.countDown();
-            }
-        });
-        try {
-            if (!latch.await(MAIN_THREAD_FETCH_TIMEOUT_SEC, TimeUnit.SECONDS)) {
-                throw new IOException("JWKS fetch timed out after " + MAIN_THREAD_FETCH_TIMEOUT_SEC + "s");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("JWKS fetch interrupted", e);
-        }
-        if (error.get() != null) {
-            throw error.get();
-        }
-        String json = result.get();
-        if (json == null || json.isEmpty()) {
-            throw new IOException("JWKS fetch returned empty body");
-        }
-        return json;
     }
 
     @NonNull

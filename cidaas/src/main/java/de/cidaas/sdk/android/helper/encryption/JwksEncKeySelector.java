@@ -19,7 +19,8 @@ import java.util.Random;
 
 /**
  * Selects an encryption public key from a JWKS document.
- * Any key with {@code use=enc}, {@code kty=EC}, {@code alg=ECDH-ES} (and preferably {@code crv=P-256}) is valid.
+ * Any key with {@code use=enc}, {@code kty=EC}, {@code alg=ECDH-ES} (or empty alg), and explicit
+ * {@code crv=P-256} is valid. Keys that omit {@code crv} are rejected.
  * When several keys match, one is chosen at random.
  */
 public final class JwksEncKeySelector {
@@ -79,7 +80,7 @@ public final class JwksEncKeySelector {
         if (alg != null && !alg.isEmpty() && !"ECDH-ES".equals(alg)) {
             return null;
         }
-        String crv = key.optString("crv", "P-256");
+        String crv = key.optString("crv");
         if (!"P-256".equals(crv)) {
             return null;
         }

@@ -11,6 +11,9 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import de.cidaas.sdk.android.library.common.Privacy;
 import okhttp3.mockwebserver.MockResponse;
@@ -102,6 +105,21 @@ public class ClientSideEncryptionTest {
     }
 
     @Test
+    public void selectEncryptionKey_rejectsMissingCrv() throws Exception {
+        String jwksMissingCrv = "{"
+                + "\"keys\":[{"
+                + "\"kid\":\"no-crv\","
+                + "\"kty\":\"EC\","
+                + "\"alg\":\"ECDH-ES\","
+                + "\"use\":\"enc\","
+                + "\"x\":\"dR1oRGTcEuwdU_UgVW2mALpZAwId2ofyJeHTUEoyqZE\","
+                + "\"y\":\"YxDzoQJo0WRcOG4_brxBF1CQhuYgt90zoLo041poWJ0\""
+                + "}]"
+                + "}";
+        Assert.assertNull(JwksEncKeySelector.selectEncryptionKey(jwksMissingCrv));
+    }
+
+    @Test
     public void encrypt_includesKidIatJtiInProtectedHeader() throws Exception {
         ECKey key = JwksEncKeySelector.selectEncryptionKey(SAMPLE_JWKS);
         Assert.assertNotNull(key);
@@ -130,10 +148,11 @@ public class ClientSideEncryptionTest {
         Privacy.setEncryptionEnabled(true);
 
         String baseUrl = mockWebServer.url("/").toString().replaceAll("/$", "");
-        String jwe = ClientSideEncryption.encryptIfEnabled("pass_code_value", baseUrl);
+        String jwe = encryptOffMainThread("pass_code_value", baseUrl);
 
         Assert.assertNotNull(jwe);
         Assert.assertNotEquals("pass_code_value", jwe);
+        Assert.assertEquals(1, mockWebServer.getRequestCount());
 
         JSONObject header = parseJweHeader(jwe);
         Assert.assertTrue(ENC_KEY_A.equals(header.getString("kid")) || ENC_KEY_B.equals(header.getString("kid")));
@@ -152,13 +171,13 @@ public class ClientSideEncryptionTest {
     @Test
     public void encryptIfEnabled_samePlaintext_producesDistinctJti() throws Exception {
         mockWebServer.enqueue(new MockResponse().setBody(SAMPLE_JWKS).setResponseCode(200));
-        mockWebServer.enqueue(new MockResponse().setBody(SAMPLE_JWKS).setResponseCode(200));
         Privacy.setEncryptionEnabled(true);
 
         String baseUrl = mockWebServer.url("/").toString().replaceAll("/$", "");
-        String password = ClientSideEncryption.encryptIfEnabled("SamePass123!", baseUrl);
-        String confirm = ClientSideEncryption.encryptIfEnabled("SamePass123!", baseUrl);
+        String password = encryptOffMainThread("SamePass123!", baseUrl);
+        String confirm = encryptOffMainThread("SamePass123!", baseUrl);
 
+        Assert.assertEquals(1, mockWebServer.getRequestCount());
         Assert.assertNotEquals(password, confirm);
         Assert.assertNotEquals(parseJweHeader(password).getString("jti"),
                 parseJweHeader(confirm).getString("jti"));
@@ -166,7 +185,6 @@ public class ClientSideEncryptionTest {
 
     @Test
     public void encryptPassCodeIfEnabled_onlyBackupCodeAndPattern() throws Exception {
-        mockWebServer.enqueue(new MockResponse().setBody(SAMPLE_JWKS).setResponseCode(200));
         mockWebServer.enqueue(new MockResponse().setBody(SAMPLE_JWKS).setResponseCode(200));
         Privacy.setEncryptionEnabled(true);
 
@@ -180,14 +198,38 @@ public class ClientSideEncryptionTest {
         Assert.assertTrue(ClientSideEncryption.shouldEncryptVerificationPassCode("BACKUPCODE"));
         Assert.assertTrue(ClientSideEncryption.shouldEncryptVerificationPassCode("PATTERN"));
 
-        // Force JWKS base via encryptIfEnabled path used inside encryptPassCodeIfEnabled —
-        // temporarily set domain through encryptIfEnabled for pattern/backup by calling with known base:
-        // encryptPassCodeIfEnabled uses encryptIfEnabled(passCode) without base override; Privacy on + empty
-        // CidaasHelper.baseurl may fail. Use shouldEncrypt flags above; encrypt path covered by encryptIfEnabled tests.
         Assert.assertNotEquals("pattern-secret",
-                ClientSideEncryption.encryptIfEnabled("pattern-secret", baseUrl));
+                encryptOffMainThread("pattern-secret", baseUrl));
         Assert.assertNotEquals("backup-code",
-                ClientSideEncryption.encryptIfEnabled("backup-code", baseUrl));
+                encryptOffMainThread("backup-code", baseUrl));
+        Assert.assertEquals(1, mockWebServer.getRequestCount());
+    }
+
+    /**
+     * Encryption may run on Robolectric's main thread; JWKS fetch must not.
+     * Warm/fetch via a worker so {@link ClientSideEncryption#encryptIfEnabled} succeeds.
+     */
+    private static String encryptOffMainThread(String value, String baseUrl) throws Exception {
+        AtomicReference<String> result = new AtomicReference<>();
+        AtomicReference<Exception> error = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        Thread worker = new Thread(() -> {
+            try {
+                result.set(ClientSideEncryption.encryptIfEnabled(value, baseUrl));
+            } catch (Exception e) {
+                error.set(e);
+            } finally {
+                latch.countDown();
+            }
+        }, "cse-test-encrypt");
+        worker.start();
+        if (!latch.await(15, TimeUnit.SECONDS)) {
+            throw new AssertionError("encrypt timed out");
+        }
+        if (error.get() != null) {
+            throw error.get();
+        }
+        return result.get();
     }
 
     private static JSONObject parseJweHeader(String jwe) throws Exception {
