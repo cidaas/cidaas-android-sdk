@@ -13,6 +13,7 @@ import de.cidaas.sdk.android.cidaasnative.data.service.helper.NativeURLHelper;
 import de.cidaas.sdk.android.cidaasnative.util.NativeConstants;
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.helper.commonerror.CommonError;
+import de.cidaas.sdk.android.helper.encryption.ClientSideEncryption;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
@@ -74,6 +75,15 @@ public class SetPasswordService {
             final EventResult<ChangePasswordResponseEntity> callback) {
         final String methodName = "SetPassword Service :serviceForSetPassword()";
         try {
+            // Each field gets its own JWE (unique jti) — reusing ciphertext triggers server jti replay.
+            if (setPasswordRequestEntity.getPassword() != null && !setPasswordRequestEntity.getPassword().isEmpty()) {
+                setPasswordRequestEntity.setPassword(
+                        ClientSideEncryption.encryptIfEnabled(setPasswordRequestEntity.getPassword()));
+            }
+            if (setPasswordRequestEntity.getConfirmPassword() != null && !setPasswordRequestEntity.getConfirmPassword().isEmpty()) {
+                setPasswordRequestEntity.setConfirmPassword(
+                        ClientSideEncryption.encryptIfEnabled(setPasswordRequestEntity.getConfirmPassword()));
+            }
             ICidaasNativeService cidaasNativeService = service.getInstance();
             cidaasNativeService.setPassword(setPasswordUrl, headers, setPasswordRequestEntity)
                     .enqueue(new Callback<ChangePasswordResponseEntity>() {

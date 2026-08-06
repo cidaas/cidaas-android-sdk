@@ -18,6 +18,7 @@ import de.cidaas.sdk.android.cidaasverification.data.service.ICidaasSDK_V2_Servi
 import de.cidaas.sdk.android.cidaasverification.domain.controller.configrationflow.enroll.FaceEnrollInterpreter;
 import de.cidaas.sdk.android.cidaasverification.util.VerificationConstants;
 import de.cidaas.sdk.android.helper.commonerror.CommonError;
+import de.cidaas.sdk.android.helper.encryption.ClientSideEncryption;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.HttpStatusCode;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
@@ -65,6 +66,10 @@ public class EnrollService {
                                   final EventResult<EnrollResponse> enrollCallback) {
         final String methodName = "EnrollService:-callEnrollService()";
         try {
+            if (enrollEntity.getPass_code() != null && !enrollEntity.getPass_code().isEmpty()) {
+                enrollEntity.setPass_code(ClientSideEncryption.encryptPassCodeIfEnabled(
+                        enrollEntity.getPass_code(), enrollEntity.getVerificationType()));
+            }
             //call service
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();
             cidaasSDK_v2_services.enroll(enrollURL, headers, enrollEntity).enqueue(new Callback<EnrollResponse>() {

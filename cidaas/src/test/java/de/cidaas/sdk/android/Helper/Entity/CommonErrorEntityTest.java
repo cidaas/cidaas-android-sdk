@@ -46,8 +46,8 @@ public class CommonErrorEntityTest {
     @Test
     public void setRefnumber() {
 
-        commonErrorEntity.setRefnumber("refNumber");
-        Assert.assertEquals("refNumber", commonErrorEntity.getRefnumber());
+        commonErrorEntity.setReferenceNumber("refNumber");
+        Assert.assertEquals("refNumber", commonErrorEntity.getReferenceNumber());
     }
 
     @Test

@@ -24,6 +24,7 @@ import de.cidaas.sdk.android.cidaasnative.data.service.helper.NativeURLHelper;
 import de.cidaas.sdk.android.cidaasnative.util.NativeConstants;
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.helper.commonerror.CommonError;
+import de.cidaas.sdk.android.helper.encryption.ClientSideEncryption;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
@@ -168,6 +169,18 @@ public class RegistrationService {
                                            final EventResult<RegisterNewUserResponseEntity> callback) {
         final String methodName = "RegistrationService :registerNewUser()";
         try {
+            RegistrationEntity registrationEntity = registerNewUserRequestEntity.getRegistrationEntity();
+            if (registrationEntity != null) {
+                // Each field gets its own JWE (unique jti) — reusing ciphertext triggers server jti replay.
+                if (registrationEntity.getPassword() != null && !registrationEntity.getPassword().isEmpty()) {
+                    registrationEntity.setPassword(
+                            ClientSideEncryption.encryptIfEnabled(registrationEntity.getPassword()));
+                }
+                if (registrationEntity.getPassword_echo() != null && !registrationEntity.getPassword_echo().isEmpty()) {
+                    registrationEntity.setPassword_echo(
+                            ClientSideEncryption.encryptIfEnabled(registrationEntity.getPassword_echo()));
+                }
+            }
             //Call Service-getRequestId
             ICidaasNativeService cidaasNativeService = service.getInstance();
             cidaasNativeService.registerNewUser(registerNewUserUrl, headers, registerNewUserRequestEntity.getRegistrationEntity()).enqueue(

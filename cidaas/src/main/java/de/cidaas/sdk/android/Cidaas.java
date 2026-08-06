@@ -35,6 +35,7 @@ import de.cidaas.sdk.android.helper.general.DBHelper;
 import de.cidaas.sdk.android.helper.loaders.ICustomLoader;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricCallback;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricEntity;
+import de.cidaas.sdk.android.library.common.Privacy;
 import de.cidaas.sdk.android.service.entity.UserInfo.UserInfoEntity;
 import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 import de.cidaas.sdk.android.service.entity.documentscanner.DocumentScannerServiceResultEntity;
@@ -100,6 +101,32 @@ public class Cidaas {
 
     public String disableLog() {
         return CidaasHelper.getShared(context).disableLog();
+    }
+
+    /**
+     * Controls whether the SDK JWE-encrypts sensitive fields ({@code password}, {@code pass_code}, etc.)
+     * before sending them to cidaas APIs.
+     * Default is {@code false} for backward compatibility.
+     *
+     * <p>When enabled, the SDK loads {@code /.well-known/jwks.json}, picks any key with
+     * {@code use=enc} / {@code alg=ECDH-ES} / {@code crv=P-256}, and encrypts field values as
+     * compact JWE with {@code kid}, {@code iat}, and {@code jti} in the protected header.
+     *
+     * <p><strong>Note:</strong> this setting is process-wide via {@link Privacy}.
+     */
+    public static void setEncryptionEnabled(boolean encryptionEnabled) {
+        Privacy.setEncryptionEnabled(encryptionEnabled);
+        if (encryptionEnabled) {
+            // Warm JWKS cache so later encrypt calls (often on main thread) don't fail.
+            de.cidaas.sdk.android.helper.encryption.JwksClient.prefetchAsync(null);
+        }
+    }
+
+    /**
+     * @return whether client-side encryption of sensitive fields is enabled (default {@code false}).
+     */
+    public static boolean isEncryptionEnabled() {
+        return Privacy.isEncryptionEnabled();
     }
 
     /**

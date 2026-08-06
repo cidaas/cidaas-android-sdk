@@ -15,6 +15,7 @@ import de.cidaas.sdk.android.cidaasnative.data.service.helper.NativeURLHelper;
 import de.cidaas.sdk.android.cidaasnative.util.NativeConstants;
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.helper.commonerror.CommonError;
+import de.cidaas.sdk.android.helper.encryption.ClientSideEncryption;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
@@ -93,6 +94,19 @@ public class ChangePasswordService {
                                           Map<String, String> headers, final EventResult<ChangePasswordResponseEntity> callback) {
         final String methodName = "ChangePassword Service :serviceForChangePassword()";
         try {
+            // Each password field gets its own JWE (unique jti) — reusing ciphertext triggers server jti replay.
+            if (changePasswordRequestEntity.getOld_password() != null && !changePasswordRequestEntity.getOld_password().isEmpty()) {
+                changePasswordRequestEntity.setOld_password(
+                        ClientSideEncryption.encryptIfEnabled(changePasswordRequestEntity.getOld_password()));
+            }
+            if (changePasswordRequestEntity.getNew_password() != null && !changePasswordRequestEntity.getNew_password().isEmpty()) {
+                changePasswordRequestEntity.setNew_password(
+                        ClientSideEncryption.encryptIfEnabled(changePasswordRequestEntity.getNew_password()));
+            }
+            if (changePasswordRequestEntity.getConfirm_password() != null && !changePasswordRequestEntity.getConfirm_password().isEmpty()) {
+                changePasswordRequestEntity.setConfirm_password(
+                        ClientSideEncryption.encryptIfEnabled(changePasswordRequestEntity.getConfirm_password()));
+            }
             //Call Service-getRequestId
             ICidaasNativeService cidaasNativeService = service.getInstance();
             cidaasNativeService.changePassword(changePasswordUrl, headers, changePasswordRequestEntity)

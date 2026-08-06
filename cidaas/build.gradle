@@ -120,6 +120,9 @@ dependencies {
     // common codec for TOTP Generation
     implementation 'commons-codec:commons-codec:1.15'
 
+    // JWE (ECDH-ES + A256GCM) for client-side encryption of password / pass_code
+    implementation 'com.nimbusds:nimbus-jose-jwt:9.37.3'
+
     //Android X for finger print authentication after android pie
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.google.android.material:material:1.12.0'
