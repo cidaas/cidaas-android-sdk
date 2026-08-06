@@ -137,6 +137,26 @@ public class ClientSideEncryptionTest {
     }
 
     @Test
+    public void getJwksJson_onMainThread_usesStaleCacheAfterTtlAndSchedulesRefresh() throws Exception {
+        mockWebServer.enqueue(new MockResponse().setBody(SAMPLE_JWKS).setResponseCode(200));
+        String baseUrl = mockWebServer.url("/").toString().replaceAll("/$", "");
+
+        long expiredAt = System.currentTimeMillis() - JwksClient.CACHE_TTL_MS - 1_000L;
+        JwksClient.putCacheForTest(baseUrl, SAMPLE_JWKS, expiredAt);
+
+        // Robolectric runs this test on the main looper thread.
+        String jwks = JwksClient.getJwksJson(baseUrl);
+        Assert.assertEquals(SAMPLE_JWKS, jwks);
+
+        // Background refresh should hit the mock server.
+        long deadline = System.currentTimeMillis() + 5_000L;
+        while (mockWebServer.getRequestCount() < 1 && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        Assert.assertEquals(1, mockWebServer.getRequestCount());
+    }
+
+    @Test
     public void encryptIfEnabled_whenDisabled_returnsPlaintext() {
         Privacy.setEncryptionEnabled(false);
         Assert.assertEquals("plain-pass", ClientSideEncryption.encryptIfEnabled("plain-pass"));
