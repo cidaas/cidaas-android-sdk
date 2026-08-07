@@ -35,6 +35,8 @@ import de.cidaas.sdk.android.helper.general.DBHelper;
 import de.cidaas.sdk.android.helper.loaders.ICustomLoader;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricCallback;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricEntity;
+import de.cidaas.sdk.android.library.common.Privacy;
+import de.cidaas.sdk.android.library.locationlibrary.LocationDetails;
 import de.cidaas.sdk.android.service.entity.UserInfo.UserInfoEntity;
 import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 import de.cidaas.sdk.android.service.entity.documentscanner.DocumentScannerServiceResultEntity;
@@ -86,6 +88,36 @@ public class Cidaas {
 
     public void setENABLE_PKCE(boolean ENABLE_PKCE) {
         CidaasHelper.getShared(context).setENABLE_PKCE(ENABLE_PKCE);
+    }
+
+    /**
+     * Controls whether the SDK may access device location (lat/lon headers and GPS lookups).
+     * Default is {@code true} for backward compatibility.
+     *
+     * <p><strong>Note:</strong> this setting is process-wide. Because {@link Privacy} holds a
+     * static flag, calling this method on any {@code Cidaas} instance affects every instance
+     * in the same process.
+     *
+     * <p>When set to {@code false}, any already-registered location listener on
+     * the shared {@link LocationDetails} instance is stopped via {@link LocationDetails#stopUsingGPS()}.
+     *
+     * <p>When set back to {@code true}, location listeners are not automatically
+     * restarted. They will be re-registered on the next call to
+     * {@link LocationDetails#getLocation()} (or any method that invokes it internally).
+     */
+    public static void setEnableLocationAccess(boolean enableLocationAccess) {
+        Privacy.setLocationEnabled(enableLocationAccess);
+        if (!enableLocationAccess && LocationDetails.shared != null) {
+            LocationDetails.shared.stopUsingGPS();
+        }
+    }
+
+    /**
+     * @return whether SDK location access is currently enabled (default {@code true}).
+     * This reflects the process-wide {@link Privacy} flag shared by all {@code Cidaas} instances.
+     */
+    public static boolean isEnableLocationAccess() {
+        return Privacy.isLocationEnabled();
     }
 
     // enableLog

@@ -12,7 +12,6 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
@@ -78,6 +77,9 @@ public class LocationDetails implements LocationListener {
 
     public Location getLocation() {
         try {
+            if (!Privacy.isLocationEnabled()) {
+                return null;
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 getLocationPermissions();
@@ -95,11 +97,6 @@ public class LocationDetails implements LocationListener {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void getLocationPermissions() {
-
-        if (!Privacy.isLocationEnabled()) {
-            return;
-        }
-
         if (ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(mContext,
@@ -136,16 +133,7 @@ public class LocationDetails implements LocationListener {
                             LocationManager.NETWORK_PROVIDER,
                             MIN_TIME_BW_UPDATES,
                             MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-                    Log.d("Network", "Network");
-                    if (locationManager != null) {
-                        location = locationManager
-                                .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                        if (location != null) {
-                            latitude = location.getLatitude();
-                            longitude = location.getLongitude();
-                            bearing = location.getBearing();
-                        }
-                    }
+                    applyLastKnownIfPresent(LocationManager.NETWORK_PROVIDER);
                 }
                 // if GPS Enabled get lat/long using GPS Services
                 if (isGPSEnabled) {
@@ -154,22 +142,31 @@ public class LocationDetails implements LocationListener {
                                 LocationManager.GPS_PROVIDER,
                                 MIN_TIME_BW_UPDATES,
                                 MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-                        Log.d("GPS Enabled", "GPS Enabled");
-                        if (locationManager != null) {
-                            location = locationManager
-                                    .getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                            if (location != null) {
-                                latitude = location.getLatitude();
-                                longitude = location.getLongitude();
-                                bearing = location.getBearing();
-                            }
-                        }
+                        applyLastKnownIfPresent(LocationManager.GPS_PROVIDER);
                     }
                 }
             }
         } catch (Exception e) {
 
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void applyLastKnownIfPresent(String provider) {
+        if (locationManager == null) {
+            return;
+        }
+        Location lastKnown = locationManager.getLastKnownLocation(provider);
+        if (lastKnown != null) {
+            applyLocation(lastKnown);
+        }
+    }
+
+    private void applyLocation(Location newLocation) {
+        location = newLocation;
+        latitude = newLocation.getLatitude();
+        longitude = newLocation.getLongitude();
+        bearing = newLocation.getBearing();
     }
 
     /**
@@ -186,6 +183,9 @@ public class LocationDetails implements LocationListener {
      * Function to get latitude
      */
     public String getLatitude() {
+        if (!Privacy.isLocationEnabled()) {
+            return "";
+        }
 
         String Lat = "";
 
@@ -194,8 +194,9 @@ public class LocationDetails implements LocationListener {
                 ContextCompat.checkSelfPermission(mContext,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-            if (getLocation() != null) {
-                latitude = getLocation().getLatitude();
+            Location current = getLocation();
+            if (current != null) {
+                latitude = current.getLatitude();
                 Lat = "" + latitude;
             }
         } else {
@@ -210,14 +211,19 @@ public class LocationDetails implements LocationListener {
      * Function to get longitude
      */
     public String getLongitude() {
+        if (!Privacy.isLocationEnabled()) {
+            return "";
+        }
+
         String Long = "";
         if (ContextCompat.checkSelfPermission(mContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(mContext,
                         Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-            if (getLocation() != null) {
-                longitude = getLocation().getLongitude();
+            Location current = getLocation();
+            if (current != null) {
+                longitude = current.getLongitude();
                 Long = "" + longitude;
             }
         } else {
@@ -230,6 +236,9 @@ public class LocationDetails implements LocationListener {
     }
 
     public float getBearing() {
+        if (!Privacy.isLocationEnabled()) {
+            return 0f;
+        }
         if (location != null) {
             bearing = location.getBearing();
         }
@@ -242,6 +251,9 @@ public class LocationDetails implements LocationListener {
      * @return boolean
      */
     public boolean canGetLocation() {
+        if (!Privacy.isLocationEnabled()) {
+            return false;
+        }
         return this.canGetLocation;
     }
 
