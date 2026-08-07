@@ -15,6 +15,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import de.cidaas.sdk.android.helper.general.CidaasHelper;
+import de.cidaas.sdk.android.helper.network.CertificatePinningHelper;
+import okhttp3.CertificatePinner;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -28,6 +30,9 @@ import okhttp3.ResponseBody;
  * domain is still returned on the main thread (stale-while-revalidate) while a background refresh
  * runs. Only a completely empty cache on the main thread fails fast — call
  * {@link #prefetchAsync} (also done by {@code Cidaas.setEncryptionEnabled(true)}) at startup.
+ *
+ * <p>JWKS HTTP uses the same certificate-pinning config as other SDK clients
+ * ({@link CertificatePinningHelper}), when pinning is configured.
  */
 public final class JwksClient {
 
@@ -42,10 +47,8 @@ public final class JwksClient {
         return t;
     });
 
-    private static volatile OkHttpClient httpClient = new OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .build();
+    /** When non-null, used instead of {@link #buildHttpClient()} (unit tests). */
+    private static volatile OkHttpClient httpClientOverride;
 
     private JwksClient() {
     }
@@ -56,14 +59,44 @@ public final class JwksClient {
         REFRESH_SCHEDULED.set(false);
     }
 
-    /** For unit tests. */
+    /** For unit tests — inject a client (e.g. default OkHttp against MockWebServer). */
     static void setHttpClient(@NonNull OkHttpClient client) {
-        httpClient = client;
+        httpClientOverride = client;
+    }
+
+    static void clearHttpClientOverride() {
+        httpClientOverride = null;
     }
 
     @VisibleForTesting
     static void putCacheForTest(@NonNull String baseUrl, @NonNull String jwksJson, long fetchedAtMs) {
         CACHE.set(new CachedJwks(normalizeBaseUrl(baseUrl), jwksJson, fetchedAtMs));
+    }
+
+    @NonNull
+    private static OkHttpClient resolveHttpClient() {
+        OkHttpClient override = httpClientOverride;
+        if (override != null) {
+            return override;
+        }
+        return buildHttpClient();
+    }
+
+    /**
+     * Builds a client with the same pin config as Retrofit services
+     * ({@link CertificatePinningHelper#buildCertificatePinner()}). Built per call so pinning
+     * applied after SDK init is still honored (there is no shared SDK OkHttp singleton).
+     */
+    @NonNull
+    private static OkHttpClient buildHttpClient() {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(15, TimeUnit.SECONDS);
+        CertificatePinner pinner = CertificatePinningHelper.buildCertificatePinner();
+        if (pinner != null) {
+            builder.certificatePinner(pinner);
+        }
+        return builder.build();
     }
 
     /**
@@ -177,7 +210,7 @@ public final class JwksClient {
                 .get()
                 .build();
         Log.i(TAG, "Fetching JWKS " + url);
-        try (Response response = httpClient.newCall(request).execute()) {
+        try (Response response = resolveHttpClient().newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new IOException("JWKS fetch failed with HTTP " + response.code());
             }

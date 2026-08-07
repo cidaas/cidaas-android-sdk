@@ -15,6 +15,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.library.common.Privacy;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -71,6 +72,8 @@ public class ClientSideEncryptionTest {
     public void tearDown() throws Exception {
         Privacy.setEncryptionEnabled(false);
         JwksClient.clearCache();
+        JwksClient.clearHttpClientOverride();
+        CidaasHelper.baseurl = "";
         mockWebServer.shutdown();
     }
 
@@ -209,6 +212,8 @@ public class ClientSideEncryptionTest {
         Privacy.setEncryptionEnabled(true);
 
         String baseUrl = mockWebServer.url("/").toString().replaceAll("/$", "");
+        CidaasHelper.baseurl = baseUrl;
+
         Assert.assertEquals("123456",
                 ClientSideEncryption.encryptPassCodeIfEnabled("123456", "EMAIL"));
         Assert.assertEquals("654321",
@@ -218,10 +223,10 @@ public class ClientSideEncryptionTest {
         Assert.assertTrue(ClientSideEncryption.shouldEncryptVerificationPassCode("BACKUPCODE"));
         Assert.assertTrue(ClientSideEncryption.shouldEncryptVerificationPassCode("PATTERN"));
 
-        Assert.assertNotEquals("pattern-secret",
-                encryptOffMainThread("pattern-secret", baseUrl));
-        Assert.assertNotEquals("backup-code",
-                encryptOffMainThread("backup-code", baseUrl));
+        String encryptedPattern = encryptPassCodeOffMainThread("pattern-secret", "PATTERN");
+        String encryptedBackup = encryptPassCodeOffMainThread("backup-code", "BACKUPCODE");
+        Assert.assertNotEquals("pattern-secret", encryptedPattern);
+        Assert.assertNotEquals("backup-code", encryptedBackup);
         Assert.assertEquals(1, mockWebServer.getRequestCount());
     }
 
@@ -230,12 +235,22 @@ public class ClientSideEncryptionTest {
      * Warm/fetch via a worker so {@link ClientSideEncryption#encryptIfEnabled} succeeds.
      */
     private static String encryptOffMainThread(String value, String baseUrl) throws Exception {
+        return runOffMainThread(() -> ClientSideEncryption.encryptIfEnabled(value, baseUrl));
+    }
+
+    private static String encryptPassCodeOffMainThread(String passCode, String verificationType)
+            throws Exception {
+        return runOffMainThread(() ->
+                ClientSideEncryption.encryptPassCodeIfEnabled(passCode, verificationType));
+    }
+
+    private static String runOffMainThread(java.util.concurrent.Callable<String> action) throws Exception {
         AtomicReference<String> result = new AtomicReference<>();
         AtomicReference<Exception> error = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
         Thread worker = new Thread(() -> {
             try {
-                result.set(ClientSideEncryption.encryptIfEnabled(value, baseUrl));
+                result.set(action.call());
             } catch (Exception e) {
                 error.set(e);
             } finally {
