@@ -53,9 +53,6 @@ public class Headers {
                 headers.put("Content-Type", contentType);
             }
 
-            headers.put("lat", LocationDetails.getShared(context).getLatitude());
-            headers.put("lon", LocationDetails.getShared(context).getLongitude());
-
             if (Privacy.isLocationEnabled()) {
 
                 headers.put("lat", LocationDetails.getShared(context).getLatitude());
