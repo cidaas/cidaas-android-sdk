@@ -25,7 +25,7 @@ import java.util.Random;
  */
 public final class JwksEncKeySelector {
 
-    private static Random random = new SecureRandom();
+    private static volatile Random random = new SecureRandom();
 
     private JwksEncKeySelector() {
     }

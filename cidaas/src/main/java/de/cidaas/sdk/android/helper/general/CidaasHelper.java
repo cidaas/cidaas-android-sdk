@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
+import de.cidaas.sdk.android.helper.encryption.JwksClient;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.network.CertificatePinningConfig;
@@ -186,6 +187,7 @@ public class CidaasHelper {
     public static void setCertificatePinning(@NonNull String... pinHashes) {
         networkSecurityPinningXmlResId = 0;
         certificatePinningConfig = new CertificatePinningConfig(null, pinHashes);
+        JwksClient.clearHttpClient();
     }
 
     /**
@@ -194,11 +196,13 @@ public class CidaasHelper {
     public static void setCertificatePinning(@NonNull String host, @NonNull String... pinHashes) {
         networkSecurityPinningXmlResId = 0;
         certificatePinningConfig = new CertificatePinningConfig(host, pinHashes);
+        JwksClient.clearHttpClient();
     }
 
     public static void setCertificatePinning(@NonNull CertificatePinningConfig config) {
         networkSecurityPinningXmlResId = 0;
         certificatePinningConfig = config;
+        JwksClient.clearHttpClient();
     }
 
     /**
@@ -212,11 +216,13 @@ public class CidaasHelper {
     public static void setCertificatePinningFromNetworkSecurityConfig(int xmlResId) {
         certificatePinningConfig = null;
         networkSecurityPinningXmlResId = xmlResId;
+        JwksClient.clearHttpClient();
     }
 
     public static void clearCertificatePinning() {
         certificatePinningConfig = null;
         networkSecurityPinningXmlResId = 0;
+        JwksClient.clearHttpClient();
     }
 
 }

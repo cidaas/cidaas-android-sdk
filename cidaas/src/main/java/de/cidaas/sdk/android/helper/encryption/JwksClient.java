@@ -32,7 +32,9 @@ import okhttp3.ResponseBody;
  * {@link #prefetchAsync} (also done by {@code Cidaas.setEncryptionEnabled(true)}) at startup.
  *
  * <p>JWKS HTTP uses the same certificate-pinning config as other SDK clients
- * ({@link CertificatePinningHelper}), when pinning is configured.
+ * ({@link CertificatePinningHelper}), when pinning is configured. The OkHttp client is cached;
+ * call {@link #clearHttpClient()} after changing pins (done automatically from
+ * {@link de.cidaas.sdk.android.helper.general.CidaasHelper} pin APIs).
  */
 public final class JwksClient {
 
@@ -50,6 +52,12 @@ public final class JwksClient {
     /** When non-null, used instead of {@link #buildHttpClient()} (unit tests). */
     private static volatile OkHttpClient httpClientOverride;
 
+    /**
+     * Cached production client (connection pool / dispatcher). Cleared via {@link #clearHttpClient()}
+     * when certificate pinning config changes so the next fetch picks up new pins.
+     */
+    private static volatile OkHttpClient cachedHttpClient;
+
     private JwksClient() {
     }
 
@@ -57,6 +65,15 @@ public final class JwksClient {
     public static void clearCache() {
         CACHE.set(null);
         REFRESH_SCHEDULED.set(false);
+    }
+
+    /**
+     * Drops the cached OkHttp client so the next JWKS fetch rebuilds with the current
+     * {@link CertificatePinningHelper} config. Call after changing certificate pinning
+     * (also invoked from {@link de.cidaas.sdk.android.helper.general.CidaasHelper} pin setters).
+     */
+    public static void clearHttpClient() {
+        cachedHttpClient = null;
     }
 
     /** For unit tests — inject a client (e.g. default OkHttp against MockWebServer). */
@@ -79,13 +96,25 @@ public final class JwksClient {
         if (override != null) {
             return override;
         }
-        return buildHttpClient();
+        OkHttpClient cached = cachedHttpClient;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (JwksClient.class) {
+            cached = cachedHttpClient;
+            if (cached != null) {
+                return cached;
+            }
+            cached = buildHttpClient();
+            cachedHttpClient = cached;
+            return cached;
+        }
     }
 
     /**
      * Builds a client with the same pin config as Retrofit services
-     * ({@link CertificatePinningHelper#buildCertificatePinner()}). Built per call so pinning
-     * applied after SDK init is still honored (there is no shared SDK OkHttp singleton).
+     * ({@link CertificatePinningHelper#buildCertificatePinner()}). Result is cached by
+     * {@link #resolveHttpClient()} until {@link #clearHttpClient()}.
      */
     @NonNull
     private static OkHttpClient buildHttpClient() {

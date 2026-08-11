@@ -72,6 +72,7 @@ public class ClientSideEncryptionTest {
     public void tearDown() throws Exception {
         Privacy.setEncryptionEnabled(false);
         JwksClient.clearCache();
+        JwksClient.clearHttpClient();
         JwksClient.clearHttpClientOverride();
         CidaasHelper.baseurl = "";
         mockWebServer.shutdown();
@@ -157,6 +158,27 @@ public class ClientSideEncryptionTest {
             Thread.sleep(50);
         }
         Assert.assertEquals(1, mockWebServer.getRequestCount());
+    }
+
+    @Test
+    public void encryptIfEnabled_onMainThread_withEmptyJwksCache_failsClosed() {
+        Privacy.setEncryptionEnabled(true);
+        JwksClient.clearCache();
+        CidaasHelper.baseurl = mockWebServer.url("/").toString().replaceAll("/$", "");
+
+        try {
+            ClientSideEncryption.encryptIfEnabled("secret-on-main");
+            Assert.fail("Expected IllegalStateException when JWKS was never prefetched");
+        } catch (IllegalStateException e) {
+            Assert.assertTrue(e.getMessage(),
+                    e.getMessage().contains("Client-side encryption failed")
+                            || e.getMessage().contains("JWKS cache is empty"));
+            Throwable cause = e.getCause();
+            Assert.assertNotNull(cause);
+            Assert.assertTrue(cause.getMessage(),
+                    cause.getMessage().contains("JWKS cache is empty"));
+        }
+        Assert.assertEquals(0, mockWebServer.getRequestCount());
     }
 
     @Test
