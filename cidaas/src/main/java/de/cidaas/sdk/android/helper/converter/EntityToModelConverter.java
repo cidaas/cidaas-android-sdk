@@ -211,6 +211,11 @@ public class EntityToModelConverter {
                 }
 
                 accessTokenEntity.setExpires_in(accessTokenModel.getExpires_in());
+                if (userId != null && !userId.isEmpty()) {
+                    accessTokenEntity.setSub(userId);
+                } else if (accessTokenModel.getUserId() != null && !accessTokenModel.getUserId().isEmpty()) {
+                    accessTokenEntity.setSub(accessTokenModel.getUserId());
+                }
 
                 // Decrypt the AccessToken
                 if (accessTokenModel.isEncrypted()) {

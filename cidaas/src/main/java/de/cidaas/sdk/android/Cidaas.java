@@ -33,6 +33,7 @@ import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.helper.general.DBHelper;
 import de.cidaas.sdk.android.helper.loaders.ICustomLoader;
+import de.cidaas.sdk.android.helper.storage.SecureStorage;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricCallback;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricEntity;
 import de.cidaas.sdk.android.library.common.Privacy;
@@ -118,6 +119,23 @@ public class Cidaas {
      */
     public static boolean isEnableLocationAccess() {
         return Privacy.isLocationEnabled();
+    }
+
+    /**
+     * When {@code true}, string values in local SharedPreferences (tokens, secrets, device info,
+     * etc. keyed by {@code sub} / domain) are encrypted with Android Keystore–backed Tink AEAD.
+     * Default is {@code false} (plaintext, backward compatible). Sync {@link DBHelper} APIs are unchanged.
+     *
+     * <p>Call after {@link Cidaas} construction / SDK init so a {@link Context} is available.
+     * Enabling migrates existing plaintext string prefs; disabling decrypts them back.
+     */
+    public void setSecureStorageEnabled(boolean enabled) {
+        SecureStorage.setEnabled(context, enabled);
+    }
+
+    /** @return whether Keystore/Tink secure local storage is enabled (default {@code false}). */
+    public boolean isSecureStorageEnabled() {
+        return SecureStorage.isEnabled();
     }
 
     // enableLog
