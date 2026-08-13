@@ -89,6 +89,23 @@ public class SecureStorageTest {
         Assert.assertEquals("plain-secret", DBHelper.getShared().getSecret(sub));
     }
 
+    @Test
+    public void disabling_decryptsBackToPlaintext() {
+        String sub = "user-sub-4";
+        SecureStorage.setEnabled(context, true);
+        DBHelper.getShared().addSecret("secret-to-plain", sub);
+
+        SharedPreferences prefs = context.getSharedPreferences("cidaas_preference", Context.MODE_PRIVATE);
+        Assert.assertTrue(prefs.getString("Secret_info" + sub, "").startsWith(SecureStorage.CIPHER_PREFIX));
+
+        SecureStorage.setEnabled(context, false);
+        Assert.assertFalse(SecureStorage.isEnabled());
+
+        String raw = prefs.getString("Secret_info" + sub, null);
+        Assert.assertEquals("secret-to-plain", raw);
+        Assert.assertEquals("secret-to-plain", DBHelper.getShared().getSecret(sub));
+    }
+
     /** Deterministic stand-in for Tink so unit tests do not require Android Keystore. */
     private static final class FakeXorCipher implements LocalValueCipher {
         @NonNull

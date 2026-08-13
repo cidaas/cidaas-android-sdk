@@ -15,6 +15,7 @@ import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.helper.storage.SecureStorage;
 import de.cidaas.sdk.android.models.dbmodel.AccessTokenModel;
 import de.cidaas.sdk.android.models.dbmodel.UserInfoModel;
+import timber.log.Timber;
 
 /**
  * Local persistence for SDK state via {@link SharedPreferences} (not a SQL database).
@@ -79,7 +80,7 @@ public class DBHelper {
         try {
             putSecureString(ENCRYPTED_STRING, encryptedString);
         } catch (Exception e) {
-            //Exception on ENCRYPTED_STRING
+            Timber.e(e, "DBHelper: setEncryptedData failed");
         }
     }
 
@@ -129,11 +130,10 @@ public class DBHelper {
 
     //Add Secret Based on Sub
     public void addSecret(String secret, String sub) {
-        boolean result = false;
         try {
             putSecureString(SECRET_INFO + sub, secret);
         } catch (Exception e) {
-            result = false;
+            Timber.e(e, "DBHelper: addSecret failed for sub");
         }
 
     }
@@ -167,11 +167,10 @@ public class DBHelper {
 
     //Add Secret Based on Sub
     public void setUserAgent(String userAgent) {
-        boolean result = false;
         try {
             putSecureString(USER_AGENT, userAgent);
         } catch (Exception e) {
-            result = false;
+            Timber.e(e, "DBHelper: setUserAgent failed");
         }
 
     }
@@ -189,13 +188,11 @@ public class DBHelper {
 
     //Add Challenge Properties
     public void addChallengeProperties(Dictionary<String, String> challengepropObj) {
-        boolean result = false;
         try {
             String jsonString = shared_objectMapper.writeValueAsString(challengepropObj);
             putSecureString(CHALLENGE_PROPERTIES, jsonString);
-            result = true;
         } catch (Exception e) {
-            result = false;
+            Timber.e(e, "DBHelper: addChallengeProperties failed");
         }
 
     }
@@ -222,15 +219,12 @@ public class DBHelper {
 
     //Add Login object in LocalDB(SharedPreferences) for Future purposes
     public boolean addLoginProperties(Dictionary<String, String> loginpropObj) {
-        boolean result = false;
         try {
             String jsonString = shared_objectMapper.writeValueAsString(loginpropObj);
-            putSecureString(LOGIN_PROPERTIES + loginpropObj.get("DomainURL"), jsonString);
-            result = true;
-            return result;
+            return putSecureString(LOGIN_PROPERTIES + loginpropObj.get("DomainURL"), jsonString);
         } catch (Exception e) {
-            result = false;
-            return result;
+            Timber.e(e, "DBHelper: addLoginProperties failed");
+            return false;
         }
     }
 
@@ -257,13 +251,11 @@ public class DBHelper {
 
     //Add Device
     public void addDeviceInfo(DeviceInfoEntity deviceInfoEntity) {
-        boolean result = false;
         try {
             String jsonString = shared_objectMapper.writeValueAsString(deviceInfoEntity);
             putSecureString(DEVICE_INFO, jsonString);
-            result = true;
         } catch (Exception e) {
-            result = false;
+            Timber.e(e, "DBHelper: addDeviceInfo failed");
         }
     }
 
@@ -302,7 +294,6 @@ public class DBHelper {
 
     //Add Device
     public void setFCMToken(String fcmToken) {
-        boolean result = false;
         try {
             putSecureString(FCMTOKEN_INFO, fcmToken);
 
@@ -312,7 +303,7 @@ public class DBHelper {
                 addDeviceInfo(deviceInfoEntity);
             }
         } catch (Exception e) {
-            result = false;
+            Timber.e(e, "DBHelper: setFCMToken failed");
         }
     }
 
@@ -330,11 +321,10 @@ public class DBHelper {
 
     //Add User Device id with Domain URL
     public void setUserDeviceId(String userDeviceId, String domainURL) {
-        boolean result = true;
         try {
             putSecureString(USER_DEVICE_INFO + domainURL, userDeviceId);
         } catch (Exception e) {
-            result = false;
+            Timber.e(e, "DBHelper: setUserDeviceId failed");
         }
     }
 
@@ -351,14 +341,12 @@ public class DBHelper {
 
     //Done Set Access Token
     public void setAccessToken(AccessTokenModel accessTokenModel) {
-        boolean result = false;
         try {
             String key = accessTokenModel.getUserId();
             String jsonString = shared_objectMapper.writeValueAsString(accessTokenModel);
             putSecureString(user_storage_key + key, jsonString);
-            result = true;
         } catch (Exception e) {
-            result = false;
+            Timber.e(e, "DBHelper: setAccessToken failed");
         }
 
     }
@@ -382,7 +370,7 @@ public class DBHelper {
             String jsonString = shared_objectMapper.writeValueAsString(userInfoModel);
             putSecureString(user_storage_info + key, jsonString);
         } catch (Exception e) {
-            //result=false;
+            Timber.e(e, "DBHelper: setUserInfo failed");
         }
 
     }
@@ -410,9 +398,26 @@ public class DBHelper {
         return result;
     }
 
-    private static void putSecureString(String key, String value) {
-        editor.putString(key, SecureStorage.wrapForPersist(key, value));
-        editor.commit();
+    /**
+     * Encrypts (when SecureStorage is on) and commits a string preference.
+     *
+     * @return {@code true} if {@link SharedPreferences.Editor#commit()} succeeded
+     * @throws IllegalStateException if SecureStorage wrap fails (cipher missing / encrypt error);
+     *                               callers must not treat that as a successful write
+     */
+    private static boolean putSecureString(String key, String value) {
+        try {
+            String wrapped = SecureStorage.wrapForPersist(key, value);
+            editor.putString(key, wrapped);
+            boolean committed = editor.commit();
+            if (!committed) {
+                Timber.e("DBHelper: SharedPreferences commit failed for key=%s", key);
+            }
+            return committed;
+        } catch (RuntimeException e) {
+            Timber.e(e, "DBHelper: failed to encrypt/persist string for key=%s", key);
+            throw e;
+        }
     }
 
     private static String getSecureString(String key, String defaultValue) {

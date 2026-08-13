@@ -69,9 +69,11 @@ public final class SecureStorage {
 
         if (secure) {
             ensureCipherLocked();
+            // Migrate before flipping the persisted flag so a failed migration cannot leave
+            // meta saying "enabled" while some keys remain plaintext.
+            migrateAllStringValues(true);
             enabled = true;
             meta.edit().putBoolean(META_ENABLED, true).apply();
-            migrateAllStringValues(true);
         } else {
             if (cipher == null) {
                 try {
