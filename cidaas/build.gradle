@@ -120,6 +120,9 @@ dependencies {
     // common codec for TOTP Generation
     implementation 'commons-codec:commons-codec:1.15'
 
+    // Local secure storage (Keystore-backed Tink AEAD for SharedPreferences values)
+    implementation 'com.google.crypto.tink:tink-android:1.16.0'
+
     //Android X for finger print authentication after android pie
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.google.android.material:material:1.12.0'

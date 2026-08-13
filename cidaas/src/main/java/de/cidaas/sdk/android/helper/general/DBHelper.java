@@ -1,6 +1,5 @@
 package de.cidaas.sdk.android.helper.general;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -13,13 +12,14 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
+import de.cidaas.sdk.android.helper.storage.SecureStorage;
 import de.cidaas.sdk.android.models.dbmodel.AccessTokenModel;
 import de.cidaas.sdk.android.models.dbmodel.UserInfoModel;
 
 /**
- * Created by widasrnarayanan on 16/1/18.
+ * Local persistence for SDK state via {@link SharedPreferences} (not a SQL database).
+ * String values may be encrypted when {@link SecureStorage} is enabled (Keystore + Tink).
  */
-
 public class DBHelper {
 
 
@@ -77,8 +77,7 @@ public class DBHelper {
 //SET ENCRYPTED DATA
     public void setEncryptedData(String encryptedString) {
         try {
-            editor.putString(ENCRYPTED_STRING, encryptedString);
-            editor.commit();
+            putSecureString(ENCRYPTED_STRING, encryptedString);
         } catch (Exception e) {
             //Exception on ENCRYPTED_STRING
         }
@@ -89,7 +88,7 @@ public class DBHelper {
     public String getEncryptedData() {
         String result = "";
         try {
-            result = preferences.getString(ENCRYPTED_STRING, "");
+            result = getSecureString(ENCRYPTED_STRING, "");
         } catch (Exception e) {
             result = "";
         }
@@ -124,6 +123,7 @@ public class DBHelper {
             preferences = context.getSharedPreferences("cidaas_preference", 0);
             editor = preferences.edit();
         }
+        SecureStorage.init(context);
     }
 
 
@@ -131,8 +131,7 @@ public class DBHelper {
     public void addSecret(String secret, String sub) {
         boolean result = false;
         try {
-            editor.putString(SECRET_INFO + sub, secret);
-            editor.commit();
+            putSecureString(SECRET_INFO + sub, secret);
         } catch (Exception e) {
             result = false;
         }
@@ -143,7 +142,7 @@ public class DBHelper {
     public String getSecret(String sub) {
         String secret;
         try {
-            secret = preferences.getString(SECRET_INFO + sub, "");
+            secret = getSecureString(SECRET_INFO + sub, "");
         } catch (Exception e) {
             secret = "";
         }
@@ -170,8 +169,7 @@ public class DBHelper {
     public void setUserAgent(String userAgent) {
         boolean result = false;
         try {
-            editor.putString(USER_AGENT, userAgent);
-            editor.commit();
+            putSecureString(USER_AGENT, userAgent);
         } catch (Exception e) {
             result = false;
         }
@@ -182,7 +180,7 @@ public class DBHelper {
     public String getUserAgent() {
         String userAgent;
         try {
-            userAgent = preferences.getString(USER_AGENT, "");
+            userAgent = getSecureString(USER_AGENT, "");
         } catch (Exception e) {
             userAgent = "";
         }
@@ -194,8 +192,8 @@ public class DBHelper {
         boolean result = false;
         try {
             String jsonString = shared_objectMapper.writeValueAsString(challengepropObj);
-            editor.putString(CHALLENGE_PROPERTIES, jsonString);
-            result = editor.commit();
+            putSecureString(CHALLENGE_PROPERTIES, jsonString);
+            result = true;
         } catch (Exception e) {
             result = false;
         }
@@ -207,7 +205,7 @@ public class DBHelper {
 
         Dictionary<String, String> challengeProperties = new Hashtable<>();
         try {
-            String jsonString = preferences.getString(CHALLENGE_PROPERTIES, (new JSONObject().toString()));
+            String jsonString = getSecureString(CHALLENGE_PROPERTIES, (new JSONObject().toString()));
             JSONObject jsonObject = new JSONObject(jsonString);
             Iterator<String> keysItr = jsonObject.keys();
             while (keysItr.hasNext()) {
@@ -227,8 +225,8 @@ public class DBHelper {
         boolean result = false;
         try {
             String jsonString = shared_objectMapper.writeValueAsString(loginpropObj);
-            editor.putString(LOGIN_PROPERTIES + loginpropObj.get("DomainURL"), jsonString);
-            result = editor.commit();
+            putSecureString(LOGIN_PROPERTIES + loginpropObj.get("DomainURL"), jsonString);
+            result = true;
             return result;
         } catch (Exception e) {
             result = false;
@@ -242,7 +240,7 @@ public class DBHelper {
 
         Dictionary<String, String> loginProperties = new Hashtable<>();
         try {
-            String jsonString = preferences.getString(LOGIN_PROPERTIES + domainURL, (new JSONObject().toString()));
+            String jsonString = getSecureString(LOGIN_PROPERTIES + domainURL, (new JSONObject().toString()));
             JSONObject jsonObject = new JSONObject(jsonString);
             Iterator<String> keysItr = jsonObject.keys();
             while (keysItr.hasNext()) {
@@ -262,8 +260,8 @@ public class DBHelper {
         boolean result = false;
         try {
             String jsonString = shared_objectMapper.writeValueAsString(deviceInfoEntity);
-            editor.putString(DEVICE_INFO, jsonString);
-            result = editor.commit();
+            putSecureString(DEVICE_INFO, jsonString);
+            result = true;
         } catch (Exception e) {
             result = false;
         }
@@ -271,7 +269,7 @@ public class DBHelper {
 
     //get Device info
     public DeviceInfoEntity getDeviceInfo() {
-        String jsonString = preferences.getString(DEVICE_INFO, "");
+        String jsonString = getSecureString(DEVICE_INFO, "");
         DeviceInfoEntity deviceInfoEntity;
         try {
             // parse jsonObject instead of Jackson readValue() as Jackson also map stability from Parcelable to jsonString as of Android 14
@@ -306,8 +304,7 @@ public class DBHelper {
     public void setFCMToken(String fcmToken) {
         boolean result = false;
         try {
-            editor.putString(FCMTOKEN_INFO, fcmToken);
-            editor.commit();
+            putSecureString(FCMTOKEN_INFO, fcmToken);
 
             DeviceInfoEntity deviceInfoEntity = getDeviceInfo();
             if (deviceInfoEntity != null) {
@@ -323,7 +320,7 @@ public class DBHelper {
     public String getFCMToken() {
         String fcmtoken;
         try {
-            fcmtoken = preferences.getString(FCMTOKEN_INFO, "");
+            fcmtoken = getSecureString(FCMTOKEN_INFO, "");
         } catch (Exception e) {
             fcmtoken = "";
         }
@@ -335,8 +332,7 @@ public class DBHelper {
     public void setUserDeviceId(String userDeviceId, String domainURL) {
         boolean result = true;
         try {
-            editor.putString(USER_DEVICE_INFO + domainURL, userDeviceId);
-            editor.commit();
+            putSecureString(USER_DEVICE_INFO + domainURL, userDeviceId);
         } catch (Exception e) {
             result = false;
         }
@@ -346,7 +342,7 @@ public class DBHelper {
     public String getUserDeviceId(String domainURL) {
         String userDeviceId;
         try {
-            userDeviceId = preferences.getString(USER_DEVICE_INFO + domainURL, "");
+            userDeviceId = getSecureString(USER_DEVICE_INFO + domainURL, "");
         } catch (Exception e) {
             userDeviceId = "";
         }
@@ -359,8 +355,8 @@ public class DBHelper {
         try {
             String key = accessTokenModel.getUserId();
             String jsonString = shared_objectMapper.writeValueAsString(accessTokenModel);
-            editor.putString(user_storage_key + key, jsonString);
-            result = editor.commit();
+            putSecureString(user_storage_key + key, jsonString);
+            result = true;
         } catch (Exception e) {
             result = false;
         }
@@ -369,7 +365,7 @@ public class DBHelper {
 
     //Done Get Access Token
     public AccessTokenModel getAccessToken(String userId) {
-        String jsonString = preferences.getString(user_storage_key + userId, "");
+        String jsonString = getSecureString(user_storage_key + userId, "");
         AccessTokenModel accessTokenModel;
         try {
             accessTokenModel = shared_objectMapper.readValue(jsonString, AccessTokenModel.class);
@@ -384,8 +380,7 @@ public class DBHelper {
         try {
             String key = userInfoModel.getUserid();
             String jsonString = shared_objectMapper.writeValueAsString(userInfoModel);
-            editor.putString(user_storage_info + key, jsonString);
-            editor.commit();
+            putSecureString(user_storage_info + key, jsonString);
         } catch (Exception e) {
             //result=false;
         }
@@ -394,7 +389,7 @@ public class DBHelper {
 
     //Done Get User info
     public UserInfoModel getUserInfo(String userId) {
-        String jsonString = preferences.getString(user_storage_info + userId, "DefaultUserinfo");
+        String jsonString = getSecureString(user_storage_info + userId, "DefaultUserinfo");
         UserInfoModel userInfoModel;
         try {
             userInfoModel = shared_objectMapper.readValue(jsonString, UserInfoModel.class);
@@ -413,6 +408,15 @@ public class DBHelper {
         editor.remove(savedKey);
         result = editor.commit();
         return result;
+    }
+
+    private static void putSecureString(String key, String value) {
+        editor.putString(key, SecureStorage.wrapForPersist(key, value));
+        editor.commit();
+    }
+
+    private static String getSecureString(String key, String defaultValue) {
+        return SecureStorage.unwrapFromPersist(key, preferences.getString(key, defaultValue), defaultValue);
     }
 
 }
