@@ -51,16 +51,10 @@ public class EntityToModelConverter {
     // convert accessTokenEntity To AccessTokenModel
     public void accessTokenEntityToAccessTokenModel(AccessTokenEntity accessTokenEntity, String userId,
             EventResult<AccessTokenModel> callback) {
-        accessTokenEntityToAccessTokenModel(accessTokenEntity, userId, false, callback);
-    }
-
-    public void accessTokenEntityToAccessTokenModel(AccessTokenEntity accessTokenEntity, String userId, boolean dpopSession,
-            EventResult<AccessTokenModel> callback) {
         String methodName = "accessTokenEntityToAccessTokenModel";
         try {
             String EncryptedToken, EncryptedRefreshToken = "";
 
-            AccessTokenModel.getShared().setDpopSession(dpopSession);
             AccessTokenModel.getShared().setExpires_in(accessTokenEntity.getExpires_in());
             AccessTokenModel.getShared().setId_token(accessTokenEntity.getId_token());
             AccessTokenModel.getShared().setRefresh_token(accessTokenEntity.getRefresh_token());
@@ -211,6 +205,11 @@ public class EntityToModelConverter {
                 }
 
                 accessTokenEntity.setExpires_in(accessTokenModel.getExpires_in());
+                if (userId != null && !userId.isEmpty()) {
+                    accessTokenEntity.setSub(userId);
+                } else if (accessTokenModel.getUserId() != null && !accessTokenModel.getUserId().isEmpty()) {
+                    accessTokenEntity.setSub(accessTokenModel.getUserId());
+                }
 
                 // Decrypt the AccessToken
                 if (accessTokenModel.isEncrypted()) {

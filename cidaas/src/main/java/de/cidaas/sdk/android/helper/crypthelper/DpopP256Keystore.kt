@@ -39,8 +39,22 @@ object DpopP256Keystore {
     }
 
     @JvmStatic
-    fun proofJwt(context: Context, httpMethod: String, requestUrlString: String): String =
-        proofJwtInternal(context, httpMethod, requestUrlString, null, null, null, null)
+    @JvmOverloads
+    fun proofJwt(
+        context: Context,
+        httpMethod: String,
+        requestUrlString: String,
+        accessToken: String? = null,
+    ): String = proofJwtInternal(
+        context,
+        httpMethod,
+        requestUrlString,
+        accessToken,
+        null,
+        null,
+        null,
+        null,
+    )
 
     /**
      * DPoP proof for device-registration verification: standard DPoP claims plus {@code session_id},
@@ -60,6 +74,7 @@ object DpopP256Keystore {
         context,
         httpMethod,
         requestUrlString,
+        null,
         sessionId,
         initiationNonce,
         appAttestationToken,
@@ -70,6 +85,7 @@ object DpopP256Keystore {
         context: Context,
         httpMethod: String,
         requestUrlString: String,
+        accessToken: String?,
         sessionId: String?,
         initiationNonce: String?,
         appAttestationToken: String?,
@@ -92,6 +108,10 @@ object DpopP256Keystore {
             .put("htu", canonicalHtu(requestUrlString))
             .put("iat", iat)
             .put("jti", jti)
+        // RFC 9449 §4.2: ath is required when the proof accompanies an access token.
+        if (!accessToken.isNullOrEmpty()) {
+            payload.put("ath", accessTokenHash(accessToken))
+        }
         if (!sessionId.isNullOrEmpty()) {
             payload.put("session_id", sessionId)
         }
@@ -113,6 +133,16 @@ object DpopP256Keystore {
         val derSig = sig.sign()
         val joseSig = derToJoseEs256(derSig)
         return "$signingInput.${joseSig.toBase64UrlNoPad()}"
+    }
+
+    /**
+     * RFC 9449 `ath`: base64url(SHA-256(ASCII(access_token))).
+     */
+    @JvmStatic
+    fun accessTokenHash(accessToken: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest(accessToken.toByteArray(StandardCharsets.US_ASCII))
+        return digest.toBase64UrlNoPad()
     }
 
     private fun canonicalHtu(urlString: String): String {

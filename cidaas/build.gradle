@@ -122,6 +122,8 @@ dependencies {
 
     // JWE (ECDH-ES + A256GCM) for client-side encryption of password / pass_code
     implementation 'com.nimbusds:nimbus-jose-jwt:9.37.3'
+    // Local secure storage (Keystore-backed Tink AEAD for SharedPreferences values)
+    implementation 'com.google.crypto.tink:tink-android:1.16.0'
 
     //Android X for finger print authentication after android pie
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
