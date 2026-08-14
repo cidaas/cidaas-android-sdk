@@ -34,7 +34,7 @@ public class AccessTokenModel implements Serializable {
     private boolean isEncrypted = true;
     private String token_type = "";
     private String id_token_expires_in = "";
-    /** Persisted when tokens were obtained with DPoP ({@code webAuth().useDpop()}); refresh uses the same proof. */
+    /** Persisted when tokens were obtained while {@code Cidaas#setDpopEnabled(true)}. */
     private boolean dpopSession;
     //Getters and Setters
 

@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.helper.general.DBHelper;
+import de.cidaas.sdk.android.helper.crypthelper.DpopInterceptor;
 import de.cidaas.sdk.android.helper.network.CertificatePinningHelper;
 import okhttp3.CertificatePinner;
 import okhttp3.Interceptor;
@@ -50,6 +51,7 @@ public class CidaasSDK_V2_Service {
         }
 
         okHttpClient = clientBuilder
+                .addInterceptor(new DpopInterceptor(mcontext))
                 .addNetworkInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {

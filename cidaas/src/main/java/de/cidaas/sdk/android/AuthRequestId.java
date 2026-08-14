@@ -9,12 +9,15 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.cidaas.sdk.android.helper.crypthelper.DpopConfig;
 import de.cidaas.sdk.android.helper.crypthelper.DpopP256Keystore;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 
 /**
  * Fetches an auth {@code requestId} via {@code CidaasNative.getRequestId} (reflection). Obtain from
  * {@link Cidaas#requestId()}; complete with {@link #fetch(EventResult)}.
+ *
+ * <p>When {@link Cidaas#setDpopEnabled(boolean)} is {@code true}, {@code dpop_jkt} is included automatically.</p>
  *
  * <p>Callback success receives
  * {@code de.cidaas.sdk.android.cidaasnative.data.entity.authrequest.AuthRequestResponseEntity} at runtime; add
@@ -27,7 +30,6 @@ public final class AuthRequestId {
 
     private final Cidaas cidaas;
     private Map<String, String> extraParams;
-    private boolean useDpop;
 
     public AuthRequestId(@NonNull Cidaas cidaas, @Nullable Map<String, String> extraParams) {
         this.cidaas = cidaas;
@@ -41,16 +43,6 @@ public final class AuthRequestId {
     }
 
     /**
-     * Include {@code dpop_jkt} (RFC 9449) in the request-id call form parameters (same JWK as
-     * {@link de.cidaas.sdk.android.browser.WebAuth#useDpop()}). Call before {@link #fetch(EventResult)}.
-     */
-    @NonNull
-    public AuthRequestId useDpop() {
-        this.useDpop = true;
-        return this;
-    }
-
-    /**
      * Calls {@code CidaasNative.getRequestId(EventResult, HashMap...)} using {@link Cidaas#context}.
      */
     @SuppressWarnings("unchecked")
@@ -59,7 +51,7 @@ public final class AuthRequestId {
         if (extraParams != null) {
             merged.putAll(extraParams);
         }
-        if (useDpop) {
+        if (DpopConfig.isEnabled()) {
             try {
                 merged.put("dpop_jkt", DpopP256Keystore.jwkThumbprintSha256(cidaas.context));
             } catch (Exception e) {
