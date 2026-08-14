@@ -33,6 +33,7 @@ import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.helper.general.DBHelper;
 import de.cidaas.sdk.android.helper.loaders.ICustomLoader;
+import de.cidaas.sdk.android.helper.crypthelper.DpopConfig;
 import de.cidaas.sdk.android.helper.storage.SecureStorage;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricCallback;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricEntity;
@@ -138,6 +139,20 @@ public class Cidaas {
         return SecureStorage.isEnabled();
     }
 
+    /**
+     * When {@code true}, every SDK Retrofit/OkHttp request receives a RFC 9449 {@code DPoP} proof
+     * header, and hosted login / request-id flows include {@code dpop_jkt}.
+     * Default is {@code false}. Process-wide and persisted across app restarts.
+     */
+    public void setDpopEnabled(boolean enabled) {
+        DpopConfig.setEnabled(context, enabled);
+    }
+
+    /** @return whether global DPoP is enabled (default {@code false}). */
+    public boolean isDpopEnabled() {
+        return DpopConfig.isEnabled();
+    }
+
     // enableLog
 
     public boolean isLogEnable() {
@@ -201,15 +216,7 @@ public class Cidaas {
     }
 
     public void getAccessTokenFromRefreshToken(String refershtoken, EventResult<AccessTokenEntity> result) {
-        getAccessTokenFromRefreshToken(refershtoken, false, result);
-    }
-
-    /**
-     * @param useDpop set {@code true} when the refresh token belongs to a DPoP session (e.g. after
-     *                {@link de.cidaas.sdk.android.browser.WebAuth#useDpop()}); otherwise use {@code false}.
-     */
-    public void getAccessTokenFromRefreshToken(String refershtoken, boolean useDpop, EventResult<AccessTokenEntity> result) {
-        AccessTokenController.getShared(context).getAccessTokenByRefreshToken(refershtoken, useDpop, result);
+        AccessTokenController.getShared(context).getAccessTokenByRefreshToken(refershtoken, result);
     }
 
     public void getAccessTokenBySocial(SocialAccessTokenEntity socialAccessTokenEntity,
@@ -243,16 +250,7 @@ public class Cidaas {
     public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
             @Nullable final Map<String, String> extraParams,
             final EventResult<AccessTokenEntity> callbacktoMain) {
-        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, false, callbacktoMain);
-    }
-
-    /**
-     * Hosted login with optional {@code DPoP} on the token endpoint (use {@link WebAuth#useDpop()}).
-     */
-    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
-            @Nullable final Map<String, String> extraParams, boolean useDpop,
-            final EventResult<AccessTokenEntity> callbacktoMain) {
-        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, useDpop, callbacktoMain);
+        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, callbacktoMain);
     }
 
     public void logoutWithBrowser(@NonNull final Context activityContext, @NonNull final String sub,
@@ -266,7 +264,7 @@ public class Cidaas {
      * Browser-based login, logout, and social login. Pass the {@link Context} used
      * to launch the custom tab
      * (typically your current {@link Activity}). Example:
-     * {@code cidaas.webAuth(this).extraParams(map).signIn(callback);} or {@code cidaas.webAuth(this).useDpop().signIn(callback);}
+     * {@code cidaas.setDpopEnabled(true); cidaas.webAuth(this).extraParams(map).signIn(callback);}
      */
     @NonNull
     public WebAuth webAuth(@NonNull Context activityContext) {
@@ -276,7 +274,7 @@ public class Cidaas {
     /**
      * OAuth / hosted-flow {@code requestId} (delegates to
      * {@code CidaasNative.getRequestId} at runtime). Example:
-     * {@code cidaas.requestId().fetch(callback);} or {@code cidaas.requestId().useDpop().fetch(callback);}
+     * {@code cidaas.requestId().fetch(callback);} (uses global {@link #setDpopEnabled(boolean)} for {@code dpop_jkt})
      */
     @NonNull
     public AuthRequestId requestId() {

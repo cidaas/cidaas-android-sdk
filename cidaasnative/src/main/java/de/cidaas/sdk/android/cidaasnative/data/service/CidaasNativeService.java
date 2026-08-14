@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import de.cidaas.sdk.android.cidaasnative.BuildConfig;
 import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.helper.general.DBHelper;
+import de.cidaas.sdk.android.helper.crypthelper.DpopInterceptor;
 import de.cidaas.sdk.android.helper.network.CertificatePinningHelper;
 import okhttp3.CertificatePinner;
 import okhttp3.OkHttpClient;
@@ -66,6 +67,7 @@ public class CidaasNativeService {
         }
 
         okHttpClient = clientBuilder
+                .addInterceptor(new DpopInterceptor(mcontext))
                 .addNetworkInterceptor(chain -> {
                     Request originalRequest = chain.request();
                     Request requestWithUserAgent = originalRequest.newBuilder()

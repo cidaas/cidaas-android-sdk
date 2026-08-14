@@ -12,6 +12,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
+import de.cidaas.sdk.android.helper.crypthelper.DpopConfig;
 import de.cidaas.sdk.android.helper.storage.SecureStorage;
 import de.cidaas.sdk.android.models.dbmodel.AccessTokenModel;
 import de.cidaas.sdk.android.models.dbmodel.UserInfoModel;
@@ -125,6 +126,7 @@ public class DBHelper {
             editor = preferences.edit();
         }
         SecureStorage.init(context);
+        DpopConfig.init(context);
     }
 
 
