@@ -6,6 +6,8 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import timber.log.Timber;
+
 /**
  * Process-wide DPoP (RFC 9449) toggle. When enabled, every OkHttp/Retrofit call from the SDK
  * receives a {@code DPoP} proof header via {@link DpopInterceptor}, and hosted login / request-id
@@ -35,8 +37,9 @@ public final class DpopConfig {
         if (enabled) {
             try {
                 DpopP256Keystore.ensureKey(appContext);
-            } catch (Exception ignored) {
-                // Key is created lazily on first proof; keep flag as persisted.
+            } catch (Exception e) {
+                // Key is created lazily on first proof; interceptor proceeds without DPoP if that fails.
+                Timber.e(e, "DpopConfig: DPoP key not ready at init; will retry on first proof");
             }
         }
     }

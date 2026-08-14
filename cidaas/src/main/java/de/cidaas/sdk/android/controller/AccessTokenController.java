@@ -7,7 +7,6 @@ import java.util.Dictionary;
 import de.cidaas.sdk.android.entities.LoginCredentialsResponseEntity;
 import de.cidaas.sdk.android.entities.SocialAccessTokenEntity;
 import de.cidaas.sdk.android.helper.converter.EntityToModelConverter;
-import de.cidaas.sdk.android.helper.crypthelper.DpopConfig;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
@@ -74,7 +73,7 @@ public class AccessTokenController {
             AccessTokenService.getShared(context).getAccessTokenByCode(baseurl, code, new EventResult<AccessTokenEntity>() {
                 @Override
                 public void success(final AccessTokenEntity result) {
-                    accessTokenConversion(result, callback, DpopConfig.isEnabled());
+                    accessTokenConversion(result, callback);
                 }
 
                 @Override
@@ -88,11 +87,10 @@ public class AccessTokenController {
     }
 
     //-------------------------------------------------------- accessTokenConversion---------------------------------------------------------
-    private void accessTokenConversion(final AccessTokenEntity accessTokenEntity, final EventResult<AccessTokenEntity> callback,
-            boolean persistDpopSession) {
+    private void accessTokenConversion(final AccessTokenEntity accessTokenEntity, final EventResult<AccessTokenEntity> callback) {
         final String methodName = "AccessToken Controller :accessTokenConversion()";
         try {
-            EntityToModelConverter.getShared(context).accessTokenEntityToAccessTokenModel(accessTokenEntity, accessTokenEntity.getSub(), persistDpopSession,
+            EntityToModelConverter.getShared(context).accessTokenEntityToAccessTokenModel(accessTokenEntity, accessTokenEntity.getSub(),
                     new EventResult<AccessTokenModel>() {
                         @Override
                         public void success(AccessTokenModel modelresult) {
@@ -172,7 +170,7 @@ public class AccessTokenController {
                     AccessTokenService.getShared(context).getAccessTokenByRefreshToken(refreshToken, loginPropertiesResult, new EventResult<AccessTokenEntity>() {
                         @Override
                         public void success(AccessTokenEntity result) {
-                            accessTokenConversion(result, callback, DpopConfig.isEnabled());
+                            accessTokenConversion(result, callback);
                         }
 
                         @Override

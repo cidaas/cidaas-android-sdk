@@ -34,8 +34,6 @@ public class AccessTokenModel implements Serializable {
     private boolean isEncrypted = true;
     private String token_type = "";
     private String id_token_expires_in = "";
-    /** Persisted when tokens were obtained while {@code Cidaas#setDpopEnabled(true)}. */
-    private boolean dpopSession;
     //Getters and Setters
 
 
@@ -135,14 +133,6 @@ public class AccessTokenModel implements Serializable {
 
     public void setEncrypted(boolean encrypted) {
         isEncrypted = encrypted;
-    }
-
-    public boolean isDpopSession() {
-        return dpopSession;
-    }
-
-    public void setDpopSession(boolean dpopSession) {
-        this.dpopSession = dpopSession;
     }
 
 }

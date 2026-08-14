@@ -70,7 +70,8 @@ public final class DpopInterceptor implements Interceptor {
             return chain.proceed(withDpop);
 
         } catch (Exception e) {
-            throw new IOException("Failed to attach DPoP proof header", e);
+            Timber.e(e, "DpopInterceptor: failed to generate DPoP proof; proceeding without header");
+            return chain.proceed(request);
         }
     }
 
