@@ -31,8 +31,8 @@ public class CidaasSDK_V2_Service {
 
         String baseurl = CidaasHelper.baseurl;
 
-        if (baseurl == null || baseurl.equals("")) {
-            baseurl = "https://www.google.com";
+        if (baseurl == null || baseurl.isEmpty()) {
+            throw new IllegalStateException("CidaasHelper.baseurl must be set before creating service instances");
         }
 
 
