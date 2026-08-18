@@ -51,6 +51,10 @@ public class BiometricDialogV23 extends BottomSheetDialog implements View.OnClic
         dialogBuilder.setCancelable(false);
 
         AlertDialog mAlertDialog = dialogBuilder.create();
+        if (mAlertDialog.getWindow() != null) {
+            mAlertDialog.getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE);
+        }
         mAlertDialog.show();
     }
 
@@ -114,6 +118,15 @@ public class BiometricDialogV23 extends BottomSheetDialog implements View.OnClic
         }
     }*/
 
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (getWindow() != null) {
+            getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE);
+        }
+    }
 
     @Override
     public void onClick(View view) {

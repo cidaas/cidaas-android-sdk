@@ -153,6 +153,8 @@ public final class FaceEnrollmentWizardActivity extends AppCompatActivity {
             setTheme(theme);
         }
         super.onCreate(savedInstanceState);
+        getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                android.view.WindowManager.LayoutParams.FLAG_SECURE);
 
         Intent intent = getIntent();
         mode = intent.getIntExtra(EXTRA_MODE, MODE_ENROLL);
