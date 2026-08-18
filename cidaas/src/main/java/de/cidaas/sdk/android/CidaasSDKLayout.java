@@ -368,10 +368,10 @@ public class CidaasSDKLayout extends RelativeLayout {
                     WebSettings settings = webViewInstance.getSettings();
                     settings.setJavaScriptEnabled(true);
                     settings.setDomStorageEnabled(true);
-                    settings.setAllowFileAccess(true);
+                    settings.setAllowFileAccess(false);
                     settings.setCacheMode(WebSettings.LOAD_DEFAULT);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
                     }
                     settings.setUserAgentString(
                             "\"Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1\"");

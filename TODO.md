@@ -16,3 +16,12 @@ payload.put("key_backing", KeystoreEcP256StrongBoxHelper.getSecurityLevel(alias)
 `KeySecurityLevel.wireValue` produces stable strings: `STRONGBOX`, `TEE`, `HARDWARE`, `SOFTWARE`, `UNKNOWN_SECURE`.
 
 **Depends on:** server-side agreement on claim name, validation rules, and how `key_backing` interacts with existing DPoP/biometric verification.
+
+## WebViewAssetLoader support for login WebView
+
+`CidaasSDKLayout` disables `file://` access (`setAllowFileAccess(false)`) for security. If customers need to load local assets (branding, fonts, CSS) into the hosted login page, expose `WebViewAssetLoader` integration — this serves local files over `https://appassets.androidplatform.net/` without re-enabling `file://`.
+
+**What's needed:**
+- Allow integrators to supply a configured `WebViewAssetLoader` via the `Cidaas` public API
+- Override `shouldInterceptRequest` in `CidaasWebViewClient` to delegate to the asset loader
+- Keep `setAllowFileAccess(false)` regardless
