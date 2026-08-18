@@ -58,8 +58,8 @@ object DpopP256Keystore {
 
     /**
      * DPoP proof for device-registration verification: standard DPoP claims plus {@code session_id},
-     * {@code nonce}, {@code attestation} (Play Integrity / App Check token), and {@code biometric_public_key_der}
-     * (standard Base64 of SubjectPublicKeyInfo DER).
+     * {@code nonce}, optional {@code attestation} (Play Integrity / App Check token when provided),
+     * and {@code biometric_public_key_der} (standard Base64 of SubjectPublicKeyInfo DER).
      */
     @JvmStatic
     fun proofJwtForDeviceRegistration(
@@ -68,7 +68,7 @@ object DpopP256Keystore {
         requestUrlString: String,
         sessionId: String,
         initiationNonce: String,
-        appAttestationToken: String,
+        appAttestationToken: String?,
         biometricPublicKeyDerBase64: String,
     ): String = proofJwtInternal(
         context,
