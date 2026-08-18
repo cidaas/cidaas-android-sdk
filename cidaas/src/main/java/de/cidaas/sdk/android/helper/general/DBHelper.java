@@ -69,7 +69,7 @@ public class DBHelper {
     public boolean getEnablePKCE() {
         boolean result = false;
         try {
-            result = preferences.getBoolean(LOG_ENABLE_STATUS, true);
+            result = preferences.getBoolean(PKCE_ENABLE_STATUS, true);
         } catch (Exception e) {
             result = false;
         }
@@ -111,7 +111,7 @@ public class DBHelper {
     public boolean getEnableLog() {
         boolean result = false;
         try {
-            result = preferences.getBoolean(PKCE_ENABLE_STATUS, true);
+            result = preferences.getBoolean(LOG_ENABLE_STATUS, true);
         } catch (Exception e) {
             result = false;
         }
