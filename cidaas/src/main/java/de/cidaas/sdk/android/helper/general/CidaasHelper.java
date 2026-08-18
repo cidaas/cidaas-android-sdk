@@ -17,6 +17,7 @@ import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.network.CertificatePinningConfig;
 import de.cidaas.sdk.android.properties.CidaasProperties;
+import okhttp3.OkHttpClient;
 
 import static android.os.Build.MODEL;
 
@@ -42,6 +43,9 @@ public class CidaasHelper {
     public static String APP_VERSION = "";
 
     public static boolean IS_SETURL_CALLED = false;
+
+    @Nullable
+    public static volatile OkHttpClient customHttpClient;
 
     @Nullable
     public static CertificatePinningConfig certificatePinningConfig;

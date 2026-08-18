@@ -36,29 +36,29 @@ public class CidaasSDK_V2_Service {
         }
 
 
-        ICidaasSDK_V2_Services iCidaasSDK_v2_services = null;
-        OkHttpClient okHttpClient = null;
+        OkHttpClient custom = CidaasHelper.customHttpClient;
+        OkHttpClient.Builder clientBuilder;
+        if (custom != null) {
+            clientBuilder = custom.newBuilder();
+        } else {
+            clientBuilder = new OkHttpClient.Builder()
+                    .readTimeout(40, TimeUnit.SECONDS)
+                    .connectTimeout(100, TimeUnit.SECONDS);
 
-        final String HEADER_USER_AGENT = "User-Agent";
-
-        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-                .readTimeout(40, TimeUnit.SECONDS)
-                .connectTimeout(100, TimeUnit.SECONDS);
-
-        CertificatePinner certificatePinner = CertificatePinningHelper.buildCertificatePinner(mcontext);
-        if (certificatePinner != null) {
-            clientBuilder.certificatePinner(certificatePinner);
+            CertificatePinner certificatePinner = CertificatePinningHelper.buildCertificatePinner(mcontext);
+            if (certificatePinner != null) {
+                clientBuilder.certificatePinner(certificatePinner);
+            }
         }
 
-        okHttpClient = clientBuilder
+        OkHttpClient okHttpClient = clientBuilder
                 .addInterceptor(new DpopInterceptor(mcontext))
                 .addNetworkInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {
                         Request originalRequest = chain.request();
                         Request requestWithUserAgent = originalRequest.newBuilder()
-                                .header(HEADER_USER_AGENT, createCustomUserAgent())
-
+                                .header("User-Agent", createCustomUserAgent())
                                 .build();
                         for (int i = 0; i < requestWithUserAgent.headers().size(); i++) {
                             DBHelper.getShared().setUserAgent("User-Agent : " + String.format("%s: %s", requestWithUserAgent.headers().name(i), requestWithUserAgent.headers().value(i)));
@@ -68,6 +68,8 @@ public class CidaasSDK_V2_Service {
                     }
                 })
                 .build();
+
+        ICidaasSDK_V2_Services iCidaasSDK_v2_services;
 
 
         Retrofit retrofit = new Retrofit.Builder()

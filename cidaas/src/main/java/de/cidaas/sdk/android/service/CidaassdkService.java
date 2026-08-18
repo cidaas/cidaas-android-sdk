@@ -62,38 +62,31 @@ public class CidaassdkService {
     }
 
     public OkHttpClient getOKHttpClient() {
-        OkHttpClient okHttpClient;
-        final String HEADER_USER_AGENT = "User-Agent";
-        /*
-         * final String HEADER_LOCATION_LATITUDE="Lat";
-         * final String HEADER_LOCATION_LONGITUDE="Long";
-         */
-        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-                .readTimeout(40, TimeUnit.SECONDS)
-                .connectTimeout(100, TimeUnit.SECONDS);
+        OkHttpClient custom = CidaasHelper.customHttpClient;
+        OkHttpClient.Builder clientBuilder;
+        if (custom != null) {
+            clientBuilder = custom.newBuilder();
+        } else {
+            clientBuilder = new OkHttpClient.Builder()
+                    .readTimeout(40, TimeUnit.SECONDS)
+                    .connectTimeout(100, TimeUnit.SECONDS);
 
-        CertificatePinner certificatePinner = CertificatePinningHelper.buildCertificatePinner(mcontext);
-        if (certificatePinner != null) {
-            clientBuilder.certificatePinner(certificatePinner);
+            CertificatePinner certificatePinner = CertificatePinningHelper.buildCertificatePinner(mcontext);
+            if (certificatePinner != null) {
+                clientBuilder.certificatePinner(certificatePinner);
+            }
         }
 
-        okHttpClient = clientBuilder
+        return clientBuilder
                 .addInterceptor(new DpopInterceptor(mcontext))
                 .addNetworkInterceptor(new Interceptor() {
                     @Override
                     public Response intercept(Chain chain) throws IOException {
                         Request originalRequest = chain.request();
                         Request requestWithUserAgent = originalRequest.newBuilder()
-                                .header(HEADER_USER_AGENT, createCustomUserAgent(originalRequest))
-                                /*
-                                 * .addHeader(HEADER_LOCATION_LATITUDE,getLat())
-                                 * .header(HEADER_LOCATION_LONGITUDE,getLong())
-                                 */
+                                .header("User-Agent", createCustomUserAgent(originalRequest))
                                 .build();
                         for (int i = 0; i < requestWithUserAgent.headers().size(); i++) {
-                            // Timber.d("User-Agent : "+String.format("%s: %s",
-                            // requestWithUserAgent.headers().name(i),
-                            // requestWithUserAgent.headers().value(i)));
                             DBHelper.getShared().setUserAgent("User-Agent : " + String.format("%s: %s",
                                     requestWithUserAgent.headers().name(i), requestWithUserAgent.headers().value(i)));
                         }
@@ -102,7 +95,6 @@ public class CidaassdkService {
                     }
                 })
                 .build();
-        return okHttpClient;
     }
 
     private String createCustomUserAgent(Request originalRequest) {
