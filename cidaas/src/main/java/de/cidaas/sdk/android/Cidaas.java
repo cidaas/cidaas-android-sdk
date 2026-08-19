@@ -39,6 +39,7 @@ import de.cidaas.sdk.android.helper.storage.SecureStorage;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricCallback;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricEntity;
 import de.cidaas.sdk.android.helper.crypthelper.KeyBackingPolicy;
+import de.cidaas.sdk.android.helper.network.UserAgentInterceptor;
 import de.cidaas.sdk.android.helper.crypthelper.KeystoreEcP256StrongBoxHelper;
 import de.cidaas.sdk.android.library.common.Privacy;
 import okhttp3.OkHttpClient;
@@ -507,7 +508,7 @@ public class Cidaas {
     }
 
     public String getUserAgent() {
-        return DBHelper.getShared().getUserAgent();
+        return UserAgentInterceptor.getUserAgent();
     }
 
     // ----------------------------------LocationHistory------------------------------------------------------------------------------------------------------

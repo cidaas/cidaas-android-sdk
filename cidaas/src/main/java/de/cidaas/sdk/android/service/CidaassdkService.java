@@ -1,21 +1,15 @@
 package de.cidaas.sdk.android.service;
 
 import android.content.Context;
-import android.os.Build;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import de.cidaas.sdk.android.BuildConfig;
 import de.cidaas.sdk.android.helper.crypthelper.DpopInterceptor;
 import de.cidaas.sdk.android.helper.general.CidaasHelper;
-import de.cidaas.sdk.android.helper.general.DBHelper;
 import de.cidaas.sdk.android.helper.network.CertificatePinningHelper;
+import de.cidaas.sdk.android.helper.network.UserAgentInterceptor;
 import okhttp3.CertificatePinner;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -79,36 +73,8 @@ public class CidaassdkService {
 
         return clientBuilder
                 .addInterceptor(new DpopInterceptor(mcontext))
-                .addNetworkInterceptor(new Interceptor() {
-                    @Override
-                    public Response intercept(Chain chain) throws IOException {
-                        Request originalRequest = chain.request();
-                        Request requestWithUserAgent = originalRequest.newBuilder()
-                                .header("User-Agent", createCustomUserAgent(originalRequest))
-                                .build();
-                        for (int i = 0; i < requestWithUserAgent.headers().size(); i++) {
-                            DBHelper.getShared().setUserAgent("User-Agent : " + String.format("%s: %s",
-                                    requestWithUserAgent.headers().name(i), requestWithUserAgent.headers().value(i)));
-                        }
-
-                        return chain.proceed(requestWithUserAgent);
-                    }
-                })
+                .addInterceptor(new UserAgentInterceptor())
                 .build();
-    }
-
-    private String createCustomUserAgent(Request originalRequest) {
-        // App name can be also retrieved programmatically, but no need to do it for
-        // this sample needs
-        String ua = "Cidaas-" + CidaasHelper.APP_NAME;
-        String baseUa = System.getProperty("http.agent");
-        if (baseUa != null) {
-            ua = ua + "/" + CidaasHelper.APP_VERSION + "_" + BuildConfig.VERSION_NAME + " Make:" + Build.BRAND + "_"
-                    + Build.DEVICE + " Model:" + Build.MODEL + " " + baseUa;
-        }
-        // Remove non-ASCII characters for HTTP header compatibility
-        // Safety net for device names or other fields with special characters
-        return ua.replaceAll("[^\\x20-\\x7E]", "");
     }
 
 }

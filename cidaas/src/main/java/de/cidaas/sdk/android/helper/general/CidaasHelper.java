@@ -16,6 +16,7 @@ import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.network.CertificatePinningConfig;
+import de.cidaas.sdk.android.helper.network.UserAgentInterceptor;
 import de.cidaas.sdk.android.properties.CidaasProperties;
 import okhttp3.OkHttpClient;
 
@@ -42,7 +43,7 @@ public class CidaasHelper {
     public static String APP_NAME = "de.cidaas";
     public static String APP_VERSION = "";
 
-    public static boolean IS_SETURL_CALLED = false;
+    public static volatile boolean IS_SETURL_CALLED = false;
 
     @Nullable
     public static volatile OkHttpClient customHttpClient;
@@ -80,6 +81,7 @@ public class CidaasHelper {
 
         CidaasHelper.baseurl = "";
         CidaasHelper.IS_SETURL_CALLED = false;
+        UserAgentInterceptor.resetCache();
 
         // Add Device info
         deviceInfoEntity = new DeviceInfoEntity();
