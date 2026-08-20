@@ -8,6 +8,7 @@ import java.io.Serializable;
 public class VerifyAccountResponseEntity implements Serializable {
     boolean success = false;
     int status = 0;
+    VerifyAccountResponseDataEntity data;
 
     public boolean isSuccess() {
         return success;
@@ -23,5 +24,13 @@ public class VerifyAccountResponseEntity implements Serializable {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public VerifyAccountResponseDataEntity getData() {
+        return data;
+    }
+
+    public void setData(VerifyAccountResponseDataEntity data) {
+        this.data = data;
     }
 }

@@ -174,4 +174,58 @@ public class NativeLoginController {
         });
     }
 
+    /**
+     * Completes auto-login after register: afterregister handle → authorization code → token exchange.
+     */
+    public void handleAfterRegister(@NonNull final String trackId,
+                                    @NonNull final EventResult<AccessTokenEntity> result) {
+        String methodName = "LoginController :handleAfterRegister()";
+        try {
+            if (trackId.trim().isEmpty()) {
+                result.failure(WebAuthError.getShared(context).propertyMissingException(
+                        "trackId must not be empty", NativeConstants.ERROR_LOGGING_PREFIX + methodName));
+                return;
+            }
+            CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
+                @Override
+                public void success(Dictionary<String, String> loginPropertiesResult) {
+                    NativeLoginService.getShared(context).handleAfterRegister(
+                            loginPropertiesResult.get(NativeConstants.DOMAIN_URL),
+                            trackId,
+                            new EventResult<String>() {
+                                @Override
+                                public void success(String code) {
+                                    AccessTokenController.getShared(context).getAccessTokenByCode(code,
+                                            new EventResult<AccessTokenEntity>() {
+                                                @Override
+                                                public void success(AccessTokenEntity accessTokenresult) {
+                                                    result.success(accessTokenresult);
+                                                }
+
+                                                @Override
+                                                public void failure(WebAuthError error) {
+                                                    result.failure(error);
+                                                }
+                                            });
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    result.failure(error);
+                                }
+                            });
+                }
+
+                @Override
+                public void failure(WebAuthError error) {
+                    result.failure(error);
+                }
+            });
+        } catch (Exception e) {
+            result.failure(WebAuthError.getShared(context).methodException(
+                    NativeConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                    WebAuthErrorCode.AUTO_LOGIN_AFTER_REGISTER_FAILURE, e.getMessage()));
+        }
+    }
+
 }
