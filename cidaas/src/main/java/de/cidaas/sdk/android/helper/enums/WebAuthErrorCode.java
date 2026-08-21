@@ -41,7 +41,6 @@ public final class WebAuthErrorCode {
     public static final int LOGINWITH_CREDENTIALS_FAILURE = 10221;
     public static final int LOGOUT = 10134;
     public static final int REGISTRATION_SETUP_FAILURE = 10222;
-    public static final int AUTO_LOGIN_AFTER_REGISTER_FAILURE = 10223;
     public static final int USER_PROFILE_UPDATE_FAILURE = 10134;
 
     public static final int MFA_LIST_FAILURE = 10026;

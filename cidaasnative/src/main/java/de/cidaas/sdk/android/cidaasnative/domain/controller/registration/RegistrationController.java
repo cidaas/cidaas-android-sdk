@@ -14,14 +14,12 @@ import de.cidaas.sdk.android.cidaasnative.data.entity.register.registeruser.Regi
 import de.cidaas.sdk.android.cidaasnative.data.entity.register.registrationsetup.RegistrationSetupRequestEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.register.registrationsetup.RegistrationSetupResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.data.entity.register.registrationsetup.RegistrationSetupResultDataEntity;
-import de.cidaas.sdk.android.cidaasnative.domain.controller.login.NativeLoginController;
 import de.cidaas.sdk.android.cidaasnative.domain.service.Registration.RegistrationService;
 import de.cidaas.sdk.android.cidaasnative.util.NativeConstants;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.properties.CidaasProperties;
-import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 
 public class RegistrationController {
     private Context context;
@@ -242,8 +240,7 @@ public class RegistrationController {
                     registerNewUserRequestEntity.getRegistrationEntity() != null &&
                     !registerNewUserRequestEntity.getRegistrationEntity().getFamily_name().equals("") && baseurl != null && !baseurl.equals("")) {
                 // Service call
-                RegistrationService.getShared(context).registerNewUser(baseurl, registerNewUserRequestEntity,
-                        wrapRegisterWithAutoLogin(result));
+                RegistrationService.getShared(context).registerNewUser(baseurl, registerNewUserRequestEntity, result);
             } else {
                 String errorMessage = "RequestId must not be empty";
                 result.failure(WebAuthError.getShared(context).propertyMissingException(errorMessage, methodName));
@@ -251,38 +248,6 @@ public class RegistrationController {
         } catch (Exception e) {
             result.failure(WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.REGISTRATION_SETUP_FAILURE, e.getMessage()));
         }
-    }
-
-    private EventResult<RegisterNewUserResponseEntity> wrapRegisterWithAutoLogin(
-            final EventResult<RegisterNewUserResponseEntity> result) {
-        return new EventResult<RegisterNewUserResponseEntity>() {
-            @Override
-            public void success(RegisterNewUserResponseEntity registerResult) {
-                if (!AutoLoginAfterRegister.shouldAttempt(registerResult)) {
-                    result.success(registerResult);
-                    return;
-                }
-                String trackId = AutoLoginAfterRegister.trackId(registerResult);
-                NativeLoginController.getShared(context).handleAfterRegister(trackId,
-                        new EventResult<AccessTokenEntity>() {
-                            @Override
-                            public void success(AccessTokenEntity accessTokenresult) {
-                                registerResult.setAccessToken(accessTokenresult);
-                                result.success(registerResult);
-                            }
-
-                            @Override
-                            public void failure(WebAuthError error) {
-                                result.failure(error);
-                            }
-                        });
-            }
-
-            @Override
-            public void failure(WebAuthError error) {
-                result.failure(error);
-            }
-        };
     }
 
     //update User
