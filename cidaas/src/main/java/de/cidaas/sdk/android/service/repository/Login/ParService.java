@@ -155,15 +155,28 @@ public class ParService {
                 }
             }
         }
+        // Call-site extraParams may override non-core keys (e.g. prompt), but must not
+        // replace SDK-managed OAuth/PKCE fields already set above.
         if (extraParams != null) {
             for (Map.Entry<String, String> entry : extraParams.entrySet()) {
                 if (entry.getKey() != null && entry.getValue() != null
-                        && !"scope".equals(entry.getKey())) {
+                        && !isSdkManagedParKey(entry.getKey())) {
                     form.put(entry.getKey(), entry.getValue());
                 }
             }
         }
         return form;
+    }
+
+    /** Core PAR / PKCE fields that callers must not overwrite via {@code extraParams}. */
+    private static boolean isSdkManagedParKey(String key) {
+        return "client_id".equals(key)
+                || "response_type".equals(key)
+                || "redirect_uri".equals(key)
+                || "code_challenge".equals(key)
+                || "code_challenge_method".equals(key)
+                || "state".equals(key)
+                || "scope".equals(key);
     }
 
     private void serviceForPushAuthorizationRequest(String parUrl,

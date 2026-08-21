@@ -358,7 +358,8 @@ public class LoginController {
             // : Handle Exception
 
             callbacktoMain.failure(WebAuthError.getShared(context)
-                    .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE, e.getMessage()));            // Clear callback after exception
+                    .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE, e.getMessage()));
+            // Clear callback after exception
             logincallback = null;
         }
 

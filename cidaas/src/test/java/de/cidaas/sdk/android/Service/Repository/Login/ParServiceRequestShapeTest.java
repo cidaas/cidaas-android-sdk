@@ -40,6 +40,7 @@ public class ParServiceRequestShapeTest {
         Assert.assertEquals("S256", form.get("code_challenge_method"));
         Assert.assertEquals("state123", form.get("state"));
         Assert.assertEquals("openid profile", form.get("scope"));
+        Assert.assertNull(form.get("nonce"));
     }
 
     @Test
@@ -53,5 +54,24 @@ public class ParServiceRequestShapeTest {
 
         Assert.assertEquals("openid email", form.get("scope"));
         Assert.assertEquals("login", form.get("prompt"));
+    }
+
+    @Test
+    public void buildParFormBody_doesNotAllowExtraParamsToOverwritePkceFields() {
+        Map<String, String> extra = new HashMap<>();
+        extra.put("code_challenge", "attacker-challenge");
+        extra.put("client_id", "attacker-client");
+        extra.put("prompt", "consent");
+
+        Map<String, String> form = ParService.buildParFormBody(
+                "client-id",
+                "https://app.example/callback",
+                "challenge-value",
+                "state123",
+                extra);
+
+        Assert.assertEquals("challenge-value", form.get("code_challenge"));
+        Assert.assertEquals("client-id", form.get("client_id"));
+        Assert.assertEquals("consent", form.get("prompt"));
     }
 }
