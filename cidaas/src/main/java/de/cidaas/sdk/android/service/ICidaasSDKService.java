@@ -118,7 +118,7 @@ public interface ICidaasSDKService {
     @POST
     Call<ParResponseEntity> pushAuthorizationRequest(@Url String url,
             @HeaderMap Map<String, String> headers,
-            @FieldMap(encoded = true) Map<String, String> params);
+            @FieldMap Map<String, String> params);
 
     // ---------
 }

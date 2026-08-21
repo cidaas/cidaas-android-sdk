@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import de.cidaas.sdk.android.Cidaas;
 import de.cidaas.sdk.android.helper.general.GenralHelper;
+import timber.log.Timber;
 
 /**
  * Created by widasrnarayanan on 5/2/18.
@@ -422,6 +423,7 @@ public class URLHelper {
                     .build()
                     .toString();
         } catch (Exception e) {
+            Timber.e(e, "constructParLoginURL failed for authzURL=%s", authzURL);
             return "";
         }
     }

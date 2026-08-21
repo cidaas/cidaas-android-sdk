@@ -1,7 +1,6 @@
 package de.cidaas.sdk.android.service.repository.Login;
 
 import android.content.Context;
-
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -26,7 +25,6 @@ import de.cidaas.sdk.android.service.helperforservice.Headers.Headers;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import timber.log.Timber;
 
 /**
  * Pushed Authorization Request (RFC 9126) against {@code POST /authz-srv/par}.
@@ -49,12 +47,8 @@ public class ParService {
     }
 
     public static ParService getShared(Context contextFromCidaas) {
-        try {
-            if (shared == null) {
-                shared = new ParService(contextFromCidaas);
-            }
-        } catch (Exception e) {
-            Timber.i(e.getMessage());
+        if (shared == null) {
+            shared = new ParService(contextFromCidaas);
         }
         return shared;
     }
@@ -70,7 +64,7 @@ public class ParService {
                             final EventResult<ParResponseEntity> callback) {
         final String methodName = "ParService :generatePAR()";
         try {
-            if (baseurl == null || baseurl.equals("")) {
+            if (baseurl == null || baseurl.isEmpty()) {
                 callback.failure(WebAuthError.getShared(context).propertyMissingException(
                         context.getString(R.string.EMPTY_BASE_URL_SERVICE),
                         CidaasConstants.ERROR_LOGGING_PREFIX + methodName));

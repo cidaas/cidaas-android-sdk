@@ -923,7 +923,14 @@ public class LoginController {
 
                     final String authorizationEndpoint = authzURL;
                     final Dictionary<String, String> challengeForPar = challenge;
-                    ParService.getShared(context).generatePAR(
+                    ParService parService = ParService.getShared(context);
+                    if (parService == null) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "ParService unavailable",
+                                CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                        return;
+                    }
+                    parService.generatePAR(
                             baseurl, props, challengeForPar, extraParams,
                             new EventResult<ParResponseEntity>() {
                                 @Override
