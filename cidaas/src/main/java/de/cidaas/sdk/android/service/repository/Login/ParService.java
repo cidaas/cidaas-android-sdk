@@ -92,9 +92,6 @@ public class ParService {
             }
 
             String state = UUID.randomUUID().toString().replace("-", "");
-            if (state.length() > 20) {
-                state = state.substring(0, 20);
-            }
 
             Dictionary<String, String> updatedChallenge = new Hashtable<>();
             if (challengeProperties != null) {

@@ -416,10 +416,11 @@ public class URLHelper {
                     || requestUri == null || requestUri.isEmpty()) {
                 return "";
             }
-            Uri.Builder builder = new Uri.Builder();
-            builder.appendQueryParameter("client_id", clientId)
-                    .appendQueryParameter("request_uri", requestUri);
-            return authzURL + builder.build().toString();
+            return Uri.parse(authzURL).buildUpon()
+                    .appendQueryParameter("client_id", clientId)
+                    .appendQueryParameter("request_uri", requestUri)
+                    .build()
+                    .toString();
         } catch (Exception e) {
             return "";
         }
