@@ -61,6 +61,7 @@ import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.helper.general.FileHelper;
 import de.cidaas.sdk.android.properties.CidaasProperties;
+import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 
 public class CidaasNative {
 
@@ -268,6 +269,15 @@ public class CidaasNative {
         NativeLoginController.getShared(context).logout(sub, logoutresult);
     }
 
+    /**
+     * Completes auto-login after register or account verification using the {@code trackId}
+     * from those responses ({@code POST /login-srv/login/handle/afterregister/:trackId}).
+     */
+    public void loginAfterRegister(@NonNull final String trackId,
+            final EventResult<AccessTokenEntity> result) {
+        NativeLoginController.getShared(context).handleAfterRegister(trackId, result);
+    }
+
     // -----------------------------------------------------***** REGISTER
     // *****---------------------------------------------------------------
 
@@ -303,6 +313,12 @@ public class CidaasNative {
         }
     }
 
+    /**
+     * Registers a new user. When the tenant has auto-login after register and auto-activate user
+     * enabled, a successful response may include {@link RegisterNewUserResponseEntity#getAccessToken()}
+     * ({@code data.action = AUTO_LOGIN}). Otherwise the callback is register-only (for example
+     * {@code VERIFICATION} or {@code LOGIN}).
+     */
     public void registerUser(final RegistrationEntity registrationEntity,
             final EventResult<RegisterNewUserResponseEntity> registerFieldsresult,
             final HashMap<String, String>... extraParams) {
@@ -339,6 +355,10 @@ public class CidaasNative {
         RegistrationController.getShared(context).getRegisterationFields(requestId, locale, registerFieldsresult);
     }
 
+    /**
+     * Registers a new user with an existing {@code requestId}. See
+     * {@link #registerUser(RegistrationEntity, EventResult, HashMap[])} for auto-login behaviour.
+     */
     public void registerUser(@NonNull final String requestId, final RegistrationEntity registrationEntity,
             final EventResult<RegisterNewUserResponseEntity> registerFieldsresult) {
         RegistrationController.getShared(context).registerNewUser(requestId, registrationEntity, registerFieldsresult);
