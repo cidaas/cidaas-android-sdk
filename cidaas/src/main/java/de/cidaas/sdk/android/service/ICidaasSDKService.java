@@ -5,6 +5,7 @@ import java.util.Map;
 import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.service.entity.UserInfo.UserInfoEntity;
 import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
+import de.cidaas.sdk.android.service.entity.par.ParResponseEntity;
 import de.cidaas.sdk.android.service.entity.documentscanner.DocumentScannerServiceResultEntity;
 import de.cidaas.sdk.android.service.entity.notificationentity.getpendingnotification.NotificationEntity;
 import de.cidaas.sdk.android.service.entity.socialprovider.SocialProviderEntity;
@@ -109,6 +110,15 @@ public interface ICidaasSDKService {
     // Construct URL
     @GET
     Call<Object> getUrlList(@Url String url, @HeaderMap Map<String, String> headers);
+
+    /**
+     * Pushed Authorization Request (RFC 9126): {@code POST /authz-srv/par}.
+     */
+    @FormUrlEncoded
+    @POST
+    Call<ParResponseEntity> pushAuthorizationRequest(@Url String url,
+            @HeaderMap Map<String, String> headers,
+            @FieldMap(encoded = true) Map<String, String> params);
 
     // ---------
 }

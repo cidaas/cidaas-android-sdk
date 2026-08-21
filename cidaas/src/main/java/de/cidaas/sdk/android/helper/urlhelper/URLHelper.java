@@ -56,6 +56,9 @@ public class URLHelper {
 
     String openIdURL = "/.well-known/openid-configuration";
 
+    /** Pushed Authorization Request endpoint (RFC 9126). */
+    String parURL = "/authz-srv/par";
+
     String setupEmailMFA = "/verification-srv/email/callSetup";
     String enrollEmailMFA = "/verification-srv/email/enroll";
     String initiateemailMFA = "/verification-srv/email/initiate";
@@ -315,6 +318,10 @@ public class URLHelper {
         return openIdURL;
     }
 
+    public String getParURL() {
+        return parURL;
+    }
+
     public String getPreAuthCode() {
         return preAuthCode;
     }
@@ -395,6 +402,26 @@ public class URLHelper {
         } catch (Exception e) {
             return "URL Construction Failed Something went Wrong";
             // handle Exception
+        }
+    }
+
+    /**
+     * Builds the authorize URL after a successful PAR push:
+     * {@code authorization_endpoint?client_id=...&request_uri=...}.
+     */
+    public String constructParLoginURL(String authzURL, String clientId, String requestUri) {
+        try {
+            if (authzURL == null || authzURL.isEmpty()
+                    || clientId == null || clientId.isEmpty()
+                    || requestUri == null || requestUri.isEmpty()) {
+                return "";
+            }
+            Uri.Builder builder = new Uri.Builder();
+            builder.appendQueryParameter("client_id", clientId)
+                    .appendQueryParameter("request_uri", requestUri);
+            return authzURL + builder.build().toString();
+        } catch (Exception e) {
+            return "";
         }
     }
 
