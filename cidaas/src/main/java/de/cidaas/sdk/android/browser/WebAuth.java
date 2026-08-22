@@ -20,6 +20,7 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * <pre>{@code
  * cidaas.setDpopEnabled(true);
  * cidaas.webAuth(this).extraParams(map).signIn(callback);
+ * cidaas.webAuth(this).usePar().signIn(callback); // PAR + PKCE
  * cidaas.webAuth(this).signOut(sub, callback);
  * cidaas.webAuth(this).signOut(sub, postLogoutRedirectUri, callback);
  * cidaas.webAuth(this).social(requestId, provider).signIn(callback);
@@ -31,6 +32,7 @@ public final class WebAuth {
     private final Context activityContext;
     private String color;
     private Map<String, String> extraParams;
+    private boolean usePar;
 
     public WebAuth(@NonNull Cidaas cidaas, @NonNull Context activityContext) {
         if (activityContext == null) {
@@ -53,10 +55,21 @@ public final class WebAuth {
     }
 
     /**
+     * Use Pushed Authorization Request (RFC 9126) with PKCE for the next {@link #signIn(EventResult)}.
+     * Calls {@code generatePAR} (PKCE).
+     */
+    @NonNull
+    public WebAuth usePar() {
+        this.usePar = true;
+        return this;
+    }
+
+    /**
      * Hosted login in a custom tab ({@link Cidaas#loginWithBrowser}).
+     * When {@link #usePar()} was called, uses PAR + PKCE instead of a full authorize query string.
      */
     public void signIn(@NonNull EventResult<AccessTokenEntity> callback) {
-        cidaas.loginWithBrowser(activityContext, color, extraParams, callback);
+        cidaas.loginWithBrowser(activityContext, color, extraParams, usePar, callback);
     }
 
     /**
