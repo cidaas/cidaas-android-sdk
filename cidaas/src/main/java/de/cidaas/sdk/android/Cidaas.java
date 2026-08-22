@@ -396,7 +396,7 @@ public class Cidaas {
      * ({@code POST /login-srv/login/handle/afterregister/:trackId} → token exchange).
      */
     public void handleAfterRegister(@NonNull final String trackId,
-            final EventResult<AccessTokenEntity> result) {
+            @NonNull final EventResult<AccessTokenEntity> result) {
         LoginController.getShared(context).handleAfterRegister(trackId, result);
     }
 

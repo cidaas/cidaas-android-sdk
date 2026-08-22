@@ -51,7 +51,7 @@ public class AfterRegisterService {
                                     final EventResult<String> callback) {
         String methodName = "AfterRegisterService :handleAfterRegister()";
         try {
-            if (baseurl == null || baseurl.equals("") || trackId == null || trackId.trim().isEmpty()) {
+            if (baseurl == null || baseurl.isEmpty() || trackId == null || trackId.trim().isEmpty()) {
                 callback.failure(WebAuthError.getShared(context).propertyMissingException(
                         "baseurl and trackId must not be empty",
                         CidaasConstants.ERROR_LOGGING_PREFIX + methodName));

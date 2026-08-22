@@ -240,7 +240,7 @@ public class RegistrationController {
                     registerNewUserRequestEntity.getRegistrationEntity() != null &&
                     !registerNewUserRequestEntity.getRegistrationEntity().getFamily_name().equals("") && baseurl != null && !baseurl.equals("")) {
                 // Service call
-                RegistrationService.getShared(context).registerNewUser(baseurl, registerNewUserRequestEntity,result);
+                RegistrationService.getShared(context).registerNewUser(baseurl, registerNewUserRequestEntity, result);
             } else {
                 String errorMessage = "RequestId must not be empty";
                 result.failure(WebAuthError.getShared(context).propertyMissingException(errorMessage, methodName));
