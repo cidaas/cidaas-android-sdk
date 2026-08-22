@@ -2,6 +2,9 @@ package de.cidaas.sdk.android.service.repository.Login;
 
 import androidx.annotation.Nullable;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,8 +18,7 @@ import okhttp3.Response;
 public final class AfterRegisterAuthorizationCodeParser {
 
     private static final Pattern CODE_IN_QUERY = Pattern.compile("(?:[?&])code=([^&\\s\"'<>]+)");
-    private static final com.fasterxml.jackson.databind.ObjectMapper OBJECT_MAPPER =
-            new com.fasterxml.jackson.databind.ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private AfterRegisterAuthorizationCodeParser() {
     }
@@ -56,8 +58,8 @@ public final class AfterRegisterAuthorizationCodeParser {
     @Nullable
     private static String parseJsonCode(String json) {
         try {
-            com.fasterxml.jackson.databind.JsonNode root = OBJECT_MAPPER.readTree(json);
-            com.fasterxml.jackson.databind.JsonNode data = root.path("data");
+            JsonNode root = OBJECT_MAPPER.readTree(json);
+            JsonNode data = root.path("data");
             String code = data.path("code").asText(null);
             if (code != null && !code.trim().isEmpty()) {
                 return code.trim();

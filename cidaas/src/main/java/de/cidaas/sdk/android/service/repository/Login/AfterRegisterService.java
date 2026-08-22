@@ -31,9 +31,7 @@ public class AfterRegisterService {
 
     public AfterRegisterService(Context contextFromCidaas) {
         context = contextFromCidaas;
-        if (service == null) {
-            service = new CidaassdkService(contextFromCidaas);
-        }
+        service = new CidaassdkService(contextFromCidaas);
     }
 
     public static AfterRegisterService getShared(Context contextFromCidaas) {
@@ -106,7 +104,10 @@ public class AfterRegisterService {
                         callback.success(code);
                         return;
                     }
-                    String err = bodyText != null && !bodyText.isEmpty() ? bodyText : r.message();
+                    String rawErr = bodyText != null && !bodyText.isEmpty() ? bodyText : r.message();
+                    String err = rawErr != null && rawErr.length() > 500
+                            ? rawErr.substring(0, 500) + "…"
+                            : rawErr;
                     callback.failure(WebAuthError.getShared(context).serviceCallFailureException(
                             WebAuthErrorCode.AUTO_LOGIN_AFTER_REGISTER_FAILURE,
                             "HTTP " + r.code() + " afterregister missing authorization code: " + err,
