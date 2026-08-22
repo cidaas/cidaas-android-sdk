@@ -15,6 +15,8 @@ import okhttp3.Response;
 public final class AfterRegisterAuthorizationCodeParser {
 
     private static final Pattern CODE_IN_QUERY = Pattern.compile("(?:[?&])code=([^&\\s\"'<>]+)");
+    private static final com.fasterxml.jackson.databind.ObjectMapper OBJECT_MAPPER =
+            new com.fasterxml.jackson.databind.ObjectMapper();
 
     private AfterRegisterAuthorizationCodeParser() {
     }
@@ -54,8 +56,7 @@ public final class AfterRegisterAuthorizationCodeParser {
     @Nullable
     private static String parseJsonCode(String json) {
         try {
-            com.fasterxml.jackson.databind.JsonNode root =
-                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
+            com.fasterxml.jackson.databind.JsonNode root = OBJECT_MAPPER.readTree(json);
             com.fasterxml.jackson.databind.JsonNode data = root.path("data");
             String code = data.path("code").asText(null);
             if (code != null && !code.trim().isEmpty()) {
@@ -76,18 +77,14 @@ public final class AfterRegisterAuthorizationCodeParser {
         if (raw == null) {
             return null;
         }
+        // AfterRegisterService uses followRedirects(false); code comes from Location (or body),
+        // never from the afterregister POST request URL itself.
         for (Response r = raw; r != null; r = r.priorResponse()) {
             if (r.code() >= 300 && r.code() < 400) {
                 String location = r.header("Location");
                 String fromLocation = codeFromLocation(location, r.request() != null ? r.request().url() : null);
                 if (fromLocation != null) {
                     return fromLocation;
-                }
-            }
-            if (r.request() != null) {
-                String fromUrl = queryCode(r.request().url());
-                if (fromUrl != null) {
-                    return fromUrl;
                 }
             }
         }
