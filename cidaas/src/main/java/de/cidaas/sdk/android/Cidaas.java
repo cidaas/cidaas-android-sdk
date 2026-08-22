@@ -378,6 +378,16 @@ public class Cidaas {
         LoginController.getShared(context).getLoginURL(extraParams, callback);
     }
 
+    /**
+     * Completes auto-login after register using {@code trackId} from the register response
+     * when {@code data.action} is {@code AUTO_LOGIN}
+     * ({@code POST /login-srv/login/handle/afterregister/:trackId} → token exchange).
+     */
+    public void handleAfterRegister(@NonNull final String trackId,
+            final EventResult<AccessTokenEntity> result) {
+        LoginController.getShared(context).handleAfterRegister(trackId, result);
+    }
+
     // Get Registration URL
     public void getRegistrationURL(final EventResult<String> callback) {
         LoginController.getShared(context).getRegistrationURL(callback);

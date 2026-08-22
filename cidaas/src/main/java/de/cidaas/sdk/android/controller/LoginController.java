@@ -27,6 +27,7 @@ import de.cidaas.sdk.android.helper.pkce.OAuthChallengeGenerator;
 import de.cidaas.sdk.android.helper.urlhelper.URLHelper;
 import de.cidaas.sdk.android.properties.CidaasProperties;
 import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
+import de.cidaas.sdk.android.service.repository.Login.AfterRegisterService;
 import de.cidaas.sdk.android.service.repository.Login.LoginService;
 import timber.log.Timber;
 
@@ -824,6 +825,62 @@ public class LoginController {
             logincallback = null;
         }
 
+    }
+
+    /**
+     * Completes auto-login after register: afterregister handle → authorization code → token exchange.
+     * Call from the app when register returns {@code data.action = AUTO_LOGIN} and a {@code trackId}.
+     */
+    public void handleAfterRegister(@NonNull final String trackId,
+                                    @NonNull final EventResult<AccessTokenEntity> result) {
+        String methodName = "LoginController :handleAfterRegister()";
+        try {
+            if (trackId == null || trackId.trim().isEmpty()) {
+                result.failure(WebAuthError.getShared(context).propertyMissingException(
+                        "trackId must not be empty", CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                return;
+            }
+            CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
+                @Override
+                public void success(Dictionary<String, String> loginPropertiesResult) {
+                    AfterRegisterService.getShared(context).handleAfterRegister(
+                            loginPropertiesResult.get(CidaasConstants.DOMAIN_URL),
+                            trackId,
+                            new EventResult<String>() {
+                                @Override
+                                public void success(String code) {
+                                    AccessTokenController.getShared(context).getAccessTokenByCode(code,
+                                            new EventResult<AccessTokenEntity>() {
+                                                @Override
+                                                public void success(AccessTokenEntity accessTokenresult) {
+                                                    result.success(accessTokenresult);
+                                                
+                                                }
+
+                                                @Override
+                                                public void failure(WebAuthError error) {
+                                                    result.failure(error);
+                                                }
+                                            });
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    result.failure(error);
+                                }
+                            });
+                }
+
+                @Override
+                public void failure(WebAuthError error) {
+                    result.failure(error);
+                }
+            });
+        } catch (Exception e) {
+            result.failure(WebAuthError.getShared(context).methodException(
+                    CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                    WebAuthErrorCode.AUTO_LOGIN_AFTER_REGISTER_FAILURE, e.getMessage()));
+        }
     }
 
 }

@@ -1,4 +1,4 @@
-package de.cidaas.sdk.android.cidaasnative.domain.service.Login;
+package de.cidaas.sdk.android.Service.Repository.Login;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,6 +8,8 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+
+import de.cidaas.sdk.android.service.repository.Login.AfterRegisterAuthorizationCodeParser;
 
 public class AfterRegisterAuthorizationCodeParserTest {
 

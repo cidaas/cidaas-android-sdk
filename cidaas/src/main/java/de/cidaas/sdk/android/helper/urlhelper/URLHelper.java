@@ -35,6 +35,7 @@ public class URLHelper {
 
     String tokenUrl = "/token-srv/token";
     String socialTokenURL = "/login-srv/social/token";
+    String loginAfterRegisterURL = "/login-srv/login/handle/afterregister/";
 
     String preAuthCode = "&preAuthCode=";
 
@@ -321,6 +322,10 @@ public class URLHelper {
 
     public String getSocialTokenURL() {
         return socialTokenURL;
+    }
+
+    public String getLoginAfterRegisterUrl(String trackId) {
+        return loginAfterRegisterURL + trackId;
     }
 
     public String getDocumentScanner() {

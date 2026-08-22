@@ -20,7 +20,6 @@ public class NativeURLHelper {
     String clientUrl = "/public-srv/public/";
     String tenantUrl = "/public-srv/tenantinfo/basic";
     String loginWithCredentials = "/login-srv/login/sdk";
-    String loginAfterRegisterUrl = "/login-srv/login/handle/afterregister/";
     String logoutUrl = "/session/end_session";
 
     String passwordlessContinueUrl = "/login-srv/verification/sdk/login/";
@@ -89,10 +88,6 @@ public class NativeURLHelper {
 
     public String getLoginWithCredentials() {
         return loginWithCredentials;
-    }
-
-    public String getLoginAfterRegisterUrl(String trackId) {
-        return loginAfterRegisterUrl + trackId;
     }
 
     public String getLogoutUrl(String accessToken) {

@@ -1,4 +1,4 @@
-package de.cidaas.sdk.android.cidaasnative.domain.service.Login;
+package de.cidaas.sdk.android.service.repository.Login;
 
 import androidx.annotation.Nullable;
 
@@ -12,7 +12,7 @@ import okhttp3.Response;
  * Resolves OAuth {@code code} from {@code POST /login-srv/login/handle/afterregister/:track_id}
  * (typically {@code 302 Location}, JSON {@code data.code}, or a "Redirecting to …?code=" body).
  */
-final class AfterRegisterAuthorizationCodeParser {
+public final class AfterRegisterAuthorizationCodeParser {
 
     private static final Pattern CODE_IN_QUERY = Pattern.compile("(?:[?&])code=([^&\\s\"'<>]+)");
 
@@ -20,7 +20,7 @@ final class AfterRegisterAuthorizationCodeParser {
     }
 
     @Nullable
-    static String findAuthorizationCode(@Nullable Response rawOkHttp, @Nullable String responseBodyText) {
+    public static String findAuthorizationCode(@Nullable Response rawOkHttp, @Nullable String responseBodyText) {
         String code = findCodeInOkHttp(rawOkHttp);
         if (code != null && !code.isEmpty()) {
             return code;
@@ -39,7 +39,7 @@ final class AfterRegisterAuthorizationCodeParser {
     }
 
     @Nullable
-    static String findCodeInPlainText(@Nullable String text) {
+    public static String findCodeInPlainText(@Nullable String text) {
         if (text == null || text.isEmpty()) {
             return null;
         }
