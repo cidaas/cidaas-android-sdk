@@ -69,26 +69,36 @@ public class DeviceRegistrationService {
     }
 
     /**
-     * Initiates device registration, reads {@code nonce}, {@code session_id} / {@code sessionId}, and {@code provider}
-     * from the initiation response, then performs attestation (Play Integrity when {@code provider} is {@code google},
-     * Firebase App Check when {@code firebase}) and calls the verification API.
+     * Initiates device registration then verifies with a DPoP proof that always includes biometric
+     * key material (thumbprint / public key DER).
      *
-     * @param activity hosting FragmentActivity (retained for API compatibility; verification no longer sends a separate Biometric header JWT)
-     * @param pushId   FCM push token
-     * @param playIntegrityCloudProjectNumber optional GCP project number linked in Play Console; when null,
-     *                                        read from manifest meta-data {@link CidaasConstants#PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER}
+     * <p>When {@code useAppAttestation} is {@code true}, {@code pushId} is required, initiation sends
+     * {@code push_id}, and Play Integrity / Firebase App Check runs from initiation {@code provider}.
+     * When {@code false} (default when the flag is omitted), {@code push_id} is omitted and app
+     * attestation is skipped; only biometric + DPoP are used.
+     *
+     * @param activity                        hosting FragmentActivity (API compatibility)
+     * @param useAppAttestation               enable FCM + Google/Firebase app attestation
+     * @param pushId                          FCM token; required only when {@code useAppAttestation} is true
+     * @param playIntegrityCloudProjectNumber optional GCP project number for Play Integrity
      */
     public void startRegistration(@NonNull final FragmentActivity activity,
-                                  @NonNull final String pushId,
+                                  final boolean useAppAttestation,
+                                  @Nullable final String pushId,
                                   @Nullable final Long playIntegrityCloudProjectNumber,
                                   @NonNull final EventResult<DeviceRegistrationResponseEntity> callback) {
         final String methodName = "DeviceRegistrationService :startRegistration()";
         DeviceInfoEntity deviceInfo = DBHelper.getShared().getDeviceInfo();
         String deviceId = deviceInfo != null ? deviceInfo.getDeviceId() : null;
-        if (deviceId == null || deviceId.isEmpty()
-                || pushId == null || pushId.isEmpty()) {
+        if (deviceId == null || deviceId.isEmpty()) {
             callback.failure(WebAuthError.getShared(context).propertyMissingException(
-                    "device id from deviceInfo and pushId must not be empty",
+                    "device id from deviceInfo must not be empty",
+                    CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+            return;
+        }
+        if (useAppAttestation && (pushId == null || pushId.isEmpty())) {
+            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    "pushId must not be empty when useAppAttestation is true",
                     CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
             return;
         }
@@ -112,8 +122,19 @@ public class DeviceRegistrationService {
                 String initiationUrl = baseurl + URLHelper.getShared().getDeviceRegistrationURL() + "/initiation";
                 Map<String, String> headers = Headers.getShared(context).getHeaders(
                         null, true, URLHelper.contentTypeJson);
-                DeviceRegistrationRequestEntity body = new DeviceRegistrationRequestEntity(deviceId, pushId, clientId);
-                enqueueInitiation(activity, baseurl, initiationUrl, headers, body, playIntegrityCloudProjectNumber, callback, methodName);
+                String pushForRequest = useAppAttestation ? pushId : null;
+                DeviceRegistrationRequestEntity body =
+                        new DeviceRegistrationRequestEntity(deviceId, pushForRequest, clientId);
+                enqueueInitiation(
+                        activity,
+                        baseurl,
+                        initiationUrl,
+                        headers,
+                        body,
+                        useAppAttestation,
+                        playIntegrityCloudProjectNumber,
+                        callback,
+                        methodName);
             }
 
             @Override
@@ -129,6 +150,7 @@ public class DeviceRegistrationService {
                                    String url,
                                    Map<String, String> headers,
                                    DeviceRegistrationRequestEntity body,
+                                   final boolean useAppAttestation,
                                    @Nullable final Long playIntegrityCloudProjectNumber,
                                    final EventResult<DeviceRegistrationResponseEntity> callback,
                                    final String methodName) {
@@ -153,6 +175,7 @@ public class DeviceRegistrationService {
                                     entity,
                                     headers,
                                     api,
+                                    useAppAttestation,
                                     playIntegrityCloudProjectNumber,
                                     callback,
                                     methodName);
@@ -193,54 +216,50 @@ public class DeviceRegistrationService {
                                                      final DeviceRegistrationResponseEntity initiation,
                                                      final Map<String, String> headers,
                                                      final ICidaasSDKService api,
+                                                     final boolean useAppAttestation,
                                                      @Nullable final Long playIntegrityCloudProjectNumber,
                                                      final EventResult<DeviceRegistrationResponseEntity> callback,
                                                      final String methodName) {
         verificationExecutor.execute(() -> {
             try {
                 final DeviceRegistrationInitiationDataEntity initiationData = parseInitiation(initiation);
+
+                if (!useAppAttestation) {
+                    continueVerification(
+                            baseUrl,
+                            initiationData,
+                            headers,
+                            api,
+                            null,
+                            null,
+                            callback,
+                            methodName);
+                    return;
+                }
+
                 final String provider = attestationProviderFromInitiationResponse(initiationData);
                 final PlayIntegrityTokenListener afterAttestation = new PlayIntegrityTokenListener() {
                     @Override
                     public void onSuccess(String attestationToken) {
-                        try {
-                            final BiometricP256Signer signer = new BiometricP256Signer(context);
-                            signer.ensureKey();
-                            DpopP256Keystore.ensureKey(context);
-
-                            final String verificationUrl = baseUrl.replaceAll("/$", "")
-                                    + URLHelper.getShared().getDeviceRegistrationURL() + "/verification";
-                            final String dpopThumb = DpopP256Keystore.jwkThumbprintSha256(context);
-                            final String bioThumb = signer.jwkThumbprintSha256();
-                            final String biometricPublicKeyDer = signer.publicKeyDerBase64();
-                            final String dpopAttestationJwt = DpopP256Keystore.proofJwtForDeviceRegistration(
-                                    context,
-                                    "POST",
-                                    verificationUrl,
-                                    initiationData.getSessionId(),
-                                    initiationData.getNonce(),
-                                    attestationToken,
-                                    biometricPublicKeyDer);
-
-                            enqueueVerification(
-                                    verificationUrl,
-                                    headers,
-                                    api,
-                                    initiationData.getSessionId(),
-                                    dpopAttestationJwt,
-                                    dpopThumb,
-                                    bioThumb,
-                                    provider,
-                                    callback,
-                                    methodName);
-                        } catch (Exception e) {
-                            notifyVerificationFailure(callback, methodName, e.getMessage());
-                        }
+                        continueVerification(
+                                baseUrl,
+                                initiationData,
+                                headers,
+                                api,
+                                provider,
+                                attestationToken,
+                                callback,
+                                methodName);
                     }
 
                     @Override
                     public void onFailure(Throwable error) {
-                        notifyVerificationFailure(callback, methodName, error.getMessage());
+                        String detail = error.getMessage();
+                        if (detail == null || detail.isEmpty()) {
+                            detail = String.valueOf(error);
+                        }
+                        notifyVerificationFailure(callback, methodName,
+                                "App attestation failed (provider=" + provider + "): " + detail);
                     }
                 };
 
@@ -262,8 +281,51 @@ public class DeviceRegistrationService {
         });
     }
 
+    private void continueVerification(final String baseUrl,
+                                      final DeviceRegistrationInitiationDataEntity initiationData,
+                                      final Map<String, String> headers,
+                                      final ICidaasSDKService api,
+                                      @Nullable final String provider,
+                                      @Nullable final String attestationToken,
+                                      final EventResult<DeviceRegistrationResponseEntity> callback,
+                                      final String methodName) {
+        try {
+            final BiometricP256Signer signer = new BiometricP256Signer(context);
+            signer.ensureKey();
+            DpopP256Keystore.ensureKey(context);
+
+            final String verificationUrl = baseUrl.replaceAll("/$", "")
+                    + URLHelper.getShared().getDeviceRegistrationURL() + "/verification";
+            final String dpopThumb = DpopP256Keystore.jwkThumbprintSha256(context);
+            final String bioThumb = signer.jwkThumbprintSha256();
+            final String biometricPublicKeyDer = signer.publicKeyDerBase64();
+            final String dpopAttestationJwt = DpopP256Keystore.proofJwtForDeviceRegistration(
+                    context,
+                    "POST",
+                    verificationUrl,
+                    initiationData.getSessionId(),
+                    initiationData.getNonce(),
+                    attestationToken,
+                    biometricPublicKeyDer);
+
+            enqueueVerification(
+                    verificationUrl,
+                    headers,
+                    api,
+                    initiationData.getSessionId(),
+                    dpopAttestationJwt,
+                    dpopThumb,
+                    bioThumb,
+                    provider,
+                    callback,
+                    methodName);
+        } catch (Exception e) {
+            notifyVerificationFailure(callback, methodName, e.getMessage());
+        }
+    }
+
     /**
-     * {@code provider} is read from the initiation response; defaults to {@code google} if absent (older backends).
+     * {@code provider} from initiation; defaults to {@code google} when attestation is enabled and provider is absent.
      */
     private static String attestationProviderFromInitiationResponse(
             @NonNull DeviceRegistrationInitiationDataEntity initiationData) {
@@ -289,7 +351,7 @@ public class DeviceRegistrationService {
                                      final String dpopAttestationJwt,
                                      final String dpopThumb,
                                      final String bioThumb,
-                                     final String attestationProvider,
+                                     @Nullable final String attestationProvider,
                                      final EventResult<DeviceRegistrationResponseEntity> callback,
                                      final String methodName) {
         try {
@@ -336,7 +398,7 @@ public class DeviceRegistrationService {
             throws IllegalArgumentException {
         if (initiation.getData() == null) {
             throw new IllegalArgumentException(
-                    "initiation response missing data (expected nonce, session_id/sessionId, provider)");
+                    "initiation response missing data (expected nonce, session_id/sessionId)");
         }
         DeviceRegistrationInitiationDataEntity data = objectMapper.convertValue(
                 initiation.getData(), DeviceRegistrationInitiationDataEntity.class);

@@ -21,32 +21,67 @@ public final class Device {
     }
 
     /**
-     * Initiates device registration via {@code POST .../devices/registration/initiation}. The initiation response
-     * must include {@code nonce}, {@code session_id} (or {@code sessionId}), and {@code provider} ({@code google} or
-     * {@code firebase}). The SDK then runs Play Integrity or Firebase App Check and completes registration via
-     * {@code POST .../devices/registration/verification}.
-     * Device id comes from stored {@linkplain de.cidaas.sdk.android.entities.DeviceInfoEntity device info};
-     * {@code client_id} comes from saved login properties (e.g. {@code cidaas.xml}).
-     *
-     * @param activity hosting activity for biometric proof signing during verification
-     * @param pushId   FCM push notification id
+     * Device registration with {@code useAppAttestation = false} (biometric + DPoP only).
      */
     public void startRegistration(@NonNull FragmentActivity activity,
-                                  @NonNull String pushId,
                                   @NonNull EventResult<DeviceRegistrationResponseEntity> callback) {
-        startRegistration(activity, pushId, null, callback);
+        startRegistration(activity, false, null, null, callback);
     }
 
     /**
-     * Same as {@link #startRegistration(FragmentActivity, String, EventResult)} with an explicit Play Integrity
-     * cloud project number (used when initiation {@code provider} is {@code google}; must match the GCP project
-     * linked under Play Console → App integrity).
+     * Device registration. {@code useAppAttestation} defaults to {@code false}.
+     *
+     * @param activity hosting activity for biometric key usage during verification
+     * @param pushId   ignored unless {@code useAppAttestation} is {@code true}
      */
+    public void startRegistration(@NonNull FragmentActivity activity,
+                                  @Nullable String pushId,
+                                  @NonNull EventResult<DeviceRegistrationResponseEntity> callback) {
+        startRegistration(activity, false, pushId, null, callback);
+    }
+
+    /**
+     * Device registration.
+     *
+     * <p>Default is {@code useAppAttestation = false}: no FCM {@code push_id}, no Play Integrity /
+     * Firebase App Check; verification is biometric + DPoP only.
+     *
+     * <p>When {@code true}, the SDK sends {@code push_id}, runs Play Integrity or Firebase App Check
+     * from initiation {@code provider}, and puts that token in the verification DPoP proof.
+     *
+     * @param activity            hosting activity
+     * @param useAppAttestation   {@code true} to use app attestation; omit or {@code false} to skip
+     * @param pushId              FCM id; required when {@code useAppAttestation} is {@code true}
+     */
+    public void startRegistration(@NonNull FragmentActivity activity,
+                                  boolean useAppAttestation,
+                                  @Nullable String pushId,
+                                  @NonNull EventResult<DeviceRegistrationResponseEntity> callback) {
+        startRegistration(activity, useAppAttestation, pushId, null, callback);
+    }
+
+    /**
+     * Same as {@link #startRegistration(FragmentActivity, boolean, String, EventResult)} with an explicit
+     * Play Integrity cloud project number (used only when {@code useAppAttestation} is {@code true} and
+     * initiation {@code provider} is {@code google}).
+     */
+    public void startRegistration(@NonNull FragmentActivity activity,
+                                  boolean useAppAttestation,
+                                  @Nullable String pushId,
+                                  @Nullable Long playIntegrityCloudProjectNumber,
+                                  @NonNull EventResult<DeviceRegistrationResponseEntity> callback) {
+        DeviceRegistrationService.getShared(cidaas.context).startRegistration(
+                activity, useAppAttestation, pushId, playIntegrityCloudProjectNumber, callback);
+    }
+
+    /**
+     * @deprecated Prefer {@link #startRegistration(FragmentActivity, boolean, String, Long, EventResult)}.
+     */
+    @Deprecated
     public void startRegistration(@NonNull FragmentActivity activity,
                                   @NonNull String pushId,
                                   @Nullable Long playIntegrityCloudProjectNumber,
                                   @NonNull EventResult<DeviceRegistrationResponseEntity> callback) {
-        DeviceRegistrationService.getShared(cidaas.context).startRegistration(
-                activity, pushId, playIntegrityCloudProjectNumber, callback);
+        startRegistration(activity, false, pushId, playIntegrityCloudProjectNumber, callback);
     }
 }

@@ -11,8 +11,8 @@ public class DeviceRegistrationVerificationRequestEntity implements Serializable
     @JsonProperty("session_id")
     private String sessionId;
     /**
-     * DPoP proof JWT for the verification request. Payload includes {@code attestation} (Play Integrity /
-     * App Check token) and {@code biometric_public_key_der} linking DPoP and biometric keys to app attestation.
+     * DPoP proof JWT. Includes {@code biometric_public_key_der}; may include {@code attestation}
+     * when app attestation was enabled for this registration.
      */
     @JsonProperty("attestation")
     private String attestation;
@@ -24,7 +24,7 @@ public class DeviceRegistrationVerificationRequestEntity implements Serializable
     private String appVersion;
     @JsonProperty("platform")
     private String platform;
-    /** Same sense as initiation {@code provider}: {@code google} (Play Integrity token) or {@code firebase} (App Check JWT). */
+    /** {@code google} / {@code firebase} when app attestation is used; omitted for biometric-only registration. */
     @JsonProperty("provider")
     private String provider;
 
