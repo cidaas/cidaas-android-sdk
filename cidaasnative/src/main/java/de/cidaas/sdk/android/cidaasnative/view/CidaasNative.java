@@ -306,7 +306,7 @@ public class CidaasNative {
     /**
      * Registers a new user. Returns the register response as-is; if the tenant returns
      * {@code data.action = AUTO_LOGIN} with a {@code trackId}, the app should call
-     * {@link de.cidaas.sdk.android.Cidaas#handleAfterRegister(String, EventResult)}.
+     * {@code cidaas.users().loginAfterRegister(trackId, callback)}.
      */
     public void registerUser(final RegistrationEntity registrationEntity,
             final EventResult<RegisterNewUserResponseEntity> registerFieldsresult,

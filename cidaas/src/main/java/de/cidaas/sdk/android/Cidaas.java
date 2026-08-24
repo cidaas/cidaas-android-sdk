@@ -304,6 +304,7 @@ public class Cidaas {
      * {@code cidaas.users().fetch(sub, callback);}
      * {@code cidaas.users().register(registrationEntity, callback);} or
      * {@code cidaas.users().register(requestId, registrationEntity, callback);}
+     * {@code cidaas.users().loginAfterRegister(trackId, callback);}
      * {@code cidaas.users().verifications().fetch(sub, callback);}
      */
     @NonNull
@@ -388,16 +389,6 @@ public class Cidaas {
 
     public void getLoginURL(@Nullable final Map<String, String> extraParams, final EventResult<String> callback) {
         LoginController.getShared(context).getLoginURL(extraParams, callback);
-    }
-
-    /**
-     * Completes auto-login after register using {@code trackId} from the register response
-     * when {@code data.action} is {@code AUTO_LOGIN}
-     * ({@code POST /login-srv/login/handle/afterregister/:trackId} → token exchange).
-     */
-    public void handleAfterRegister(@NonNull final String trackId,
-            @NonNull final EventResult<AccessTokenEntity> result) {
-        LoginController.getShared(context).handleAfterRegister(trackId, result);
     }
 
     // Get Registration URL
