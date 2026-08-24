@@ -303,6 +303,11 @@ public class CidaasNative {
         }
     }
 
+    /**
+     * Registers a new user. Returns the register response as-is; if the tenant returns
+     * {@code data.action = AUTO_LOGIN} with a {@code trackId}, the app should call
+     * {@code cidaas.users().loginAfterRegister(trackId, callback)}.
+     */
     public void registerUser(final RegistrationEntity registrationEntity,
             final EventResult<RegisterNewUserResponseEntity> registerFieldsresult,
             final HashMap<String, String>... extraParams) {
@@ -339,6 +344,10 @@ public class CidaasNative {
         RegistrationController.getShared(context).getRegisterationFields(requestId, locale, registerFieldsresult);
     }
 
+    /**
+     * Registers a new user with an existing {@code requestId}. See
+     * {@link #registerUser(RegistrationEntity, EventResult, HashMap[])}.
+     */
     public void registerUser(@NonNull final String requestId, final RegistrationEntity registrationEntity,
             final EventResult<RegisterNewUserResponseEntity> registerFieldsresult) {
         RegistrationController.getShared(context).registerNewUser(requestId, registrationEntity, registerFieldsresult);

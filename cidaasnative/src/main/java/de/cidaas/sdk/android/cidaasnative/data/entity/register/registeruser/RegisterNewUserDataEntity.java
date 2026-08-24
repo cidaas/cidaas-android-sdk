@@ -7,6 +7,8 @@ import java.io.Serializable;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RegisterNewUserDataEntity implements Serializable {
     String suggested_action;
+    /** Server next step: {@code AUTO_LOGIN}, {@code VERIFICATION}, {@code LOGIN}, {@code REGISTER_SUCCESS}. */
+    String action;
     String trackId;
     String sub;
     String userStatus;
@@ -51,6 +53,14 @@ public class RegisterNewUserDataEntity implements Serializable {
 
     public void setSuggested_action(String suggested_action) {
         this.suggested_action = suggested_action;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 
     public String getTrackId() {

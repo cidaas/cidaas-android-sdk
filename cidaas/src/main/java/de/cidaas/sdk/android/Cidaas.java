@@ -304,6 +304,7 @@ public class Cidaas {
      * {@code cidaas.users().fetch(sub, callback);}
      * {@code cidaas.users().register(registrationEntity, callback);} or
      * {@code cidaas.users().register(requestId, registrationEntity, callback);}
+     * {@code cidaas.users().loginAfterRegister(trackId, callback);}
      * {@code cidaas.users().verifications().fetch(sub, callback);}
      */
     @NonNull

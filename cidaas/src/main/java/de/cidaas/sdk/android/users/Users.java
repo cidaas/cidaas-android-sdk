@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import de.cidaas.sdk.android.controller.AccessTokenController;
+import de.cidaas.sdk.android.controller.LoginController;
 import de.cidaas.sdk.android.controller.UserProfileController;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
@@ -40,6 +41,7 @@ import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
  * cidaas.users().fetch(sub, callback);
  * cidaas.users().register(registrationEntity, callback);
  * cidaas.users().register(requestId, registrationEntity, callback);
+ * cidaas.users().loginAfterRegister(trackId, callback);
  * cidaas.users().verifications().fetch(sub, callback);
  * }</pre>
  */
@@ -170,6 +172,16 @@ public final class Users {
     public void register(@NonNull String requestId, @NonNull Object registrationEntity,
             @NonNull EventResult<?> callback) {
         registerWithRequestIdInternal(requestId, registrationEntity, callback);
+    }
+
+    /**
+     * Completes auto-login after register using {@code trackId} from the register response
+     * when {@code data.action} is {@code AUTO_LOGIN}
+     * ({@code POST /login-srv/login/handle/afterregister/:trackId} → token exchange).
+     */
+    public void loginAfterRegister(@NonNull String trackId,
+            @NonNull EventResult<AccessTokenEntity> callback) {
+        LoginController.getShared(context).handleAfterRegister(trackId, callback);
     }
 
     private static String acceptLanguage(@NonNull Context context) {
