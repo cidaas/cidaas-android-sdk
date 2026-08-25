@@ -1,6 +1,7 @@
 package de.cidaas.sdk.android.cidaasnative.domain.controller.requestid;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -11,6 +12,7 @@ import java.util.Hashtable;
 import de.cidaas.sdk.android.cidaasnative.data.entity.authrequest.AuthRequestResponseEntity;
 import de.cidaas.sdk.android.cidaasnative.domain.service.RequestId.RequestIdService;
 import de.cidaas.sdk.android.cidaasnative.util.NativeConstants;
+import de.cidaas.sdk.android.entities.DeviceInfoEntity;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
@@ -18,6 +20,8 @@ import de.cidaas.sdk.android.helper.general.CidaasHelper;
 import de.cidaas.sdk.android.helper.general.DBHelper;
 import de.cidaas.sdk.android.helper.pkce.OAuthChallengeGenerator;
 import de.cidaas.sdk.android.properties.CidaasProperties;
+import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationResponseEntity;
+import de.cidaas.sdk.android.service.repository.device.DeviceRegistrationService;
 import timber.log.Timber;
 
 
@@ -95,13 +99,41 @@ public class RequestIdController {
 
             CidaasHelper.baseurl = loginproperties.get(NativeConstants.DOMAIN_URL);
             DBHelper.getShared().addLoginProperties(loginproperties);
-
-            //Service call
-            RequestIdService.getShared(context).getRequestID(loginproperties, Primaryresult, extraParams);
+            ensureDeviceRegisteredThenGetRequestId(loginproperties, Primaryresult, extraParams);
         } catch (Exception e) {
             Primaryresult.failure(WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.REQUEST_ID_SERVICE_FAILURE,
                     e.getMessage()));
         }
+    }
+
+    /**
+     * If the device is already registered, proceed to requestId (headers use DeviceInfo deviceId as
+     * {@code cidaas_dr}). Otherwise run device registration (iOS-aligned initiation/verification),
+     * then requestId.
+     */
+    private void ensureDeviceRegisteredThenGetRequestId(final Dictionary<String, String> loginproperties,
+                                                        final EventResult<AuthRequestResponseEntity> Primaryresult,
+                                                        @Nullable final HashMap<String, String>... extraParams) {
+        final String methodName = "RequestIdController :ensureDeviceRegisteredThenGetRequestId()";
+           if (DBHelper.getShared().isDeviceRegistered()) {
+            RequestIdService.getShared(context).getRequestID(loginproperties, Primaryresult, extraParams);
+            return;
+        }
+
+        // Optional attestation:register with biometric + DPoP only.
+        Log.d("NEWLOGG","LOG1");
+        DeviceRegistrationService.getShared(context).startRegistration(null, null,
+                new EventResult<DeviceRegistrationResponseEntity>() {
+                    @Override
+                    public void success(DeviceRegistrationResponseEntity result) {
+                        RequestIdService.getShared(context).getRequestID(loginproperties, Primaryresult, extraParams);
+                    }
+
+                    @Override
+                    public void failure(WebAuthError error) {
+                        Primaryresult.failure(error);
+                    }
+                });
     }
 
     private boolean checkNotnull(Dictionary<String, String> loginproperties, EventResult<AuthRequestResponseEntity> Primaryresult) {

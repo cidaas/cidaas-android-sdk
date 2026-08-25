@@ -1,6 +1,7 @@
 package de.cidaas.sdk.android.cidaasnative.domain.service.RequestId;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -24,6 +25,7 @@ import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.general.DBHelper;
+import de.cidaas.sdk.android.helper.general.DeviceRefHelper;
 import de.cidaas.sdk.android.service.helperforservice.Headers.Headers;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -75,6 +77,8 @@ public class RequestIdService {
 
                 //Construct URL For RequestId
                 String requestidURL = loginProperties.get(NativeConstants.DOMAIN_URL) + NativeURLHelper.getShared().getRequest_id_url();
+
+                DeviceRefHelper.applyToHeaders(headers);
 
                 String codeChallenge = "";
                 String clientSecret = " ";

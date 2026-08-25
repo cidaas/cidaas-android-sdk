@@ -38,6 +38,7 @@ public class DBHelper {
     private static final String PKCE_ENABLE_STATUS = "OAuthEnablePkce";
     private static final String ENCRYPTED_STRING = "EncryptedString";
     private static final String LOG_ENABLE_STATUS = "OAuthEnableLog";
+    private static final String IS_DEVICE_REGISTERED = "isDeviceRegistered";
     private static String user_storage_key = "cidaas_user_details_";
     private static String user_storage_info = "cidaas_user_info_";
     private static ObjectMapper shared_objectMapper = new ObjectMapper();
@@ -97,6 +98,28 @@ public class DBHelper {
 
         return result;
     }
+
+    public void setDeviceRegistered(boolean registered) {
+        try {
+            editor.putBoolean(IS_DEVICE_REGISTERED, registered);
+            editor.commit();
+        } catch (Exception e) {
+            Timber.e(e, "DBHelper: setDeviceRegistered failed");
+        }
+    }
+
+    /**
+     * {@code true} only after successful device registration verification (or initiation 409 with local device_id).
+     * Does not infer registration from other prefs keys.
+     */
+    public boolean isDeviceRegistered() {
+        try {
+            return preferences != null && preferences.getBoolean(IS_DEVICE_REGISTERED, false);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     //Set Enable Log
     public void setEnableLog(boolean enableLog) {
         try {
