@@ -54,14 +54,6 @@ public final class DeviceRefHelper {
         headers.put("Cookie", cookieHeaderValue(deviceId));
     }
 
-    /**
-     * @deprecated Use {@link #applyToHeaders(Map)}.
-     */
-    @Deprecated
-    public static void applyToRequestIdHeaders(@NonNull Map<String, String> headers) {
-        applyToHeaders(headers);
-    }
-
     @NonNull
     public static String cookieHeaderValue(@NonNull String deviceId) {
         return COOKIE_NAME + "=" + deviceId;

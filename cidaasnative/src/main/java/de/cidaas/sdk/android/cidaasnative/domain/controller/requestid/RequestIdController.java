@@ -114,14 +114,12 @@ public class RequestIdController {
     private void ensureDeviceRegisteredThenGetRequestId(final Dictionary<String, String> loginproperties,
                                                         final EventResult<AuthRequestResponseEntity> Primaryresult,
                                                         @Nullable final HashMap<String, String>... extraParams) {
-        final String methodName = "RequestIdController :ensureDeviceRegisteredThenGetRequestId()";
            if (DBHelper.getShared().isDeviceRegistered()) {
             RequestIdService.getShared(context).getRequestID(loginproperties, Primaryresult, extraParams);
             return;
         }
 
         // Optional attestation:register with biometric + DPoP only.
-        Log.d("NEWLOGG","LOG1");
         DeviceRegistrationService.getShared(context).startRegistration(null, null,
                 new EventResult<DeviceRegistrationResponseEntity>() {
                     @Override
