@@ -1,7 +1,6 @@
 package de.cidaas.sdk.android.cidaasnative.domain.service.RequestId;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
