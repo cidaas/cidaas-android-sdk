@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import de.cidaas.sdk.android.Cidaas;
 import de.cidaas.sdk.android.helper.general.GenralHelper;
+import timber.log.Timber;
 
 /**
  * Created by widasrnarayanan on 5/2/18.
@@ -35,6 +36,7 @@ public class URLHelper {
 
     String tokenUrl = "/token-srv/token";
     String socialTokenURL = "/login-srv/social/token";
+    String loginAfterRegisterURL = "/login-srv/login/handle/afterregister/";
 
     String preAuthCode = "&preAuthCode=";
 
@@ -55,6 +57,9 @@ public class URLHelper {
     String documentScanner = "/access-control-srv/ocr/validate";
 
     String openIdURL = "/.well-known/openid-configuration";
+
+    /** Pushed Authorization Request endpoint (RFC 9126). */
+    String parURL = "/authz-srv/par";
 
     String setupEmailMFA = "/verification-srv/email/callSetup";
     String enrollEmailMFA = "/verification-srv/email/enroll";
@@ -315,12 +320,20 @@ public class URLHelper {
         return openIdURL;
     }
 
+    public String getParURL() {
+        return parURL;
+    }
+
     public String getPreAuthCode() {
         return preAuthCode;
     }
 
     public String getSocialTokenURL() {
         return socialTokenURL;
+    }
+
+    public String getLoginAfterRegisterUrl(String trackId) {
+        return loginAfterRegisterURL + trackId;
     }
 
     public String getDocumentScanner() {
@@ -395,6 +408,28 @@ public class URLHelper {
         } catch (Exception e) {
             return "URL Construction Failed Something went Wrong";
             // handle Exception
+        }
+    }
+
+    /**
+     * Builds the authorize URL after a successful PAR push:
+     * {@code authorization_endpoint?client_id=...&request_uri=...}.
+     */
+    public String constructParLoginURL(String authzURL, String clientId, String requestUri) {
+        try {
+            if (authzURL == null || authzURL.isEmpty()
+                    || clientId == null || clientId.isEmpty()
+                    || requestUri == null || requestUri.isEmpty()) {
+                return "";
+            }
+            return Uri.parse(authzURL).buildUpon()
+                    .appendQueryParameter("client_id", clientId)
+                    .appendQueryParameter("request_uri", requestUri)
+                    .build()
+                    .toString();
+        } catch (Exception e) {
+            Timber.e(e, "constructParLoginURL failed for authzURL=%s", authzURL);
+            return "";
         }
     }
 

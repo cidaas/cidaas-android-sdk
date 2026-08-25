@@ -19,7 +19,6 @@ import de.cidaas.sdk.android.helper.encryption.ClientSideEncryption;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
-import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
 import de.cidaas.sdk.android.service.helperforservice.Headers.Headers;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -186,5 +185,4 @@ public class NativeLoginService {
             callback.failure(WebAuthError.getShared(context).methodException(NativeConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_CREDENTIALS_FAILURE, e.getMessage()));
         }
     }
-
 }

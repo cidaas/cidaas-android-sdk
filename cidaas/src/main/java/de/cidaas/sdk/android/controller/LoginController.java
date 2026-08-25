@@ -27,7 +27,10 @@ import de.cidaas.sdk.android.helper.pkce.OAuthChallengeGenerator;
 import de.cidaas.sdk.android.helper.urlhelper.URLHelper;
 import de.cidaas.sdk.android.properties.CidaasProperties;
 import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
+import de.cidaas.sdk.android.service.entity.par.ParResponseEntity;
+import de.cidaas.sdk.android.service.repository.Login.AfterRegisterService;
 import de.cidaas.sdk.android.service.repository.Login.LoginService;
+import de.cidaas.sdk.android.service.repository.Login.ParService;
 import timber.log.Timber;
 
 public class LoginController {
@@ -295,10 +298,20 @@ public class LoginController {
 
     //Get Login With Browser
     public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, final EventResult<AccessTokenEntity> callbacktoMain) {
-        loginWithBrowser(activityContext, color, null, callbacktoMain);
+        loginWithBrowser(activityContext, color, null, false, callbacktoMain);
     }
 
     public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color, @Nullable final Map<String, String> extraParams,
+                                 final EventResult<AccessTokenEntity> callbacktoMain) {
+        loginWithBrowser(activityContext, color, extraParams, false, callbacktoMain);
+    }
+
+    /**
+     * Hosted login. When {@code usePar} is true, builds the authorize URL via
+     * {@link #getLoginURLWithPAR} (PKCE {@code generatePAR}, no ClientSecret).
+     */
+    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
+                                 @Nullable final Map<String, String> extraParams, boolean usePar,
                                  final EventResult<AccessTokenEntity> callbacktoMain) {
         final String methodName = "LoginController :loginWithBrowser()";
         try {
@@ -308,22 +321,23 @@ public class LoginController {
                 authorizeExtraParams = authorizeExtraParamsWithOptionalDpop(extraParams);
             } catch (Exception e) {
                 callbacktoMain.failure(WebAuthError.getShared(context)
-                        .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE, e.getMessage()));
+                        .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                                usePar ? WebAuthErrorCode.PAR_FAILURE : WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE,
+                                e.getMessage()));
                 return;
             }
 
-            getLoginURL(authorizeExtraParams, new EventResult<String>() {
+            EventResult<String> urlCallback = new EventResult<String>() {
                 @Override
                 public void success(String result) {
                     String loginURL = result;
                     logincallback = callbacktoMain;
-                    if (loginURL != null) {
+                    if (loginURL != null && !loginURL.isEmpty()) {
                         launchCustomTab(activityContext, loginURL, color);
                     } else {
-                        // callback Failure
-                        callbacktoMain.failure(WebAuthError.getShared(context).loginWithBrowserFailureException(WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE,
+                        callbacktoMain.failure(WebAuthError.getShared(context).loginWithBrowserFailureException(
+                                usePar ? WebAuthErrorCode.PAR_FAILURE : WebAuthErrorCode.LOGINWITH_BROWSER_FAILURE,
                                 "EMPTY URL", methodName));
-                        // Clear callback after failure
                         logincallback = null;
                     }
                 }
@@ -331,11 +345,15 @@ public class LoginController {
                 @Override
                 public void failure(WebAuthError error) {
                     callbacktoMain.failure(error);
-                    // Clear callback after failure
                     logincallback = null;
                 }
-            });
+            };
 
+            if (usePar) {
+                getLoginURLWithPAR(authorizeExtraParams, urlCallback);
+            } else {
+                getLoginURL(authorizeExtraParams, urlCallback);
+            }
 
         } catch (Exception e) {
             // : Handle Exception
@@ -824,6 +842,183 @@ public class LoginController {
             logincallback = null;
         }
 
+    }
+
+    /**
+     * Completes auto-login after register: afterregister handle → authorization code → token exchange.
+     * Call from the app when register returns {@code data.action = AUTO_LOGIN} and a {@code trackId}.
+     */
+    public void handleAfterRegister(@NonNull final String trackId,
+                                    @NonNull final EventResult<AccessTokenEntity> result) {
+        String methodName = "LoginController :handleAfterRegister()";
+        try {
+            if (trackId == null || trackId.trim().isEmpty()) {
+                result.failure(WebAuthError.getShared(context).propertyMissingException(
+                        "trackId must not be empty", CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                return;
+            }
+            CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
+                @Override
+                public void success(Dictionary<String, String> loginPropertiesResult) {
+                    AfterRegisterService.getShared(context).handleAfterRegister(
+                            loginPropertiesResult.get(CidaasConstants.DOMAIN_URL),
+                            trackId,
+                            new EventResult<String>() {
+                                @Override
+                                public void success(String code) {
+                                    AccessTokenController.getShared(context).getAccessTokenByCode(code,
+                                            new EventResult<AccessTokenEntity>() {
+                                                @Override
+                                                public void success(AccessTokenEntity accessTokenresult) {
+                                                    result.success(accessTokenresult);
+                                                }
+
+                                                @Override
+                                                public void failure(WebAuthError error) {
+                                                    result.failure(error);
+                                                }
+                                            });
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    result.failure(error);
+                                }
+                            });
+                }
+
+                @Override
+                public void failure(WebAuthError error) {
+                    result.failure(error);
+                }
+            });
+        } catch (Exception e) {
+            result.failure(WebAuthError.getShared(context).methodException(
+                    CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                    WebAuthErrorCode.AUTO_LOGIN_AFTER_REGISTER_FAILURE, e.getMessage()));
+        }
+    }
+
+    // -------------------- PAR (Pushed Authorization Request) --------------------
+
+    /**
+     * Builds the authorize URL using PAR + PKCE ({@link ParService#generatePAR}).
+     */
+    public void getLoginURLWithPAR(final EventResult<String> callback) {
+        getLoginURLWithPAR(null, callback);
+    }
+
+    public void getLoginURLWithPAR(@Nullable final Map<String, String> extraParams,
+                                   final EventResult<String> callback) {
+        final String methodName = "LoginController :getLoginURLWithPAR()";
+        try {
+            CidaasProperties.getShared(context).checkCidaasProperties(new EventResult<Dictionary<String, String>>() {
+                @Override
+                public void success(Dictionary<String, String> loginProperties) {
+                    Dictionary<String, String> challengeProperties = DBHelper.getShared().getChallengeProperties();
+                    if (challengeProperties == null || challengeProperties.size() == 0 || challengeProperties.isEmpty()) {
+                        generateChallenge();
+                        challengeProperties = DBHelper.getShared().getChallengeProperties();
+                    }
+                    getLoginURLWithPAR(CidaasHelper.baseurl, loginProperties, challengeProperties,
+                            extraParams, callback);
+                }
+
+                @Override
+                public void failure(WebAuthError error) {
+                    callback.failure(error);
+                }
+            });
+        } catch (Exception e) {
+            callback.failure(WebAuthError.getShared(context)
+                    .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                            WebAuthErrorCode.PAR_FAILURE, e.getMessage()));
+        }
+    }
+
+    public void getLoginURLWithPAR(@NonNull final String baseurl,
+                                   final Dictionary<String, String> loginProperties,
+                                   final Dictionary<String, String> challengeProperties,
+                                   @Nullable final Map<String, String> extraParams,
+                                   @NonNull final EventResult<String> callback) {
+        final String methodName = "LoginController :getLoginURLWithPAR()";
+        try {
+            LoginService.getShared(context).getURLList(baseurl, new EventResult<Object>() {
+                @Override
+                public void success(Object result) {
+                    LinkedHashMap<String, String> urlList = (LinkedHashMap<String, String>) result;
+                    String authzURL = urlList.get("authorization_endpoint");
+
+                    Dictionary<String, String> props = loginProperties != null
+                            ? loginProperties
+                            : DBHelper.getShared().getLoginProperties(baseurl);
+                    Dictionary<String, String> challenge = challengeProperties;
+                    if (challenge == null || challenge.size() == 0 || challenge.get(CidaasConstants.CHALLENGE) == null) {
+                        generateChallenge();
+                        challenge = DBHelper.getShared().getChallengeProperties();
+                    }
+
+                    final String clientId = props.get(CidaasConstants.CLIENT_ID);
+                    final String redirectURL = props.get(CidaasConstants.REDIRECT_URL);
+                    final String codeChallenge = challenge.get(CidaasConstants.CHALLENGE);
+
+                    if (clientId == null || clientId.isEmpty()
+                            || redirectURL == null || redirectURL.isEmpty()
+                            || codeChallenge == null || codeChallenge.isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "ClientId, RedirectURL or Challenge must not be empty",
+                                CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                        return;
+                    }
+                    if (authzURL == null || authzURL.isEmpty()) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "authorization_endpoint missing from OpenID configuration",
+                                CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                        return;
+                    }
+
+                    final String authorizationEndpoint = authzURL;
+                    final Dictionary<String, String> challengeForPar = challenge;
+                    ParService parService = ParService.getShared(context);
+                    if (parService == null) {
+                        callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                                "ParService unavailable",
+                                CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                        return;
+                    }
+                    parService.generatePAR(
+                            baseurl, props, challengeForPar, extraParams,
+                            new EventResult<ParResponseEntity>() {
+                                @Override
+                                public void success(ParResponseEntity parResponse) {
+                                    String finalURL = URLHelper.getShared().constructParLoginURL(
+                                            authorizationEndpoint, clientId, parResponse.getRequestUri());
+                                    if (finalURL != null && !finalURL.isEmpty()) {
+                                        callback.success(finalURL);
+                                    } else {
+                                        callback.failure(WebAuthError.getShared(context)
+                                                .loginURLMissingException(
+                                                        CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                                    }
+                                }
+
+                                @Override
+                                public void failure(WebAuthError error) {
+                                    callback.failure(error);
+                                }
+                            });
+                }
+
+                @Override
+                public void failure(WebAuthError error) {
+                    callback.failure(error);
+                }
+            });
+        } catch (Exception e) {
+            callback.failure(WebAuthError.getShared(context)
+                    .methodException(CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                            WebAuthErrorCode.PAR_FAILURE, e.getMessage()));
+        }
     }
 
 }

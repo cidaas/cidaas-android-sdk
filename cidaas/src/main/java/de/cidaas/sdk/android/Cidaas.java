@@ -279,6 +279,17 @@ public class Cidaas {
         LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, callbacktoMain);
     }
 
+    /**
+     * Hosted login. When {@code usePar} is true, uses PAR + PKCE ({@code generatePAR}) instead of a
+     * full authorize query string. Prefer {@link #webAuth(Context)}{@code .usePar().signIn(...)}.
+     */
+    public void loginWithBrowser(@NonNull final Context activityContext, @Nullable final String color,
+            @Nullable final Map<String, String> extraParams, boolean usePar,
+            final EventResult<AccessTokenEntity> callbacktoMain) {
+        LoginController.getShared(context).loginWithBrowser(activityContext, color, extraParams, usePar,
+                callbacktoMain);
+    }
+
     public void logoutWithBrowser(@NonNull final Context activityContext, @NonNull final String sub,
             @Nullable final String post_redirect_uri, @Nullable final String color,
             final EventResult<Boolean> callbacktoMain) {
@@ -291,6 +302,7 @@ public class Cidaas {
      * to launch the custom tab
      * (typically your current {@link Activity}). Example:
      * {@code cidaas.setDpopEnabled(true); cidaas.webAuth(this).extraParams(map).signIn(callback);}
+     * {@code cidaas.webAuth(this).usePar().signIn(callback);}
      */
     @NonNull
     public WebAuth webAuth(@NonNull Context activityContext) {
@@ -318,6 +330,7 @@ public class Cidaas {
      * {@code cidaas.users().fetch(sub, callback);}
      * {@code cidaas.users().register(registrationEntity, callback);} or
      * {@code cidaas.users().register(requestId, registrationEntity, callback);}
+     * {@code cidaas.users().loginAfterRegister(trackId, callback);}
      * {@code cidaas.users().verifications().fetch(sub, callback);}
      */
     @NonNull
