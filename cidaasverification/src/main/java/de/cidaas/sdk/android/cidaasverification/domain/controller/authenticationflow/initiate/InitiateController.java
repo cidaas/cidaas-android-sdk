@@ -15,6 +15,7 @@ import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.general.DBHelper;
+import de.cidaas.sdk.android.helper.general.DeviceRefHelper;
 import de.cidaas.sdk.android.helper.logger.LogFile;
 import de.cidaas.sdk.android.helper.urlhelper.URLHelper;
 import de.cidaas.sdk.android.properties.CidaasProperties;
@@ -110,6 +111,7 @@ public class InitiateController {
 
                     //headers Generation
                     Map<String, String> headers = Headers.getShared(context).getHeaders(null, false, URLHelper.contentTypeJson);
+                    DeviceRefHelper.applyToHeaders(headers);
 
                     //Initiate Service call
                     InitiateService.getShared(context).callInitiateService(initiateUrl, headers, initiateEntity, initiateResult);

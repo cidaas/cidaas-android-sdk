@@ -2,6 +2,7 @@ package de.cidaas.sdk.android.service.repository.device;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -10,7 +11,9 @@ import androidx.fragment.app.FragmentActivity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.Dictionary;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +28,7 @@ import de.cidaas.sdk.android.helper.crypthelper.FirebaseAppAttestationHelper;
 import de.cidaas.sdk.android.helper.crypthelper.PlayIntegrityHelper;
 import de.cidaas.sdk.android.helper.crypthelper.PlayIntegrityTokenListener;
 import de.cidaas.sdk.android.helper.enums.EventResult;
+import de.cidaas.sdk.android.helper.enums.HttpStatusCode;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
 import de.cidaas.sdk.android.helper.general.CidaasConstants;
@@ -36,6 +40,7 @@ import de.cidaas.sdk.android.service.ICidaasSDKService;
 import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationInitiationDataEntity;
 import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationRequestEntity;
 import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationResponseEntity;
+import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationVerificationDataEntity;
 import de.cidaas.sdk.android.service.entity.device.DeviceRegistrationVerificationRequestEntity;
 import de.cidaas.sdk.android.service.helperforservice.Headers.Headers;
 import retrofit2.Call;
@@ -43,12 +48,32 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import timber.log.Timber;
 
+/**
+ * Device registration aligned with the iOS requestId gate:
+ * <pre>
+ * requestId → isDeviceRegistered?
+ *   YES → generate requestId
+ *   NO  → initiation
+ *           200 → verification → 200 SUCCESS / 409 FAILURE
+ *           409 → resolve local device_id → found SUCCESS / missing FAILURE
+ *         → persist device_id → mark complete (registration lock) → generate requestId
+ * </pre>
+ *
+ * <p>When {@code useAppAttestation} is {@code true}, initiation sends {@code push_id} and Play Integrity /
+ * Firebase App Check runs from initiation {@code provider}. When {@code false}, attestation is skipped;
+ * verification uses biometric + DPoP only.
+ */
 public class DeviceRegistrationService {
 
     private final CidaassdkService service;
     private final Context context;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ExecutorService verificationExecutor = Executors.newSingleThreadExecutor();
+
+    /** Serializes completion and coalesces concurrent {@link #startRegistration} callers. */
+    private final Object registrationLock = new Object();
+    private boolean registrationInFlight = false;
+    private final List<EventResult<DeviceRegistrationResponseEntity>> pendingRegistrationCallbacks = new ArrayList<>();
 
     private static DeviceRegistrationService shared;
 
@@ -69,35 +94,55 @@ public class DeviceRegistrationService {
     }
 
     /**
+     * Same as {@link #startRegistration(FragmentActivity, boolean, String, Long, EventResult)} without an
+     * activity. Used from requestId when the device is not yet registered. App attestation is enabled
+     * when a non-empty {@code pushId} is supplied.
+     */
+    public void startRegistration(@Nullable final String pushId,
+                                  @Nullable final Long playIntegrityCloudProjectNumber,
+                                  @NonNull final EventResult<DeviceRegistrationResponseEntity> callback) {
+        startRegistration(null, false, pushId, playIntegrityCloudProjectNumber, callback);
+    }
+
+    /**
      * Initiates device registration then verifies with a DPoP proof that always includes biometric
      * key material (thumbprint / public key DER).
      *
      * <p>When {@code useAppAttestation} is {@code true}, {@code pushId} is required, initiation sends
      * {@code push_id}, and Play Integrity / Firebase App Check runs from initiation {@code provider}.
-     * When {@code false} (default when the flag is omitted), {@code push_id} is omitted and app
-     * attestation is skipped; only biometric + DPoP are used.
+     * When {@code false}, {@code push_id} is omitted and app attestation is skipped.
      *
-     * @param activity                        hosting FragmentActivity (API compatibility)
+     * <p>Initiation 409 resolves the local device id; verification 409 is a failure (iOS parity).
+     *
+     * @param activity                        optional hosting FragmentActivity (API compatibility)
      * @param useAppAttestation               enable FCM + Google/Firebase app attestation
      * @param pushId                          FCM token; required only when {@code useAppAttestation} is true
      * @param playIntegrityCloudProjectNumber optional GCP project number for Play Integrity
      */
-    public void startRegistration(@NonNull final FragmentActivity activity,
+    public void startRegistration(@Nullable final FragmentActivity activity,
                                   final boolean useAppAttestation,
                                   @Nullable final String pushId,
                                   @Nullable final Long playIntegrityCloudProjectNumber,
                                   @NonNull final EventResult<DeviceRegistrationResponseEntity> callback) {
         final String methodName = "DeviceRegistrationService :startRegistration()";
+        synchronized (registrationLock) {
+            pendingRegistrationCallbacks.add(callback);
+            if (registrationInFlight) {
+                return;
+            }
+            registrationInFlight = true;
+        }
+
         DeviceInfoEntity deviceInfo = DBHelper.getShared().getDeviceInfo();
         String deviceId = deviceInfo != null ? deviceInfo.getDeviceId() : null;
         if (deviceId == null || deviceId.isEmpty()) {
-            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+            finishRegistrationFailure(WebAuthError.getShared(context).propertyMissingException(
                     "device id from deviceInfo must not be empty",
                     CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
             return;
         }
         if (useAppAttestation && (pushId == null || pushId.isEmpty())) {
-            callback.failure(WebAuthError.getShared(context).propertyMissingException(
+            finishRegistrationFailure(WebAuthError.getShared(context).propertyMissingException(
                     "pushId must not be empty when useAppAttestation is true",
                     CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
             return;
@@ -108,13 +153,14 @@ public class DeviceRegistrationService {
             public void success(Dictionary<String, String> loginProperties) {
                 String baseurl = loginProperties.get(CidaasConstants.DOMAIN_URL);
                 if (baseurl == null || baseurl.isEmpty()) {
-                    callback.failure(WebAuthError.getShared(context).propertyMissingException(
-                            context.getString(R.string.EMPTY_BASE_URL_SERVICE), CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                    finishRegistrationFailure(WebAuthError.getShared(context).propertyMissingException(
+                            context.getString(R.string.EMPTY_BASE_URL_SERVICE),
+                            CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
                     return;
                 }
                 String clientId = loginProperties.get(CidaasConstants.CLIENT_ID);
                 if (clientId == null || clientId.isEmpty()) {
-                    callback.failure(WebAuthError.getShared(context).propertyMissingException(
+                    finishRegistrationFailure(WebAuthError.getShared(context).propertyMissingException(
                             "ClientId from saved properties must not be empty",
                             CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
                     return;
@@ -126,33 +172,29 @@ public class DeviceRegistrationService {
                 DeviceRegistrationRequestEntity body =
                         new DeviceRegistrationRequestEntity(deviceId, pushForRequest, clientId);
                 enqueueInitiation(
-                        activity,
                         baseurl,
                         initiationUrl,
                         headers,
                         body,
                         useAppAttestation,
                         playIntegrityCloudProjectNumber,
-                        callback,
                         methodName);
             }
 
             @Override
             public void failure(WebAuthError error) {
-                callback.failure(WebAuthError.getShared(context).cidaasPropertyMissingException(
+                finishRegistrationFailure(WebAuthError.getShared(context).cidaasPropertyMissingException(
                         error.getErrorMessage(), CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
             }
         });
     }
 
-    private void enqueueInitiation(final FragmentActivity activity,
-                                   final String baseUrl,
+    private void enqueueInitiation(final String baseUrl,
                                    String url,
                                    Map<String, String> headers,
                                    DeviceRegistrationRequestEntity body,
                                    final boolean useAppAttestation,
                                    @Nullable final Long playIntegrityCloudProjectNumber,
-                                   final EventResult<DeviceRegistrationResponseEntity> callback,
                                    final String methodName) {
         try {
             ICidaasSDKService api = service.getInstance();
@@ -161,64 +203,79 @@ public class DeviceRegistrationService {
                 public void onResponse(Call<DeviceRegistrationResponseEntity> call,
                                        Response<DeviceRegistrationResponseEntity> response) {
                     if (response.isSuccessful()) {
-                        if (response.code() == 200 || response.code() == 201) {
+                        if (response.code() == HttpStatusCode.OK || response.code() == 201) {
                             DeviceRegistrationResponseEntity entity = response.body();
                             if (entity == null) {
-                                callback.failure(WebAuthError.getShared(context).emptyResponseException(
+                                finishRegistrationFailure(WebAuthError.getShared(context).emptyResponseException(
                                         WebAuthErrorCode.DEVICE_REGISTRATION_FAILURE, response.code(),
                                         CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
                                 return;
                             }
                             completeVerificationAfterInitiation(
-                                    activity,
                                     baseUrl,
                                     entity,
                                     headers,
                                     api,
                                     useAppAttestation,
                                     playIntegrityCloudProjectNumber,
-                                    callback,
                                     methodName);
-                        } else if (response.code() == 204) {
-                            callback.failure(WebAuthError.getShared(context).emptyResponseException(
-                                    WebAuthErrorCode.DEVICE_REGISTRATION_FAILURE, response.code(),
-                                    CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
-                        } else {
-                            callback.failure(WebAuthError.getShared(context).emptyResponseException(
-                                    WebAuthErrorCode.DEVICE_REGISTRATION_FAILURE, response.code(),
-                                    CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                            return;
                         }
-                    } else {
-                        dispatchRegistrationApiError(
-                                WebAuthErrorCode.DEVICE_REGISTRATION_FAILURE,
-                                response,
-                                callback,
-                                methodName);
+                        finishRegistrationFailure(WebAuthError.getShared(context).emptyResponseException(
+                                WebAuthErrorCode.DEVICE_REGISTRATION_FAILURE, response.code(),
+                                CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                        return;
                     }
+
+                    // 409 / VAC1177: device already on server → resolve local device_id
+                    String errorBody = readErrorBody(response);
+                    if (response.code() == HttpStatusCode.CONFLICT
+                            || isDeviceAlreadyRegisteredErrorBody(errorBody)) {
+                        handleInitiationConflict(methodName);
+                        return;
+                    }
+                    finishRegistrationFailureFromBody(
+                            WebAuthErrorCode.DEVICE_REGISTRATION_FAILURE,
+                            response.code(),
+                            errorBody,
+                            methodName);
                 }
 
                 @Override
                 public void onFailure(Call<DeviceRegistrationResponseEntity> call, Throwable t) {
-                    callback.failure(WebAuthError.getShared(context).serviceCallFailureException(
+                    finishRegistrationFailure(WebAuthError.getShared(context).serviceCallFailureException(
                             WebAuthErrorCode.DEVICE_REGISTRATION_FAILURE, t.getMessage(),
                             CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
                 }
             });
         } catch (Exception e) {
-            callback.failure(WebAuthError.getShared(context).methodException(
-                    CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, WebAuthErrorCode.DEVICE_REGISTRATION_FAILURE,
+            finishRegistrationFailure(WebAuthError.getShared(context).methodException(
+                    CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName,
+                    WebAuthErrorCode.DEVICE_REGISTRATION_FAILURE,
                     e.getMessage()));
         }
     }
 
-    private void completeVerificationAfterInitiation(final FragmentActivity activity,
-                                                     final String baseUrl,
+    /**
+     * Initiation 409: use local DeviceInfo.deviceId if present; otherwise fail.
+     */
+    private void handleInitiationConflict(String methodName) {
+        String localDeviceId = resolveLocalDeviceId();
+        if (localDeviceId == null || localDeviceId.isEmpty()) {
+            finishRegistrationFailure(WebAuthError.getShared(context).propertyMissingException(
+                    "Device already registered on server (409) but local device_id is missing",
+                    CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+            return;
+        }
+        finishRegistrationSuccess(localDeviceId, registrationCompleteSuccessResponse(HttpStatusCode.CONFLICT));
+    }
+
+    private void completeVerificationAfterInitiation(final String baseUrl,
                                                      final DeviceRegistrationResponseEntity initiation,
                                                      final Map<String, String> headers,
                                                      final ICidaasSDKService api,
                                                      final boolean useAppAttestation,
                                                      @Nullable final Long playIntegrityCloudProjectNumber,
-                                                     final EventResult<DeviceRegistrationResponseEntity> callback,
                                                      final String methodName) {
         verificationExecutor.execute(() -> {
             try {
@@ -232,7 +289,6 @@ public class DeviceRegistrationService {
                             api,
                             null,
                             null,
-                            callback,
                             methodName);
                     return;
                 }
@@ -248,7 +304,6 @@ public class DeviceRegistrationService {
                                 api,
                                 provider,
                                 attestationToken,
-                                callback,
                                 methodName);
                     }
 
@@ -258,7 +313,7 @@ public class DeviceRegistrationService {
                         if (detail == null || detail.isEmpty()) {
                             detail = String.valueOf(error);
                         }
-                        notifyVerificationFailure(callback, methodName,
+                        notifyVerificationFailure(methodName,
                                 "App attestation failed (provider=" + provider + "): " + detail);
                     }
                 };
@@ -272,11 +327,11 @@ public class DeviceRegistrationService {
                 } else if (isFirebaseProvider(provider)) {
                     FirebaseAppAttestationHelper.requestToken(context, afterAttestation);
                 } else {
-                    notifyVerificationFailure(callback, methodName,
+                    notifyVerificationFailure(methodName,
                             "Unsupported attestation provider: " + provider + " (expected google or firebase)");
                 }
             } catch (Exception e) {
-                notifyVerificationFailure(callback, methodName, e.getMessage());
+                notifyVerificationFailure(methodName, e.getMessage());
             }
         });
     }
@@ -287,7 +342,6 @@ public class DeviceRegistrationService {
                                       final ICidaasSDKService api,
                                       @Nullable final String provider,
                                       @Nullable final String attestationToken,
-                                      final EventResult<DeviceRegistrationResponseEntity> callback,
                                       final String methodName) {
         try {
             final BiometricP256Signer signer = new BiometricP256Signer(context);
@@ -317,10 +371,9 @@ public class DeviceRegistrationService {
                     dpopThumb,
                     bioThumb,
                     provider,
-                    callback,
                     methodName);
         } catch (Exception e) {
-            notifyVerificationFailure(callback, methodName, e.getMessage());
+            notifyVerificationFailure(methodName, e.getMessage());
         }
     }
 
@@ -352,7 +405,6 @@ public class DeviceRegistrationService {
                                      final String dpopThumb,
                                      final String bioThumb,
                                      @Nullable final String attestationProvider,
-                                     final EventResult<DeviceRegistrationResponseEntity> callback,
                                      final String methodName) {
         try {
             DeviceRegistrationVerificationRequestEntity body = new DeviceRegistrationVerificationRequestEntity(
@@ -368,29 +420,41 @@ public class DeviceRegistrationService {
                         @Override
                         public void onResponse(Call<DeviceRegistrationResponseEntity> call,
                                                Response<DeviceRegistrationResponseEntity> response) {
-                            if (response.isSuccessful() && response.body() != null) {
-                                callback.success(response.body());
-                            } else if (response.isSuccessful()) {
-                                DeviceRegistrationResponseEntity entity = new DeviceRegistrationResponseEntity();
-                                entity.setSuccess(true);
-                                entity.setStatus(response.code());
-                                callback.success(entity);
-                            } else {
-                                dispatchRegistrationApiError(
-                                        WebAuthErrorCode.DEVICE_VERIFICATION_FAILURE,
-                                        response,
-                                        callback,
-                                        methodName);
+                            if (response.isSuccessful()) {
+                                String deviceId = extractDeviceIdFromVerification(response.body());
+                                if (deviceId == null || deviceId.isEmpty()) {
+                                    deviceId = resolveLocalDeviceId();
+                                }
+                                if (deviceId == null || deviceId.isEmpty()) {
+                                    finishRegistrationFailure(WebAuthError.getShared(context).propertyMissingException(
+                                            "Verification succeeded but device_id is missing locally and in response",
+                                            CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+                                    return;
+                                }
+                                DeviceRegistrationResponseEntity entity = response.body();
+                                if (entity == null) {
+                                    entity = registrationCompleteSuccessResponse(response.code());
+                                }
+                                finishRegistrationSuccess(deviceId, entity);
+                                return;
                             }
+
+                            // Verification 409 = FAILURE (unlike initiation 409)
+                            String errorBody = readErrorBody(response);
+                            finishRegistrationFailureFromBody(
+                                    WebAuthErrorCode.DEVICE_VERIFICATION_FAILURE,
+                                    response.code(),
+                                    errorBody,
+                                    methodName);
                         }
 
                         @Override
                         public void onFailure(Call<DeviceRegistrationResponseEntity> call, Throwable t) {
-                            notifyVerificationFailure(callback, methodName, t.getMessage());
+                            notifyVerificationFailure(methodName, t.getMessage());
                         }
                     });
         } catch (Exception e) {
-            notifyVerificationFailure(callback, methodName, e.getMessage());
+            notifyVerificationFailure(methodName, e.getMessage());
         }
     }
 
@@ -410,56 +474,113 @@ public class DeviceRegistrationService {
         return data;
     }
 
-    private String readAppVersion() {
+    @Nullable
+    private String extractDeviceIdFromVerification(@Nullable DeviceRegistrationResponseEntity response) {
         try {
-            PackageManager pm = context.getPackageManager();
-            String version = pm.getPackageInfo(context.getPackageName(), 0).versionName;
-            return version != null ? version : "unknown";
-        } catch (PackageManager.NameNotFoundException e) {
-            return "unknown";
+            if (response == null || response.getData() == null) {
+                return null;
+            }
+            DeviceRegistrationVerificationDataEntity data = objectMapper.convertValue(
+                    response.getData(), DeviceRegistrationVerificationDataEntity.class);
+            if (data == null || data.getDeviceId() == null || data.getDeviceId().trim().isEmpty()) {
+                return null;
+            }
+            return data.getDeviceId().trim();
+        } catch (Exception ignored) {
+            return null;
         }
     }
 
-    private void notifyVerificationFailure(EventResult<DeviceRegistrationResponseEntity> callback,
-                                           String methodName,
-                                           String message) {
-        callback.failure(WebAuthError.getShared(context).serviceCallFailureException(
+    @Nullable
+    private String resolveLocalDeviceId() {
+        try {
+            DeviceInfoEntity deviceInfo = DBHelper.getShared().getDeviceInfo();
+            if (deviceInfo == null) {
+                return null;
+            }
+            String deviceId = deviceInfo.getDeviceId();
+            return deviceId != null && !deviceId.trim().isEmpty() ? deviceId.trim() : null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Persist device_id into DeviceInfo (same store initiate/authenticate/continue use), then mark registered.
+     * Must be called while holding {@link #registrationLock}.
+     */
+    private void persistDeviceIdAndMarkComplete(@NonNull String deviceId) {
+        DeviceInfoEntity deviceInfo = DBHelper.getShared().getDeviceInfo();
+        if (deviceInfo == null) {
+            deviceInfo = new DeviceInfoEntity();
+        }
+        deviceInfo.setDeviceId(deviceId);
+        DBHelper.getShared().addDeviceInfo(deviceInfo);
+        DBHelper.getShared().setDeviceRegistered(true);
+    }
+
+    private void finishRegistrationSuccess(@NonNull String deviceId,
+                                           @NonNull DeviceRegistrationResponseEntity entity) {
+        List<EventResult<DeviceRegistrationResponseEntity>> waiters;
+        synchronized (registrationLock) {
+            persistDeviceIdAndMarkComplete(deviceId);
+            registrationInFlight = false;
+            waiters = new ArrayList<>(pendingRegistrationCallbacks);
+            pendingRegistrationCallbacks.clear();
+        }
+        for (EventResult<DeviceRegistrationResponseEntity> waiter : waiters) {
+            waiter.success(entity);
+        }
+    }
+
+    private void finishRegistrationFailure(@NonNull WebAuthError error) {
+        List<EventResult<DeviceRegistrationResponseEntity>> waiters;
+        synchronized (registrationLock) {
+            registrationInFlight = false;
+            waiters = new ArrayList<>(pendingRegistrationCallbacks);
+            pendingRegistrationCallbacks.clear();
+        }
+        for (EventResult<DeviceRegistrationResponseEntity> waiter : waiters) {
+            waiter.failure(error);
+        }
+    }
+
+    private void notifyVerificationFailure(String methodName, String message) {
+        finishRegistrationFailure(WebAuthError.getShared(context).serviceCallFailureException(
                 WebAuthErrorCode.DEVICE_VERIFICATION_FAILURE,
                 message,
                 CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
     }
 
-    /**
-     * {@link CidaasConstants#DEVICE_ALREADY_REGISTERED_ERROR_CODE} means the device is already registered;
-     * the SDK treats that as success for initiation and verification.
-     */
-    private void dispatchRegistrationApiError(int webAuthErrorCode,
-                                              Response<DeviceRegistrationResponseEntity> response,
-                                              EventResult<DeviceRegistrationResponseEntity> callback,
-                                              String methodName) {
+    private void finishRegistrationFailureFromBody(int webAuthErrorCode,
+                                                   int httpCode,
+                                                   @Nullable String errorBody,
+                                                   String methodName) {
+        if (errorBody == null || errorBody.isEmpty()) {
+            finishRegistrationFailure(WebAuthError.getShared(context).emptyResponseException(
+                    webAuthErrorCode, httpCode, CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+            return;
+        }
+        finishRegistrationFailure(CommonError.getShared(context).generateCommonErrorEntityFromBody(
+                webAuthErrorCode, errorBody, CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
+    }
+
+    @Nullable
+    private static String readErrorBody(Response<?> response) {
         try {
             if (response.errorBody() == null) {
-                callback.failure(WebAuthError.getShared(context).emptyResponseException(
-                        webAuthErrorCode, response.code(), CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
-                return;
+                return null;
             }
-            String errorResponse = response.errorBody().string();
-            if (isDeviceAlreadyRegisteredErrorBody(errorResponse)) {
-                callback.success(deviceAlreadyRegisteredSuccessResponse(response.code()));
-                return;
-            }
-            callback.failure(CommonError.getShared(context).generateCommonErrorEntityFromBody(
-                    webAuthErrorCode, errorResponse, CidaasConstants.ERROR_LOGGING_PREFIX + methodName));
-        } catch (Exception e) {
-            callback.failure(WebAuthError.getShared(context).methodException(
-                    CidaasConstants.EXCEPTION_LOGGING_PREFIX + methodName, webAuthErrorCode, e.getMessage()));
+            return response.errorBody().string();
+        } catch (Exception ignored) {
+            return null;
         }
     }
 
-    private static DeviceRegistrationResponseEntity deviceAlreadyRegisteredSuccessResponse(int httpStatus) {
+    private static DeviceRegistrationResponseEntity registrationCompleteSuccessResponse(int httpStatus) {
         DeviceRegistrationResponseEntity entity = new DeviceRegistrationResponseEntity();
         entity.setSuccess(true);
-        entity.setStatus(httpStatus > 0 ? httpStatus : 200);
+        entity.setStatus(httpStatus > 0 ? httpStatus : HttpStatusCode.OK);
         return entity;
     }
 
@@ -502,5 +623,15 @@ public class DeviceRegistrationService {
     private static boolean matchesDeviceAlreadyRegisteredCode(String value) {
         return value != null
                 && CidaasConstants.DEVICE_ALREADY_REGISTERED_ERROR_CODE.equalsIgnoreCase(value.trim());
+    }
+
+    private String readAppVersion() {
+        try {
+            PackageManager pm = context.getPackageManager();
+            String version = pm.getPackageInfo(context.getPackageName(), 0).versionName;
+            return version != null ? version : "unknown";
+        } catch (PackageManager.NameNotFoundException e) {
+            return "unknown";
+        }
     }
 }
