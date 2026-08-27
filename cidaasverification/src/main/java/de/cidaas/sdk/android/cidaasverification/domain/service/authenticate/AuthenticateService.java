@@ -13,6 +13,7 @@ import de.cidaas.sdk.android.cidaasverification.data.service.CidaasSDK_V2_Servic
 import de.cidaas.sdk.android.cidaasverification.data.service.ICidaasSDK_V2_Services;
 import de.cidaas.sdk.android.cidaasverification.util.VerificationConstants;
 import de.cidaas.sdk.android.helper.commonerror.CommonError;
+import de.cidaas.sdk.android.helper.encryption.ClientSideEncryption;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
@@ -59,6 +60,8 @@ public class AuthenticateService {
         try {
 
             LogFile.getShared(context).addInfoLog(methodName, " AuthenticateURL:- " + authenticateURL);
+
+            applyClientSideEncryption(authenticateEntity);
 
             //call service
             ICidaasSDK_V2_Services cidaasSDK_v2_services = service.getInstance();
@@ -131,6 +134,17 @@ public class AuthenticateService {
         } catch (Exception e) {
             authenticateCallback.failure(WebAuthError.getShared(context).methodException(VerificationConstants.ERROR_LOGGING_PREFIX + methodName,
                     WebAuthErrorCode.AUTHENTICATE_VERIFICATION_FAILURE, e.getMessage()));
+        }
+    }
+
+    private static void applyClientSideEncryption(AuthenticateEntity authenticateEntity) {
+        String passCode = authenticateEntity.getPass_code();
+        String password = authenticateEntity.getPassword();
+        if (passCode != null && !passCode.isEmpty()) {
+            authenticateEntity.setPass_code(ClientSideEncryption.encryptPassCodeIfEnabled(
+                    passCode, authenticateEntity.getVerificationType()));
+        } else if (password != null && !password.isEmpty()) {
+            authenticateEntity.setPassword(ClientSideEncryption.encryptIfEnabled(password));
         }
     }
 

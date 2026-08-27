@@ -15,6 +15,7 @@ import de.cidaas.sdk.android.cidaasnative.data.service.helper.NativeURLHelper;
 import de.cidaas.sdk.android.cidaasnative.util.NativeConstants;
 import de.cidaas.sdk.android.entities.LoginCredentialsResponseEntity;
 import de.cidaas.sdk.android.helper.commonerror.CommonError;
+import de.cidaas.sdk.android.helper.encryption.ClientSideEncryption;
 import de.cidaas.sdk.android.helper.enums.EventResult;
 import de.cidaas.sdk.android.helper.enums.WebAuthErrorCode;
 import de.cidaas.sdk.android.helper.extension.WebAuthError;
@@ -135,6 +136,10 @@ public class NativeLoginService {
                                                 final EventResult<LoginCredentialsResponseEntity> callback) {
         final String methodName = "Error :LoginService :serviceForLoginWithCredentials()";
         try {
+            if (loginCredentialsRequestEntity.getPassword() != null && !loginCredentialsRequestEntity.getPassword().isEmpty()) {
+                loginCredentialsRequestEntity.setPassword(
+                        ClientSideEncryption.encryptIfEnabled(loginCredentialsRequestEntity.getPassword()));
+            }
             final ICidaasNativeService cidaasNativeService = service.getInstance();
 
             cidaasNativeService.loginWithCredentials(loginUrl, headers, loginCredentialsRequestEntity).enqueue(new Callback<LoginCredentialsResponseEntity>() {
