@@ -18,6 +18,7 @@ import de.cidaas.sdk.android.device.Device;
 import de.cidaas.sdk.android.device.Devices;
 import de.cidaas.sdk.android.publicapi.CidaasPublic;
 import de.cidaas.sdk.android.users.Users;
+import timber.log.Timber;
 import de.cidaas.sdk.android.verifications.Verifications;
 import de.cidaas.sdk.android.controller.AccessTokenController;
 import de.cidaas.sdk.android.controller.DocumentScannnerController;
@@ -37,7 +38,11 @@ import de.cidaas.sdk.android.helper.crypthelper.DpopConfig;
 import de.cidaas.sdk.android.helper.storage.SecureStorage;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricCallback;
 import de.cidaas.sdk.android.library.biometricauthentication.BiometricEntity;
+import de.cidaas.sdk.android.helper.crypthelper.KeyBackingPolicy;
+import de.cidaas.sdk.android.helper.network.UserAgentInterceptor;
+import de.cidaas.sdk.android.helper.crypthelper.KeystoreEcP256StrongBoxHelper;
 import de.cidaas.sdk.android.library.common.Privacy;
+import okhttp3.OkHttpClient;
 import de.cidaas.sdk.android.library.locationlibrary.LocationDetails;
 import de.cidaas.sdk.android.service.entity.UserInfo.UserInfoEntity;
 import de.cidaas.sdk.android.service.entity.accesstoken.AccessTokenEntity;
@@ -151,6 +156,70 @@ public class Cidaas {
     /** @return whether global DPoP is enabled (default {@code false}). */
     public boolean isDpopEnabled() {
         return DpopConfig.isEnabled();
+    }
+
+    /**
+     * Supplies a custom {@link OkHttpClient} whose TLS, proxy, certificate-pinning,
+     * and timeout settings the SDK will inherit. The SDK calls
+     * {@link OkHttpClient#newBuilder()} internally so SDK-required interceptors
+     * (DPoP, User-Agent) are always added on top; the supplied client's connection
+     * pool and dispatcher are shared.
+     *
+     * <p>Call this before any network operation (login, registration, MFA).
+     * If not called, the SDK creates a default client.
+     *
+     * <p>Example (banking-grade TLS):
+     * <pre>{@code
+     * OkHttpClient bankClient = new OkHttpClient.Builder()
+     *     .connectionSpecs(Collections.singletonList(ConnectionSpec.RESTRICTED_TLS))
+     *     .certificatePinner(new CertificatePinner.Builder()
+     *         .add("your.cidaas.host", "sha256/AAAA...")
+     *         .build())
+     *     .connectTimeout(15, TimeUnit.SECONDS)
+     *     .build();
+     * Cidaas.setHttpClient(bankClient);
+     * }</pre>
+     */
+    public static void setHttpClient(@Nullable OkHttpClient client) {
+        if (client != null && (CidaasHelper.certificatePinningConfig != null || CidaasHelper.networkSecurityPinningXmlResId != 0)) {
+            Timber.w("Custom OkHttpClient is set — SDK-level certificate pinning (setCertificatePinning) will be ignored. Configure pinning on the supplied client instead.");
+        }
+        CidaasHelper.customHttpClient = client;
+    }
+
+    /**
+     * Returns the custom {@link OkHttpClient} set via {@link #setHttpClient(OkHttpClient)},
+     * or {@code null} if the SDK is using its default client.
+     */
+    @Nullable
+    public static OkHttpClient getHttpClient() {
+        return CidaasHelper.customHttpClient;
+    }
+
+    /**
+     * Sets the minimum acceptable hardware backing for Keystore-generated keys (DPoP, biometric).
+     * Default is {@link KeyBackingPolicy#REQUIRE_HARDWARE}.
+     *
+     * <p>Call this before any key generation (device registration, MFA enrollment).
+     * If a generated key doesn't meet the policy, it is deleted and a {@link SecurityException} is thrown.
+     *
+     * <p><b>Warning:</b> Changing the policy after keys have already been generated (e.g. upgrading
+     * from {@code BEST_AVAILABLE} to {@code REQUIRE_HARDWARE}) will cause existing keys that do not
+     * meet the new policy to be deleted on the next SDK operation that uses them, requiring
+     * re-enrollment (device registration, MFA setup).
+     */
+    public static void setKeyBackingPolicy(@NonNull KeyBackingPolicy policy) {
+        KeystoreEcP256StrongBoxHelper.setPolicy(policy);
+    }
+
+    /**
+     * Returns the current minimum key backing policy.
+     * Defaults to {@link KeyBackingPolicy#REQUIRE_HARDWARE}.
+     *
+     * @return the active {@link KeyBackingPolicy}
+     */
+    public static KeyBackingPolicy getKeyBackingPolicy() {
+        return KeystoreEcP256StrongBoxHelper.getPolicy();
     }
 
     // enableLog
@@ -478,7 +547,7 @@ public class Cidaas {
     }
 
     public String getUserAgent() {
-        return DBHelper.getShared().getUserAgent();
+        return UserAgentInterceptor.getUserAgent();
     }
 
     // ----------------------------------LocationHistory------------------------------------------------------------------------------------------------------

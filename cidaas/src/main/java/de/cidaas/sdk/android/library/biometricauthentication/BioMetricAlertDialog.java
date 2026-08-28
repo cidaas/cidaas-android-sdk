@@ -92,6 +92,15 @@ public class BioMetricAlertDialog extends AlertDialog implements View.OnClickLis
 
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        if (getWindow() != null) {
+            getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE);
+        }
+    }
+
+    @Override
     public void onClick(View view) {
         dismiss();
         biometricCallback.onAuthenticationCancelled();

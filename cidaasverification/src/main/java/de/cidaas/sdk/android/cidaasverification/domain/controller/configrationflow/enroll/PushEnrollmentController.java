@@ -237,8 +237,11 @@ public final class PushEnrollmentController {
                 EnrollController.getShared(context).enrollVerification(enrollEntity, callback);
             });
 
-            dialog.show();
             Window window = dialog.getWindow();
+            if (window != null) {
+                window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
+            }
+            dialog.show();
             if (window != null) {
                 window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
                 DisplayMetrics dm = activity.getResources().getDisplayMetrics();

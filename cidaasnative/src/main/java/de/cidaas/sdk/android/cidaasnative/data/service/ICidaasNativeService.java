@@ -68,8 +68,8 @@ public interface ICidaasNativeService {
     Call<LoginCredentialsResponseEntity> loginWithCredentials(@Url String url, @HeaderMap Map<String, String> headers, @Body LoginCredentialsRequestEntity loginCredentialsRequestEntity);
 
     //Logout
-    @GET
-    Call<ResponseBody> logout(@Url String url, @HeaderMap Map<String, String> headers);
+    @POST
+    Call<ResponseBody> logout(@Url String url, @HeaderMap Map<String, String> headers, @Body Map<String, String> body);
 
     //Logout for embedded Browser
     Call<LogoutResponseEntity> logoutFromEmbeddedBrowser(@Url String url, @HeaderMap Map<String, String> headers, @Query("access_token_hint") String access_token_hint, @Query("post_logout_redirect_uri") String postlogoutRedirectURL);
